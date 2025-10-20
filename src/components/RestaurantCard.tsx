@@ -74,7 +74,7 @@ export default function RestaurantCard({ restaurant, currency, onAddToCart, user
         </p>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
-            {restaurant.estimatedDeliveryTime || 30}-{(restaurant.estimatedDeliveryTime || 30) + 10} min
+            {restaurant.est_delivery_time || '30-40 mins'}
           </span>
           <span className="text-sm font-medium" data-testid={`text-delivery-fee-${restaurant.id}`}>
             {getCurrencySymbol(currency)}{getDeliveryFee()} delivery

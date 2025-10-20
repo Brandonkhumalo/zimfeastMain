@@ -74,6 +74,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
     cuisines = CuisineTypeSerializer(many=True, read_only=True)
     external_apis = RestaurantExternalAPISerializer(many=True, read_only=True)
     menu_items = MenuItemSerializer(many=True, read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Restaurant
@@ -90,5 +91,13 @@ class RestaurantSerializer(serializers.ModelSerializer):
             "cuisines",
             "external_apis",
             "menu_items",
+            "rating",
             "created",
         ]
+    
+    def get_rating(self, obj):
+        """Get rating from restaurant dashboard, default to 4.5"""
+        try:
+            return obj.dashboard.today_average_rating
+        except:
+            return 4.5
