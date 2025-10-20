@@ -127,3 +127,11 @@ WebSocket connections are available for:
   - Updated frontend Restaurant type definition to match backend API response structure (cuisines array instead of cuisineType string)
   - Fixed RestaurantCard component to properly display cuisines array and use correct field names (lat/lng instead of coordinates object)
   - Restaurant data now correctly flows from backend to frontend with all 10 pre-populated restaurants
+- **Implemented Menu Dialog for Customer App (Oct 20, 2025)**:
+  - Created MenuDialog component that displays restaurant menu items when customers click "View Menu"
+  - Dialog shows menu items with images, descriptions, categories, availability status, and prices
+  - Each menu item has an "Add to Cart" button that adds the item to cart with proper restaurant location data
+  - Updated RestaurantCard to show menu item count on "View Menu" button
+  - Updated RestaurantGrid and TopRestaurant components to use menu dialog workflow
+  - Added toast notification when items are added to cart
+  - Dialog properly resets state on close for cleanliness (architect reviewed and approved)
