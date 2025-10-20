@@ -20,7 +20,7 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (): Promise<LoginResponse> => {
-      const res = await fetch("http://127.0.0.1:8000/api/accounts/login/", {
+      const res = await fetch("/api/accounts/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -37,7 +37,7 @@ export default function Login() {
 
       try {
         // 2️⃣ Fetch the real profile with the new token
-        const profile = await apiRequest<User>("http://127.0.0.1:8000/api/accounts/profile/");
+        const profile = await apiRequest<User>("/api/accounts/profile/");
 
         // 3️⃣ Populate React Query immediately
         queryClient.setQueryData<User>(["/api/accounts/profile/"], profile);

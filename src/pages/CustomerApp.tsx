@@ -47,23 +47,23 @@ export default function CustomerApp() {
 
   const fetchRestaurants = async (cursorUrl?: string) => {
     try {
-      let url: URL;
+      let url: string;
       
       if (cursorUrl) {
-        url = new URL(cursorUrl);
+        url = cursorUrl;
       } else {
-        url = new URL("http://127.0.0.1:8000/api/restaurants/nearby/");
-        
+        const params = new URLSearchParams();
         if (userLocation) {
-          url.searchParams.append("lat", userLocation.lat.toString());
-          url.searchParams.append("lng", userLocation.lng.toString());
+          params.append("lat", userLocation.lat.toString());
+          params.append("lng", userLocation.lng.toString());
         }
+        if (selectedCuisine) params.append("cuisine", selectedCuisine);
         
-        if (selectedCuisine) url.searchParams.append("cuisine", selectedCuisine);
+        url = `/api/restaurants/nearby/${params.toString() ? '?' + params.toString() : ''}`;
       }
 
       const token = localStorage.getItem("token");
-      const res = await fetch(url.toString(), {
+      const res = await fetch(url, {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
