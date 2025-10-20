@@ -180,7 +180,7 @@ export default function CustomerApp() {
 
   // Pagination slices
   const gridRestaurants = restaurantsData.slice(gridPage * 5, gridPage * 5 + 5);
-  const topRestaurants = allRestaurantsData
+  const topRestaurants = restaurantsData
     .filter(r => r.rating && r.rating >= 4)
     .sort((a, b) => (b.rating || 0) - (a.rating || 0))
     .slice(topPage * 5, topPage * 5 + 5);
@@ -221,7 +221,7 @@ export default function CustomerApp() {
       />
       <div className="flex justify-center gap-4 py-4">
         <Button onClick={() => setTopPage(p => Math.max(p - 1, 0))} disabled={topPage === 0}>Previous Top 5</Button>
-        <Button onClick={() => setTopPage(p => (p + 1) * 5 < allRestaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)} disabled={(topPage + 1) * 5 >= allRestaurantsData.filter(r => r.rating && r.rating >= 4).length}>Next Top 5</Button>
+        <Button onClick={() => setTopPage(p => (p + 1) * 5 < restaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)} disabled={(topPage + 1) * 5 >= restaurantsData.filter(r => r.rating && r.rating >= 4).length}>Next Top 5</Button>
       </div>
 
       {/* All Restaurants */}
