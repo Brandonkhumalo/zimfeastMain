@@ -13,9 +13,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']  # For testing only
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
+CORS_ALLOW_ALL_ORIGINS = True  # For development in Replit environment
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'Authorization',
