@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 import { Header } from "./home-components/Header";
 import { PortalSelection } from "./home-components/PortalSelection";
 import { BusinessHub } from "./home-components/BusinessHub";
@@ -13,16 +14,21 @@ export default function Home() {
   const { data: userProfile, isLoading, error } = useQuery<User>({
     queryKey: ["user-profile"],
     queryFn: () =>
-      apiRequest<User>("http://127.0.0.1:8000/api/accounts/profile/"),
+      apiRequest<User>("/api/accounts/profile/"),
     retry: false,
     refetchOnWindowFocus: false,
   });
 
+  // Handle redirect in useEffect to avoid setState during render
+  useEffect(() => {
+    if (error) {
+      setLocation("/login");
+    }
+  }, [error, setLocation]);
+
   if (isLoading) return <div>Loading...</div>;
 
   if (error) {
-    // Redirect to login if unauthorized
-    setLocation("/login");
     return null;
   }
 
