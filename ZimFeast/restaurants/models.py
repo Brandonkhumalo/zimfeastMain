@@ -70,7 +70,7 @@ class MenuItem(models.Model):
     category = models.ManyToManyField(CategoryType, blank=True)  # category is a string (e.g., Pizza, Burgers)
     prep_time = models.IntegerField(null=True, blank=True, help_text="Preparation time in minutes")
     available = models.BooleanField(default=True)
-    item_image = models.ImageField(upload_to="menu_items/", blank=True, null=True)
+    item_image = models.ImageField(upload_to="menu_items/")  # Mandatory field - enforced by frontend
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:

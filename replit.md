@@ -105,3 +105,7 @@ WebSocket connections are available for:
 - Set up Django CORS to accept all origins in development
 - Fixed Django ASGI import order for Channels
 - Created workflows for both frontend and backend servers
+- **Made menu item images mandatory**: Updated both frontend and backend to require image upload when adding menu items
+  - Frontend now includes image preview functionality
+  - Backend enforces image field requirement
+  - Migration applied to update database schema

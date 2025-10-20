@@ -27,6 +27,7 @@ interface MenuItemFormValues {
   category: string;
   preparationTime: number;
   available: boolean;
+  image: FileList;
 }
 
 interface MenuItemFormProps {
@@ -41,6 +42,7 @@ interface Category {
 export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<MenuItemFormValues>({
     defaultValues: {
@@ -88,6 +90,12 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
 
   const handleAddMenuItem: SubmitHandler<MenuItemFormValues> = async (data) => {
     try {
+      // Validate that an image is selected
+      if (!data.image || data.image.length === 0) {
+        alert("Please select an image for the menu item.");
+        return;
+      }
+
       const token = localStorage.getItem("token");
 
       const formData = new FormData();
@@ -97,6 +105,7 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
       formData.append("category", data.category);
       formData.append("prep_time", data.preparationTime.toString());
       formData.append("available", data.available ? "true" : "false");
+      formData.append("item_image", data.image[0]); // Add the image file
 
       const response = await fetch(
         "http://127.0.0.1:8000/api/restaurants/add/menu-items/",
@@ -120,6 +129,7 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
       console.log("Menu item added successfully:", result);
       alert("Menu item added successfully!");
       form.reset();
+      setImagePreview(null); // Clear image preview
     } catch (err) {
       console.error(err);
       alert("An unexpected error occurred.");
@@ -242,6 +252,52 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Image Upload - MANDATORY */}
+        <FormField
+          control={form.control}
+          name="image"
+          render={({ field: { onChange, value, ...field } }) => (
+            <FormItem>
+              <FormLabel className="text-red-600">
+                Item Image <span className="text-sm">(Required)</span>
+              </FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    {...field}
+                    onChange={(e) => {
+                      onChange(e.target.files);
+                      // Preview the image
+                      if (e.target.files && e.target.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setImagePreview(event.target?.result as string);
+                        };
+                        reader.readAsDataURL(e.target.files[0]);
+                      }
+                    }}
+                    required
+                    className="cursor-pointer"
+                  />
+                  {imagePreview && (
+                    <div className="mt-2 border rounded-lg p-2">
+                      <p className="text-sm text-gray-600 mb-2">Image Preview:</p>
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="max-w-full h-48 object-cover rounded"
+                      />
+                    </div>
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
