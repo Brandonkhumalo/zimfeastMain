@@ -122,3 +122,8 @@ WebSocket connections are available for:
   - Fixed API calls to use real backend endpoints with proper authentication
   - Fixed pagination to work with full cursor URLs
   - Updated cart system to include restaurant location data for order creation
+- **Fixed restaurant data structure alignment (Oct 20, 2025)**:
+  - Reorganized Django URL patterns in `restaurants/urls.py` - specific paths like `nearby/` and `get/all/` now come BEFORE dynamic `<str:restaurant_id>/` pattern to prevent incorrect URL matching
+  - Updated frontend Restaurant type definition to match backend API response structure (cuisines array instead of cuisineType string)
+  - Fixed RestaurantCard component to properly display cuisines array and use correct field names (lat/lng instead of coordinates object)
+  - Restaurant data now correctly flows from backend to frontend with all 10 pre-populated restaurants

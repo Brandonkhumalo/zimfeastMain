@@ -16,20 +16,15 @@ export default function RestaurantCard({ restaurant, currency, onAddToCart, user
   
   // Calculate delivery fee based on distance
   const getDeliveryFee = (): string => {
-    if (!userLocation || !restaurant.coordinates) {
+    if (!userLocation || !restaurant.lat || !restaurant.lng) {
       return DEFAULT_DELIVERY_FEE.toFixed(2); // Default delivery fee when location not available
-    }
-    
-    const coords = restaurant.coordinates as {lat: number, lng: number};
-    if (!coords.lat || !coords.lng) {
-      return DEFAULT_DELIVERY_FEE.toFixed(2); // Default when restaurant coordinates invalid
     }
     
     const fee = calculateDeliveryFeeFromCoordinates(
       userLocation.lat,
       userLocation.lng,
-      coords.lat,
-      coords.lng
+      restaurant.lat,
+      restaurant.lng
     );
     
     return fee.toFixed(2);
@@ -38,15 +33,14 @@ export default function RestaurantCard({ restaurant, currency, onAddToCart, user
   const handleViewMenu = () => {
     // In a real app, this would navigate to restaurant menu page
     // For now, we'll simulate adding a sample item to cart
-    const coords = restaurant.coordinates as {lat: number, lng: number} | undefined;
     onAddToCart({
       id: `${restaurant.id}-sample`,
       name: "Sample Dish",
       price: parseFloat(getDeliveryFee()),
       restaurantId: restaurant.id,
       restaurantName: restaurant.name,
-      restaurantLat: coords?.lat,
-      restaurantLng: coords?.lng
+      restaurantLat: restaurant.lat,
+      restaurantLng: restaurant.lng
     });
   };
 
@@ -74,7 +68,9 @@ export default function RestaurantCard({ restaurant, currency, onAddToCart, user
           </Badge>
         </div>
         <p className="text-muted-foreground text-sm mb-2" data-testid={`text-cuisine-${restaurant.id}`}>
-          {restaurant.cuisineType.charAt(0).toUpperCase() + restaurant.cuisineType.slice(1).replace('_', ' ')} • {restaurant.description || 'Great food'}
+          {restaurant.cuisines && restaurant.cuisines.length > 0 
+            ? restaurant.cuisines.map(c => c.name).join(', ') 
+            : 'Restaurant'} • {restaurant.description || 'Great food'}
         </p>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
