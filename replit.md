@@ -140,3 +140,10 @@ WebSocket connections are available for:
   - All API calls now work through Vite proxy in Replit environment
   - Fixed endpoints: order details, voucher balance, payment creation, voucher deposit, and payment status polling
   - Order checkout flow now works correctly from cart → order creation → checkout page
+- **Created User's Restaurant "Lali's" and Fixed Cuisine Filters (Oct 20, 2025)**:
+  - Created "Lali's" restaurant in Damofalls Park, Ruwa with 6 frozen goods menu items
+  - Fixed cuisine filtering system by creating cuisines that match filter values (fast_food, breakfast, traditional, etc.)
+  - Updated all 10 demo restaurants to use matching cuisine types
+  - Created RestaurantDashboard for all restaurants with ratings (Lali's has 4.5 rating)
+  - Cuisine filters (Fast Food, Traditional, Breakfast, etc.) now work correctly
+  - All restaurants now visible in customer app with working filters
