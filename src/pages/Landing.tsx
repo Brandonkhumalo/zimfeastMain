@@ -269,6 +269,25 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-8 border-t border-border bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Product of{" "}
+              <a 
+                href="https://tishanyq.co.zw" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 font-semibold underline-offset-4 hover:underline transition-colors duration-200"
+              >
+                Tishany Digital
+              </a>
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
