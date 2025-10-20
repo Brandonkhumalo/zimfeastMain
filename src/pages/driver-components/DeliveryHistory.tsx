@@ -14,37 +14,16 @@ export default function DeliveryHistory() {
   const { data, isLoading } = useQuery({
     queryKey: ["driver-order-history", cursor],
     queryFn: async () => {
-      // Uncomment to use backend
-      // const res = await getDriverOrderHistory(cursor || "");
-      // setNextCursor(res.next);
-      // setPrevCursor(res.previous);
-      // return res.results.map((o) => ({
-      //   id: o.id,
-      //   status: o.status,
-      //   deliveryFee: o.fee,
-      //   deliveryAddress: o.location || "",
-      //   orderDate: o.completed_at,
-      // }));
-
-      // DEMO DATA
-      setNextCursor(null);
-      setPrevCursor(null);
-      return [
-        {
-          id: "aaaa1111-bbbb-2222-cccc-333333333333",
-          status: "completed",
-          deliveryFee: 6.5,
-          deliveryAddress: "20 Jason Moyo St, Harare",
-          orderDate: "2025-10-04T09:15:00",
-        },
-        {
-          id: "dddd4444-eeee-5555-ffff-666666666666",
-          status: "cancelled",
-          deliveryFee: 4.76,
-          deliveryAddress: "12 Samora Machel Ave, Harare",
-          orderDate: "2025-10-04T09:15:00",
-        },
-      ];
+      const res = await getDriverOrderHistory(cursor || "");
+      setNextCursor(res.next);
+      setPrevCursor(res.previous);
+      return res.results.map((o) => ({
+        id: o.id,
+        status: o.status,
+        deliveryFee: o.fee,
+        deliveryAddress: o.location || "",
+        orderDate: o.completed_at,
+      }));
     },
   });
 

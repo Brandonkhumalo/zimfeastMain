@@ -115,3 +115,10 @@ WebSocket connections are available for:
   - Supports multiple API categories (Menu API, Meal Data, Categories, Inventory, Analytics, Custom)
   - Securely stores API URLs and optional API keys
   - Connected to backend endpoint for API management
+- **Cleaned up frontend demo data and integrated real backend**:
+  - Created 10 real restaurants in database with 30 menu items (3 per restaurant)
+  - All restaurants have external API integrations with category "get_menu"
+  - Removed all demo/mock data from CustomerApp, CartComponent, and DeliveryHistory
+  - Fixed API calls to use real backend endpoints with proper authentication
+  - Fixed pagination to work with full cursor URLs
+  - Updated cart system to include restaurant location data for order creation

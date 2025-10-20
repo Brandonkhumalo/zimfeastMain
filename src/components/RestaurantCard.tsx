@@ -38,12 +38,15 @@ export default function RestaurantCard({ restaurant, currency, onAddToCart, user
   const handleViewMenu = () => {
     // In a real app, this would navigate to restaurant menu page
     // For now, we'll simulate adding a sample item to cart
+    const coords = restaurant.coordinates as {lat: number, lng: number} | undefined;
     onAddToCart({
       id: `${restaurant.id}-sample`,
       name: "Sample Dish",
       price: parseFloat(getDeliveryFee()),
       restaurantId: restaurant.id,
-      restaurantName: restaurant.name
+      restaurantName: restaurant.name,
+      restaurantLat: coords?.lat,
+      restaurantLng: coords?.lng
     });
   };
 

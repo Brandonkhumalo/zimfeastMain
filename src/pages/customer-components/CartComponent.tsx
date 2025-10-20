@@ -68,15 +68,21 @@ export default function CartComponent({
         return;
       }
 
+      const firstItem = items[0];
+      if (!firstItem.restaurantId || !firstItem.restaurantLat || !firstItem.restaurantLng) {
+        alert("Invalid restaurant data in cart. Please try again.");
+        return;
+      }
+
       const payload = {
-        restaurant: 'e1014e44-0e90-4d26-a1b3-2aa1d98fb413', // demo
+        restaurant: firstItem.restaurantId,
         method,
-        restaurant_lat: -17.8292,
-        restaurant_lng: 31.0522,
+        restaurant_lat: firstItem.restaurantLat,
+        restaurant_lng: firstItem.restaurantLng,
         total_fee: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
         tip: 5.0,
         items: items.map((item) => ({
-          menu_item_id: "88bd1ee3-21a1-4949-baec-b5c5f606bfa4",
+          menu_item_id: item.id,
           quantity: item.quantity,
           price: item.price,
         })),

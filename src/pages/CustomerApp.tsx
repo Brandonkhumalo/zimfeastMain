@@ -12,9 +12,6 @@ import CartComponent from "./customer-components/CartComponent";
 import TopRestaurant from "./customer-components/TopRestaurants";
 import { Restaurant, CartItem } from "./customer-components/types";
 
-// Import demo data
-import { demoRestaurants } from "../components/demo-data/demoRestaurants";
-
 export default function CustomerApp() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
@@ -48,55 +45,54 @@ export default function CustomerApp() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  // ================= Demo Data & Filtering =================
-  useEffect(() => {
-    // Commented out actual API call
-    // fetchRestaurants();
-
-    const filtered = selectedCuisine
-      ? demoRestaurants.filter((r) => r.cuisineType === selectedCuisine)
-      : demoRestaurants;
-
-    setRestaurantsData(filtered);
-    setGridPage(0);
-    setTopPage(0);
-  }, [userLocation, showNearbyOnly, selectedCuisine]);
-  // ========================================================
-
-  // API call left here for reference but commented
-  /*
-  const fetchRestaurants = async (cursor?: string) => {
+  const fetchRestaurants = async (cursorUrl?: string) => {
     try {
-      const url = new URL("http://127.0.0.1:8000/api/restaurants/nearby/", window.location.origin);
-
-      if (userLocation) {
-        url.searchParams.append("lat", userLocation.lat.toString());
-        url.searchParams.append("lng", userLocation.lng.toString());
+      let url: URL;
+      
+      if (cursorUrl) {
+        url = new URL(cursorUrl);
+      } else {
+        url = new URL("http://127.0.0.1:8000/api/restaurants/nearby/");
+        
+        if (userLocation) {
+          url.searchParams.append("lat", userLocation.lat.toString());
+          url.searchParams.append("lng", userLocation.lng.toString());
+        }
+        
+        if (selectedCuisine) url.searchParams.append("cuisine", selectedCuisine);
       }
 
-      if (selectedCuisine) url.searchParams.append("cuisine", selectedCuisine);
-      if (cursor) url.searchParams.append("cursor", cursor);
+      const token = localStorage.getItem("token");
+      const res = await fetch(url.toString(), {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
 
-      const res = await fetch(url.toString(), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch restaurants");
       const data = await res.json();
-      setRestaurantsData(data.results);
-      setNextCursor(data.next);
-      setPrevCursor(data.previous);
+      setRestaurantsData(data.results || data);
+      setNextCursor(data.next || null);
+      setPrevCursor(data.previous || null);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to fetch restaurants", variant: "destructive" });
     }
   };
-  */
+
+  useEffect(() => {
+    fetchRestaurants();
+  }, [userLocation, showNearbyOnly, selectedCuisine]);
 
   const loadNext = () => {
     if (!nextCursor) return;
-    // fetchRestaurants(nextCursor); // commented
+    fetchRestaurants(nextCursor);
   };
 
   const loadPrev = () => {
     if (!prevCursor) return;
-    // fetchRestaurants(prevCursor); // commented
+    fetchRestaurants(prevCursor);
   };
 
   const toggleNearbyView = () => {

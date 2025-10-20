@@ -15,4 +15,6 @@ export interface CartItem {
   price: number;
   quantity: number;
   restaurantId?: string;
+  restaurantLat?: number;
+  restaurantLng?: number;
 }

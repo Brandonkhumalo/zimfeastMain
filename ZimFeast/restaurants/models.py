@@ -25,6 +25,7 @@ class Restaurant(models.Model):
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
+    profile_image = models.ImageField(upload_to="restaurant_profiles/", null=True, blank=True)
     full_address = models.CharField(max_length=500)  # full textual address saved from frontend
     lat = models.FloatField()
     lng = models.FloatField()
