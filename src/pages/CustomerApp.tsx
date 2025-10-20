@@ -200,7 +200,10 @@ export default function CustomerApp() {
       <MenuDialog
         restaurant={selectedRestaurant}
         isOpen={isMenuDialogOpen}
-        onClose={() => setIsMenuDialogOpen(false)}
+        onClose={() => {
+          setIsMenuDialogOpen(false);
+          setSelectedRestaurant(null);
+        }}
         onAddToCart={addToCart}
         currency={currency}
       />
