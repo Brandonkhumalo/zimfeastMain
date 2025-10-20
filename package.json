@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "tsc"
+    "check": "tsc",
+    "start": "npm run build && cd ZimFeast && daphne -b 0.0.0.0 -p 5000 ZimFeast.asgi:application"
   },
   "dependencies": {
     "@googlemaps/react-wrapper": "^1.2.0",

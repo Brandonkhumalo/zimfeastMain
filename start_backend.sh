@@ -1,4 +1,4 @@
 #!/bin/bash
 cd ZimFeast
 export DJANGO_SETTINGS_MODULE=ZimFeast.settings
-daphne -b localhost -p 8000 ZimFeast.asgi:application
+daphne -b 0.0.0.0 -p 8000 ZimFeast.asgi:application

@@ -51,10 +51,18 @@ The following environment variables are configured in `ZimFeast/.env`:
 
 ## Development
 
-### Running the Application
-Two workflows are configured and running automatically:
-1. **Frontend**: Runs on port 5000 using `npm run dev`
+### Running the Application (Development Mode)
+Two workflows are configured for development:
+1. **Dev Server**: Runs on port 5000 using `npm run dev` (Vite development server)
 2. **Backend**: Runs on port 8000 using Daphne ASGI server
+
+### Production Deployment
+For deployment to production (Reserved VM):
+1. **Build Command**: `npm run build` - Builds React frontend to static files in `dist/public/`
+2. **Run Command**: `bash start_production.sh` - Builds frontend and starts Django on port 5000
+3. Django serves both the REST API and the built React application
+4. Frontend routes to `/api/*` are proxied to Django backend
+5. All other routes serve the React app (SPA routing)
 
 ### Database Migrations
 ```bash
@@ -143,7 +151,18 @@ WebSocket connections are available for:
 - **Created User's Restaurant "Lali's" and Fixed Cuisine Filters (Oct 20, 2025)**:
   - Created "Lali's" restaurant in Damofalls Park, Ruwa with 6 frozen goods menu items
   - Fixed cuisine filtering system by creating cuisines that match filter values (fast_food, breakfast, traditional, etc.)
-  - Updated all 10 demo restaurants to use matching cuisine types
+  - Updated all 11 demo restaurants to use matching cuisine types (assigned restaurants to all filter cuisines)
   - Created RestaurantDashboard for all restaurants with ratings (Lali's has 4.5 rating)
-  - Cuisine filters (Fast Food, Traditional, Breakfast, etc.) now work correctly
-  - All restaurants now visible in customer app with working filters
+  - Cuisine filters (Fast Food, Traditional, Breakfast, Pizza, Chinese, Indian, Lunch Pack) now work correctly
+  - All 11 restaurants now visible in customer app with working filters
+  - Added "All Restaurants" section showing complete unfiltered restaurant list
+  - "Top Restaurants" section now sorts filtered results by rating (highest first)
+- **Configured Production Deployment (Oct 20, 2025)**:
+  - Fixed deployment security issue blocking `npm run dev` in production
+  - Updated Django to serve built React static files from `dist/public/`
+  - Created `start_production.sh` script that builds frontend and starts Django on port 5000
+  - Added production start script in package.json: `npm start`
+  - Configured deployment to use Reserved VM with build and run commands
+  - Backend binds to `0.0.0.0:8000` (development) and `0.0.0.0:5000` (production)
+  - Django now serves both REST API and React SPA in production
+  - Development workflow unchanged: Vite dev server on port 5000, Django API on port 8000
