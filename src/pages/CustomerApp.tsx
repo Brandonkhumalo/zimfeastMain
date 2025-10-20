@@ -10,6 +10,7 @@ import QuickFilters from "./customer-components/QuickFilters";
 import RestaurantGrid from "./customer-components/RestaurantGrid";
 import CartComponent from "./customer-components/CartComponent";
 import TopRestaurant from "./customer-components/TopRestaurants";
+import MenuDialog from "@/components/MenuDialog";
 import { Restaurant, CartItem } from "./customer-components/types";
 
 export default function CustomerApp() {
@@ -28,6 +29,9 @@ export default function CustomerApp() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [prevCursor, setPrevCursor] = useState<string | null>(null);
   const [restaurantsData, setRestaurantsData] = useState<Restaurant[]>([]);
+  
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
 
   // Pagination states
   const [gridPage, setGridPage] = useState(0);
@@ -134,7 +138,16 @@ export default function CustomerApp() {
       if (existing) return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
       return [...prev, { ...item, quantity: 1 }];
     });
-    setIsCartOpen(true);
+    toast({
+      title: "Added to cart",
+      description: `${item.name} added to your cart`,
+      variant: "default",
+    });
+  };
+
+  const handleViewMenu = (restaurant: Restaurant) => {
+    setSelectedRestaurant(restaurant);
+    setIsMenuDialogOpen(true);
   };
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -164,7 +177,7 @@ export default function CustomerApp() {
       <RestaurantGrid
         restaurants={gridRestaurants}
         currency={currency}
-        addToCart={addToCart}
+        onViewMenu={handleViewMenu}
         userLocation={userLocation}
       />
       <div className="flex justify-center gap-4 py-4">
@@ -176,13 +189,21 @@ export default function CustomerApp() {
       <TopRestaurant
         restaurants={topRestaurants}
         currency={currency}
-        addToCart={addToCart}
+        onViewMenu={handleViewMenu}
         userLocation={userLocation}
       />
       <div className="flex justify-center gap-4 py-4">
         <Button onClick={() => setTopPage(p => Math.max(p - 1, 0))} disabled={topPage === 0}>Previous Top 5</Button>
         <Button onClick={() => setTopPage(p => (p + 1) * 5 < restaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)} disabled={(topPage + 1) * 5 >= restaurantsData.filter(r => r.rating && r.rating >= 4).length}>Next Top 5</Button>
       </div>
+
+      <MenuDialog
+        restaurant={selectedRestaurant}
+        isOpen={isMenuDialogOpen}
+        onClose={() => setIsMenuDialogOpen(false)}
+        onAddToCart={addToCart}
+        currency={currency}
+      />
 
       <CartComponent
         isOpen={isCartOpen}

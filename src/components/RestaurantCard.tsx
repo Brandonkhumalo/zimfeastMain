@@ -1,17 +1,17 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Restaurant } from "@shared/schema";
+import type { Restaurant } from "@/pages/customer-components/types";
 import { calculateDeliveryFeeFromCoordinates, DEFAULT_DELIVERY_FEE } from "@shared/deliveryUtils";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
   currency: string;
-  onAddToCart: (item: any) => void;
+  onViewMenu: (restaurant: Restaurant) => void;
   userLocation?: {lat: number, lng: number} | null;
 }
 
-export default function RestaurantCard({ restaurant, currency, onAddToCart, userLocation }: RestaurantCardProps) {
+export default function RestaurantCard({ restaurant, currency, onViewMenu, userLocation }: RestaurantCardProps) {
   const getCurrencySymbol = (curr: string) => curr === 'USD' ? '$' : 'Z$';
   
   // Calculate delivery fee based on distance
@@ -28,20 +28,6 @@ export default function RestaurantCard({ restaurant, currency, onAddToCart, user
     );
     
     return fee.toFixed(2);
-  };
-  
-  const handleViewMenu = () => {
-    // In a real app, this would navigate to restaurant menu page
-    // For now, we'll simulate adding a sample item to cart
-    onAddToCart({
-      id: `${restaurant.id}-sample`,
-      name: "Sample Dish",
-      price: parseFloat(getDeliveryFee()),
-      restaurantId: restaurant.id,
-      restaurantName: restaurant.name,
-      restaurantLat: restaurant.lat,
-      restaurantLng: restaurant.lng
-    });
   };
 
   return (
@@ -82,10 +68,11 @@ export default function RestaurantCard({ restaurant, currency, onAddToCart, user
         </div>
         <Button 
           className="w-full mt-3"
-          onClick={handleViewMenu}
+          onClick={() => onViewMenu(restaurant)}
           data-testid={`button-view-menu-${restaurant.id}`}
         >
-          View Menu
+          <i className="fas fa-utensils mr-2"></i>
+          View Menu ({restaurant.menu_items?.length || 0} items)
         </Button>
       </CardContent>
     </Card>

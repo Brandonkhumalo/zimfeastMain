@@ -4,11 +4,11 @@ import { Restaurant } from "./types";
 interface RestaurantGridProps {
   restaurants: Restaurant[];
   currency: string;
-  addToCart: (item: any) => void;
+  onViewMenu: (restaurant: Restaurant) => void;
   userLocation: { lat: number; lng: number } | null;
 }
 
-export default function RestaurantGrid({ restaurants, currency, addToCart, userLocation }: RestaurantGridProps) {
+export default function RestaurantGrid({ restaurants, currency, onViewMenu, userLocation }: RestaurantGridProps) {
   if (!restaurants || restaurants.length === 0) {
     return (
       <div className="text-center py-12">
@@ -25,7 +25,7 @@ export default function RestaurantGrid({ restaurants, currency, addToCart, userL
   const renderRow = (row: typeof topRow) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
       {row.map((r) => (
-        <RestaurantCard key={r.id} restaurant={r} currency={currency} onAddToCart={addToCart} userLocation={userLocation} />
+        <RestaurantCard key={r.id} restaurant={r} currency={currency} onViewMenu={onViewMenu} userLocation={userLocation} />
       ))}
     </div>
   );
