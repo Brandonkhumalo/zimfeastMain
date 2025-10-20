@@ -95,7 +95,7 @@ export default function CustomerApp() {
   const fetchAllRestaurants = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch('/api/restaurants/nearby/', {
+      const res = await fetch('/api/restaurants/nearby/?page_size=100', {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
