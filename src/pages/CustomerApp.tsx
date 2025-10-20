@@ -10,6 +10,7 @@ import QuickFilters from "./customer-components/QuickFilters";
 import RestaurantGrid from "./customer-components/RestaurantGrid";
 import CartComponent from "./customer-components/CartComponent";
 import TopRestaurant from "./customer-components/TopRestaurants";
+import AllRestaurants from "./customer-components/AllRestaurants";
 import MenuDialog from "@/components/MenuDialog";
 import { Restaurant, CartItem } from "./customer-components/types";
 
@@ -29,6 +30,7 @@ export default function CustomerApp() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [prevCursor, setPrevCursor] = useState<string | null>(null);
   const [restaurantsData, setRestaurantsData] = useState<Restaurant[]>([]);
+  const [allRestaurantsData, setAllRestaurantsData] = useState<Restaurant[]>([]);
   
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
@@ -88,6 +90,30 @@ export default function CustomerApp() {
   useEffect(() => {
     fetchRestaurants();
   }, [userLocation, showNearbyOnly, selectedCuisine]);
+
+  // Fetch all restaurants (unfiltered) for the "All Restaurants" section
+  const fetchAllRestaurants = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch('/api/restaurants/nearby/', {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch all restaurants");
+      const data = await res.json();
+      setAllRestaurantsData(data.results || data);
+    } catch (err: any) {
+      console.error("Error fetching all restaurants:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllRestaurants();
+  }, []);
 
   const loadNext = () => {
     if (!nextCursor) return;
@@ -196,6 +222,14 @@ export default function CustomerApp() {
         <Button onClick={() => setTopPage(p => Math.max(p - 1, 0))} disabled={topPage === 0}>Previous Top 5</Button>
         <Button onClick={() => setTopPage(p => (p + 1) * 5 < restaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)} disabled={(topPage + 1) * 5 >= restaurantsData.filter(r => r.rating && r.rating >= 4).length}>Next Top 5</Button>
       </div>
+
+      {/* All Restaurants */}
+      <AllRestaurants
+        restaurants={allRestaurantsData}
+        currency={currency}
+        onViewMenu={handleViewMenu}
+        userLocation={userLocation}
+      />
 
       <MenuDialog
         restaurant={selectedRestaurant}
