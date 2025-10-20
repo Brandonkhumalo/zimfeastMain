@@ -135,3 +135,8 @@ WebSocket connections are available for:
   - Updated RestaurantGrid and TopRestaurant components to use menu dialog workflow
   - Added toast notification when items are added to cart
   - Dialog properly resets state on close for cleanliness (architect reviewed and approved)
+- **Fixed Checkout "Order not found" Error (Oct 20, 2025)**:
+  - Fixed CheckoutForm.tsx to use relative API URLs instead of hardcoded `http://127.0.0.1:8000`
+  - All API calls now work through Vite proxy in Replit environment
+  - Fixed endpoints: order details, voucher balance, payment creation, voucher deposit, and payment status polling
+  - Order checkout flow now works correctly from cart → order creation → checkout page

@@ -51,7 +51,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
     queryKey: [`/api/orders/order/${orderId}`],
     queryFn: async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://127.0.0.1:8000/api/orders/order/${orderId}/`, {
+      const res = await fetch(`/api/orders/order/${orderId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch order details");
@@ -64,7 +64,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
     if (paymentMethod === "voucher") {
       const fetchBalance = async () => {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://127.0.0.1:8000/api/payments/feast/voucher/balance/", {
+        const res = await fetch("/api/payments/feast/voucher/balance/", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
@@ -101,7 +101,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
         body.provider = mobileProvider;
       }
 
-      const res = await fetch("http://127.0.0.1:8000/api/payments/create/payment/", {
+      const res = await fetch("/api/payments/create/payment/", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
@@ -143,7 +143,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   const voucherDepositMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:8000/api/payments/deposit-voucher/", {
+      const res = await fetch("/api/payments/deposit-voucher/", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ amount: depositAmount }),
@@ -173,7 +173,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
 
         const token = localStorage.getItem("token");
         // ✅ Ensure this endpoint matches backend: /api/payments/paynow/status/<reference>/
-        const res = await fetch(`http://127.0.0.1:8000/api/payments/paynow/status/${orderId}/`, {
+        const res = await fetch(`/api/payments/paynow/status/${orderId}/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
