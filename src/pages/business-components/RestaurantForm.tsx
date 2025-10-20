@@ -68,7 +68,7 @@ export default function RestaurantForm() {
       return;
     }
 
-    fetch("http://127.0.0.1:8000/api/accounts/profile/", {
+    fetch("/api/accounts/profile/", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -100,7 +100,7 @@ export default function RestaurantForm() {
   // Fetch cuisines from backend
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch("http://127.0.0.1:8000/api/restaurants/get/cuisine/types/", {
+    fetch("/api/restaurants/get/cuisine/types/", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -136,7 +136,7 @@ export default function RestaurantForm() {
     };
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/restaurants/create/", {
+      const res = await fetch("/api/restaurants/create/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
