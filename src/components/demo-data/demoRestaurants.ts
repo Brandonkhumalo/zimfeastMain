@@ -1,0 +1,96 @@
+// components/demo-data/demoRestaurants.ts
+import { Restaurant } from "../../pages/customer-components/types";
+
+export const demoRestaurants: Restaurant[] = [
+  {
+    id: "1",
+    name: "KFC",
+    cuisineType: "fast_food",
+    description: "Finger licking good",
+    latitude: 12.34,
+    longitude: 56.78,
+    rating: 4.9,
+    image: "/images/bella-italia.jpg",
+  },
+  {
+    id: "2",
+    name: "Sushi World",
+    cuisineType: "other", // no "japanese" option, so use "other"
+    description: "Fresh sushi and Japanese dishes",
+    latitude: 12.35,
+    longitude: 56.79,
+    rating: 3.7,
+  },
+  {
+    id: "3",
+    name: "Curry Palace",
+    cuisineType: "indian",
+    description: "Delicious Indian curries and vegetarian options",
+    latitude: 12.36,
+    longitude: 56.80,
+    rating: 3.5,
+  },
+  {
+    id: "4",
+    name: "Pizza inn",
+    cuisineType: "pizza",
+    description: "Authentic Italian pizza and pasta dishes",
+    latitude: 12.34,
+    longitude: 56.78,
+    rating: 4.5,
+  },
+  {
+    id: "5",
+    name: "Chicken inn",
+    cuisineType: "other", // no "japanese" option, so use "other"
+    description: "Fresh sushi and Japanese dishes",
+    latitude: 12.35,
+    longitude: 56.79,
+    rating: 4.2,
+  },
+  {
+    id: "6",
+    name: "Hungry Lion",
+    cuisineType: "fast_food",
+    description: "Delicious Burgers and chicken at a low price",
+    latitude: 12.36,
+    longitude: 56.80,
+    rating: 4.6,
+  },
+  {
+    id: "e1014e44-0e90-4d26-a1b3-2aa1d98fb413",
+    name: "Lali's",
+    cuisineType: "lunch_pack",
+    description: "Frozen food for your lunch boxes",
+    latitude: 12.34,
+    longitude: 56.78,
+    rating: 4.3,
+  },
+  {
+    id: "8",
+    name: "Honchos",
+    cuisineType: "traditional", // no "japanese" option, so use "other"
+    description: "Freshly cooked Zim original meals",
+    latitude: 12.35,
+    longitude: 56.79,
+    rating: 3.8,
+  },
+  {
+    id: "9",
+    name: "Creamy Inn",
+    cuisineType: "desserts",
+    description: "Creamy Ice creams to enjoy",
+    latitude: 12.36,
+    longitude: 56.80,
+    rating: 4.1,
+  },
+  {
+    id: "10",
+    name: "Early Bird",
+    cuisineType: "breakfast",
+    description: "Yummy tasty food to kickstart your day",
+    latitude: 12.36,
+    longitude: 56.80,
+    rating: 4.0,
+  },
+];
