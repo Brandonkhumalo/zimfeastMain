@@ -109,3 +109,9 @@ WebSocket connections are available for:
   - Frontend now includes image preview functionality
   - Backend enforces image field requirement
   - Migration applied to update database schema
+- **Added External API management**: Restaurants can now add external API integrations
+  - Added "External APIs" button in restaurant dashboard with modern gradient styling
+  - Created ExternalAPIDialog component with form validation
+  - Supports multiple API categories (Menu API, Meal Data, Categories, Inventory, Analytics, Custom)
+  - Securely stores API URLs and optional API keys
+  - Connected to backend endpoint for API management

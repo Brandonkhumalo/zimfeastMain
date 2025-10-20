@@ -7,6 +7,7 @@ import DashboardHeader from "./restaurant-components/DashboardHeader";
 import StatsCards from "./restaurant-components/StatsCards";
 import LiveOrders from "./restaurant-components/LiveOrders";
 import MenuManagement from "./restaurant-components/MenuManagement";
+import ExternalAPIDialog from "./restaurant-components/ExternalAPIDialog";
 
 // -------------------
 // Types
@@ -96,6 +97,7 @@ export default function RestaurantDashboard() {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isExternalAPIDialogOpen, setIsExternalAPIDialogOpen] = useState(false);
 
   // preserve websocket instance in ref so handlers can access state safely
   const wsRef = useRef<WebSocket | null>(null);
@@ -288,6 +290,17 @@ export default function RestaurantDashboard() {
       <DashboardHeader restaurantName={dashboardData.restaurantName} />
 
       <main className="max-w-7xl mx-auto p-4 space-y-8">
+        {/* External API Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => setIsExternalAPIDialogOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
+          >
+            <i className="fas fa-plug"></i>
+            <span className="font-semibold">External APIs</span>
+          </button>
+        </div>
+
         <StatsCards
           todayOrders={dashboardData.todayOrders}
           todayRevenue={dashboardData.todayRevenue}
@@ -339,6 +352,13 @@ export default function RestaurantDashboard() {
           />
         </section>
       </main>
+
+      {/* External API Dialog */}
+      <ExternalAPIDialog
+        isOpen={isExternalAPIDialogOpen}
+        onClose={() => setIsExternalAPIDialogOpen(false)}
+        restaurantId={restaurantId}
+      />
     </DashboardLayout>
   );
 }
