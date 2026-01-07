@@ -332,21 +332,24 @@ def get_menu_data(request, restaurant_id):
 # -------------------------------
 
 def send_dashboard_update(restaurant, dashboard):
-    group_name = f"restaurant_{restaurant.id}"
-    async_to_sync(channel_layer.group_send)(
-        group_name,
-        {
-            "type": "restaurant.dashboard.update",
-            "dashboard_data": {
-                "today_orders": dashboard.today_orders,
-                "today_revenue": float(dashboard.today_revenue),
-                "today_average_rating": dashboard.today_average_rating,
-                "preparing": dashboard.preparing,
-                "pending": dashboard.pending,
-                "completed": dashboard.completed,
+    try:
+        group_name = f"restaurant_{restaurant.id}"
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                "type": "restaurant.dashboard.update",
+                "dashboard_data": {
+                    "today_orders": dashboard.today_orders,
+                    "today_revenue": float(dashboard.today_revenue),
+                    "today_average_rating": dashboard.today_average_rating,
+                    "preparing": dashboard.preparing,
+                    "pending": dashboard.pending,
+                    "completed": dashboard.completed,
+                },
             },
-        },
-    )
+        )
+    except Exception as e:
+        logger.warning(f"WebSocket update failed (Redis not available): {e}")
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
