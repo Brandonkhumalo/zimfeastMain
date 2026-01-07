@@ -105,13 +105,15 @@ def create_payment(request):
     # --- 2️⃣ PayNow Web ---
     if method == "paynow" and not phone:
         response = create_paynow_payment(order, user.email)
+        print(f"PayNow Response: success={response.success}, type={type(response)}")
+        print(f"PayNow Response attrs: {vars(response) if hasattr(response, '__dict__') else dir(response)}")
         if response.success:
             payment.reference = response.poll_url
             payment.save()
             order.reference = response.poll_url
             order.save()
             return Response({"paynow_url": response.redirect_url})
-        error_msg = getattr(response, 'error', None) or getattr(response, 'errors', None) or str(response)
+        error_msg = getattr(response, 'error', '') or getattr(response, 'errors', '') or getattr(response, 'data', '') or "Unknown error"
         print(f"PayNow Web Error: {error_msg}")
         return Response({"error": f"PayNow failed: {error_msg}"}, status=400)
 
