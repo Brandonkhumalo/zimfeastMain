@@ -13,6 +13,7 @@ import DriverApp from "@/pages/DriverApp";
 import BusinessHub from "@/pages/BusinessHub";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Checkout from "@/pages/Checkout";
+import PaymentReturn from "@/pages/PaymentReturn";
 import Login from '@/pages/Login';
 import RegisterPage from "./pages/RegisterPage";
 
@@ -58,6 +59,7 @@ function AppRouter() {
       <Route path="/driver" component={() => <PrivateRoute component={DriverApp} allowedRoles={["driver", "admin"]} />} />
       <Route path="/admin" component={() => <PrivateRoute component={AdminDashboard} allowedRoles={["admin"]} />} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/payment-return" component={PaymentReturn} />
 
       {/* Fallback 404 */}
       <Route component={NotFound} />

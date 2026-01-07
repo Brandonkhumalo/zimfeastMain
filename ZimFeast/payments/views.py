@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Payment, FeastVoucher
@@ -145,6 +145,7 @@ def create_payment(request):
 # PAYNOW CALLBACK ENDPOINT (Legacy)
 # ------------------------------------------------------------------------------
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def paynow_callback(request):
     """
     Legacy callback endpoint called by PayNow to update payment status.
@@ -191,6 +192,7 @@ def paynow_callback(request):
 # PAYNOW AUTOMATED RESULT ENDPOINT
 # ------------------------------------------------------------------------------
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def paynow_result(request):
     """
     Official PayNow RESULT URL endpoint.
