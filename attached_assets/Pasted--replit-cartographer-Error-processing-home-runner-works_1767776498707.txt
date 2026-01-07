@@ -1,0 +1,181 @@
+[replit-cartographer] Error processing /home/runner/workspace/src/main.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/App.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/RegisterPage.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/toaster.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/tooltip.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/not-found.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/Landing.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/Home.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/RestaurantDashboard.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/CustomerApp.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/Checkout.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/DriverApp.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/Login.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/BusinessHub.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/AdminDashboard.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+Browserslist: browsers data (caniuse-lite) is 15 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/driver-components/Header.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/driver-components/StatsSection.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/driver-components/ActiveDeliveries.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/driver-components/DeliveryHistory.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/business-components/SignInRequired.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/business-components/Header.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/checkout-components/CheckoutForm.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/business-components/InfoSection.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/card.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/Navbar.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/lib/withRoleGuard.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/tabs.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/toast.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/home-components/Header.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/business-components/DriverForm.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/home-components/BusinessHub.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/business-components/RestaurantForm.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/input.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/button.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/home-components/PortalSelection.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/restaurant-components/DashboardLayout.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/restaurant-components/DashboardHeader.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/restaurant-components/StatsCards.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/restaurant-components/LiveOrders.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/restaurant-components/ExternalAPIDialog.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/restaurant-components/MenuManagement.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/admin-components/DriverCard.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/pages/admin-components/RestaurantCard.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/select.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
+    at async PluginContainer.transform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:49099:18)
+    at async loadAndTransform (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51977:27)
+[replit-cartographer] Error processing /home/runner/workspace/src/components/ui/dialog.tsx: TypeError: traverse is not a function
+    at TransformPluginContext.transform (file:///home/runner/workspace/node_modules/@replit/vite-plugin-cartographer/dist/index.mjs:53:9)
