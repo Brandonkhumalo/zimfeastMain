@@ -87,7 +87,7 @@ export default function MenuManagement({ handleAddItem, isAddDialogOpen, setIsAd
               <i className="fas fa-plus mr-2"></i>Add Item
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Menu Item</DialogTitle>
             </DialogHeader>
