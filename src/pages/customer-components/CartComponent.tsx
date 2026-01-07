@@ -32,6 +32,7 @@ export default function CartComponent({
 
   const [method, setMethod] = useState<"delivery" | "collection">("collection");
   const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [tipAmount, setTipAmount] = useState<string>("");
 
   // Initialize Google Places Autocomplete
   const {
@@ -80,7 +81,7 @@ export default function CartComponent({
         restaurant_lat: firstItem.restaurantLat,
         restaurant_lng: firstItem.restaurantLng,
         total_fee: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
-        tip: method === "delivery" ? 5.0 : 0,
+        tip: method === "delivery" ? (parseFloat(tipAmount) || 0) : 0,
         items: items.map((item) => ({
           menu_item_id: item.id,
           quantity: item.quantity,
@@ -239,6 +240,19 @@ export default function CartComponent({
                   ></iframe>
                 </div>
               )}
+
+              <div className="mt-3">
+                <label className="text-sm font-medium mb-1 block">Add a tip for your driver (optional)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.50"
+                  placeholder="0.00"
+                  value={tipAmount}
+                  onChange={(e) => setTipAmount(e.target.value)}
+                  className="w-full border p-2 rounded"
+                />
+              </div>
             </div>
           )}
         </div>
