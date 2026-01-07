@@ -15,7 +15,7 @@ class OrderItem(models.Model):
 class Order(models.Model):
     STATUS_CHOICES = (
         ('created','created'), ('paid','paid'), ('preparing','preparing'), ('ready','ready'),
-        ('assigned','assigned'), ('out_for_delivery','out_for_delivery'), 
+        ('collected','collected'), ('assigned','assigned'), ('out_for_delivery','out_for_delivery'), 
         ('delivered','delivered'), ('cancelled','cancelled')
     )
     METHOD_CHOICES = (

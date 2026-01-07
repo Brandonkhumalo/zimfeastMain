@@ -34,4 +34,5 @@ urlpatterns = [
     # Order status updates
     path('orders/<str:order_id>/preparing/', views.mark_order_preparing, name='mark_order_preparing'),
     path('orders/<str:order_id>/ready/', views.mark_order_ready, name='mark_order_ready'),
+    path('orders/<str:order_id>/collected/', views.mark_order_collected, name='mark_order_collected'),
 ]

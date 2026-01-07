@@ -395,8 +395,30 @@ def mark_order_ready(request, order_id):
     return Response({"detail": "Order marked as ready for collection.", "status": "ready"}, status=status.HTTP_200_OK)
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mark_order_collected(request, order_id):
+    from orders.models import Order
+    order = get_object_or_404(Order, id=order_id)
+    restaurant = get_object_or_404(Restaurant, owner=request.user)
+    dashboard, _ = RestaurantDashboard.objects.get_or_create(restaurant=restaurant)
+
+    completed_list = dashboard.completed
+    order_data = next((o for o in completed_list if o["order_id"] == str(order.id)), None)
+    if order_data:
+        dashboard.completed = [o for o in completed_list if o["order_id"] != str(order.id)]
+        dashboard.save()
+
+    order.status = "collected"
+    order.delivery_complete_time = order.delivery_complete_time or timezone.now()
+    order.save()
+
+    send_dashboard_update(restaurant, dashboard)
+    return Response({"detail": "Order marked as collected.", "status": "collected"}, status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
-@permission_classes([AllowAny])  # or AllowAny if public
+@permission_classes([AllowAny])
 def list_restaurants(request):
     restaurants = Restaurant.objects.all()
     serializer = RestaurantSerializer(restaurants, many=True)

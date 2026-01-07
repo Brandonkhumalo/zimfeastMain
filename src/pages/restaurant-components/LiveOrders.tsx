@@ -54,6 +54,8 @@ export default function LiveOrders({
 
   const getActionButton = (order: any) => {
     const status = order.status;
+    const isCollection = order.method === "collection";
+    
     if (status === "paid" || status === "created" || status === "pending") {
       return (
         <button
@@ -81,13 +83,43 @@ export default function LiveOrders({
       );
     }
     if (status === "ready") {
+      if (isCollection) {
+        return (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              updateOrder(order.id, "collected");
+            }}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm"
+          >
+            Mark Collected
+          </button>
+        );
+      }
       return (
         <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium text-sm">
-          Awaiting Collection
+          Awaiting Delivery
+        </span>
+      );
+    }
+    if (status === "collected") {
+      return (
+        <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium text-sm">
+          Collected
         </span>
       );
     }
     return null;
+  };
+
+  const getOrderItems = (order: any) => {
+    if (Array.isArray(order.items) && order.items.length > 0) {
+      return order.items;
+    }
+    if (order.each_item_price && Array.isArray(order.each_item_price)) {
+      return order.each_item_price;
+    }
+    return [];
   };
 
   return (
@@ -129,57 +161,74 @@ export default function LiveOrders({
           </div>
         )}
 
-        {filteredOrders.map((order) => (
-          <div
-            key={order.id}
-            className="border border-border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-primary font-bold">
-                    #{order.id ? order.id.slice(-4) : "N/A"}
-                  </span>
+        {filteredOrders.map((order) => {
+          const items = getOrderItems(order);
+          return (
+            <div
+              key={order.id}
+              className="border border-border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                    <span className="text-primary font-bold text-lg">
+                      #{order.id ? order.id.slice(-4).toUpperCase() : "N/A"}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-xl">Order #{order.id ? order.id.slice(-4).toUpperCase() : "N/A"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.createdAt || order.created
+                        ? new Date(order.createdAt || order.created).toLocaleString()
+                        : "N/A"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-lg">{order.customerPhone || order.customer_email || "Customer"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {order.createdAt || order.created
-                      ? new Date(order.createdAt || order.created).toLocaleString()
-                      : "N/A"}
-                  </p>
+                <div className="flex flex-col items-end gap-1">
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}
+                  >
+                    {getStatusLabel(order.status)}
+                  </span>
+                  {order.method && (
+                    <span className="text-sm text-gray-600 font-medium">
+                      {order.method === "delivery" ? "🚗 Delivery" : "🏪 Collection"}
+                    </span>
+                  )}
                 </div>
               </div>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}
-              >
-                {getStatusLabel(order.status)}
-              </span>
-            </div>
 
-            <div className="text-sm text-muted-foreground mb-4 bg-gray-50 p-3 rounded">
-              {Array.isArray(order.items) && order.items.length > 0
-                ? order.items.map((i: any) => `${i.quantity}x ${i.name || i.menu_item_name}`).join(", ")
-                : order.each_item_price && Array.isArray(order.each_item_price)
-                ? order.each_item_price.map((i: any) => `${i.quantity}x ${i.name}`).join(", ")
-                : "Order items"}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-lg font-bold text-primary">
-                  ${order.total_fee || order.total || "0.00"}
-                </span>
-                {order.method && (
-                  <span className="ml-3 text-sm text-gray-500">
-                    {order.method === "delivery" ? "🚗 Delivery" : "🏪 Collection"}
-                  </span>
+              <div className="mb-4 bg-gray-50 p-3 rounded border">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Order Items</p>
+                {items.length > 0 ? (
+                  <ul className="space-y-1">
+                    {items.map((item: any, idx: number) => (
+                      <li key={idx} className="flex justify-between text-sm">
+                        <span className="font-medium">
+                          {item.quantity}x {item.name || item.menu_item_name || "Item"}
+                        </span>
+                        {item.price && (
+                          <span className="text-gray-600">${(item.price * item.quantity).toFixed(2)}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No items listed</p>
                 )}
               </div>
-              {getActionButton(order)}
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xl font-bold text-primary">
+                    ${Number(order.total_fee || order.total || 0).toFixed(2)}
+                  </span>
+                </div>
+                {getActionButton(order)}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

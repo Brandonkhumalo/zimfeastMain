@@ -62,8 +62,8 @@ const fetchMenuItems = async () => {
   return await res.json();
 };
 
-// Calls backend endpoints to update order. statusArg must be "preparing" or "ready".
-const updateOrderStatusRest = async (orderId: string, statusArg: "preparing" | "ready") => {
+// Calls backend endpoints to update order status.
+const updateOrderStatusRest = async (orderId: string, statusArg: "preparing" | "ready" | "collected") => {
   const url = `/api/orders/${orderId}/${statusArg}/`;
   const res = await fetch(url, {
     method: "POST",
@@ -200,7 +200,7 @@ export default function RestaurantDashboard() {
   }, []);
 
   // Update order via REST, called when user clicks UI actions
-  const handleUpdateOrder = async (orderId: string, status: "preparing" | "ready") => {
+  const handleUpdateOrder = async (orderId: string, status: "preparing" | "ready" | "collected") => {
     // optimistic UI update
     setOrdersData((prev) => ({
       ...prev,
@@ -328,11 +328,11 @@ export default function RestaurantDashboard() {
             selectedStatus={selectedStatus}
             setSelectedStatus={setSelectedStatus}
             updateOrder={(orderId: string, status: string) => {
-              // map "preparing" and "ready" to REST calls
+              // map status changes to REST calls
               if (status === "preparing") handleUpdateOrder(orderId, "preparing");
               else if (status === "ready") handleUpdateOrder(orderId, "ready");
+              else if (status === "collected") handleUpdateOrder(orderId, "collected");
               else {
-                // handle other status changes if needed
                 handleUpdateOrder(orderId, status as any);
               }
             }}
