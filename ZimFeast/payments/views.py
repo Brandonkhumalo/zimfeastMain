@@ -92,9 +92,9 @@ def create_payment(request):
 
             payment_response = create_paynow_payment(order, user.email)
             if payment_response.success:
-                payment.reference = payment_response.pollurl
+                payment.reference = payment_response.poll_url
                 payment.save()
-                order.reference = payment_response.pollurl
+                order.reference = payment_response.poll_url
                 order.save()
                 return Response({
                     "status": "partial",
@@ -106,9 +106,9 @@ def create_payment(request):
     if method == "paynow" and not phone:
         response = create_paynow_payment(order, user.email)
         if response.success:
-            payment.reference = response.pollurl
+            payment.reference = response.poll_url
             payment.save()
-            order.reference = response.pollurl
+            order.reference = response.poll_url
             order.save()
             return Response({"paynow_url": response.redirect_url})
         return Response({"error": "Failed to initialize PayNow Web payment"}, status=400)
@@ -123,14 +123,14 @@ def create_payment(request):
             email=user.email
         )
         if response.success:
-            payment.reference = response.pollurl
+            payment.reference = response.poll_url
             payment.save()
-            order.reference = response.pollurl
+            order.reference = response.poll_url
             order.save()
             return Response({
                 "paynow_url": response.redirect_url,
                 "instructions": "Please check your phone to approve the transaction.",
-                "reference": response.pollurl
+                "reference": response.poll_url
             })
         return Response({"success": False, "message": "Failed to initiate mobile payment."})
 
