@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -209,12 +210,28 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   if (!currentOrder) return <div>Order not found</div>;
 
   const isProcessing = paymentMutation.isPending || voucherDepositMutation.isPending;
-  const totalAmount = parseFloat(currentOrder.total_fee) + (parseFloat(currentOrder.tip) || 0);
+  
+  const itemsSubtotal = currentOrder.items.reduce((sum, item) => {
+    return sum + (parseFloat(item.price) * item.quantity);
+  }, 0);
+  const deliveryFee = Number(currentOrder.delivery_fee) || 0;
+  const tip = parseFloat(currentOrder.tip) || 0;
+  const totalAmount = itemsSubtotal + deliveryFee + tip;
 
   return (
     <Card className="max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Complete Your Payment</CardTitle>
+        <div className="flex items-center gap-2 mb-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation("/customer")}
+            className="p-1"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <CardTitle>Complete Your Payment</CardTitle>
+        </div>
         <Badge variant="outline">Order #{currentOrder.id.slice(-8)}</Badge>
       </CardHeader>
       <CardContent>
@@ -226,13 +243,15 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
             <ul className="list-disc pl-5">
               {currentOrder.items.map((item, idx) => (
                 <li key={idx}>
-                  {item.name} x {item.quantity} - ${parseFloat(item.price).toFixed(2)}
+                  {item.name} x {item.quantity} - ${(parseFloat(item.price) * item.quantity).toFixed(2)}
                 </li>
               ))}
             </ul>
           )}
-          <p className="mt-2">Delivery Fee: ${currentOrder.delivery_fee.toFixed(2)}</p>
-          <p className="mt-1 font-semibold">Total: ${totalAmount.toFixed(2)}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Subtotal: ${itemsSubtotal.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">Delivery Fee: ${deliveryFee.toFixed(2)}</p>
+          {tip > 0 && <p className="text-sm text-muted-foreground">Tip: ${tip.toFixed(2)}</p>}
+          <p className="mt-1 font-semibold text-lg">Total: ${totalAmount.toFixed(2)}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
