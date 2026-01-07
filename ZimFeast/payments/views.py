@@ -13,6 +13,7 @@ from drivers.utils import assign_driver
 from .receipt_email import send_order_receipt
 from .paynow_utils import paynow, create_paynow_payment
 from orders.models import Order
+from realtime.redis_publisher import publisher
 
 # Example PayNow URLs
 PAYNOW_SANDBOX_URL = settings.PAYNOW_SANDBOX_URL
@@ -167,7 +168,12 @@ def paynow_callback(request):
         order.save()
 
         restaurant_order_numbers = process_restaurant_orders(order)
-        driver = assign_driver(order, restaurant_order_numbers)
+        
+        # Publish to real-time server for delivery orders
+        if order.delivery_location:
+            publisher.publish_delivery_order(order)
+        else:
+            driver = assign_driver(order, restaurant_order_numbers)
 
         try:
             send_order_receipt(
@@ -218,9 +224,14 @@ def paynow_result(request):
         order.status = "paid"
         order.save()
 
-        # Process restaurants and assign driver
+        # Process restaurants
         restaurant_order_numbers = process_restaurant_orders(order)
-        driver = assign_driver(order, restaurant_order_numbers)
+        
+        # Publish to real-time server for delivery orders
+        if order.delivery_location:
+            publisher.publish_delivery_order(order)
+        else:
+            driver = assign_driver(order, restaurant_order_numbers)
 
         # Send email receipt
         try:
