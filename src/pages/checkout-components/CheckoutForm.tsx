@@ -120,8 +120,8 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
       }
 
       if (data.paynow_url) {
-        toast({ title: "Redirecting to PayNow...", description: "Please complete your payment." });
-        window.location.href = data.paynow_url;
+        toast({ title: "Opening PayNow...", description: "Complete payment in the new tab." });
+        window.open(data.paynow_url, "_blank");
         return;
       }
 
@@ -152,8 +152,8 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
       return res.json();
     },
     onSuccess: (data) => {
-      toast({ title: "Deposit Started", description: "Redirecting to PayNow..." });
-      window.location.href = data.paynow_url;
+      toast({ title: "Deposit Started", description: "Complete payment in the new tab." });
+      window.open(data.paynow_url, "_blank");
     },
   });
 
