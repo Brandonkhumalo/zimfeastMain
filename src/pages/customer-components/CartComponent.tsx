@@ -80,7 +80,7 @@ export default function CartComponent({
         restaurant_lat: firstItem.restaurantLat,
         restaurant_lng: firstItem.restaurantLng,
         total_fee: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
-        tip: 5.0,
+        tip: method === "delivery" ? 5.0 : 0,
         items: items.map((item) => ({
           menu_item_id: item.id,
           quantity: item.quantity,
@@ -105,6 +105,8 @@ export default function CartComponent({
       }
 
       const data = await res.json();
+      setItems([]);
+      localStorage.removeItem("zimfeast_cart");
       setLocation(`/checkout?orderId=${data.order.id}`);
       onClose();
     } catch (err: any) {

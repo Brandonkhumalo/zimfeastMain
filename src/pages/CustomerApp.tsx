@@ -22,8 +22,15 @@ export default function CustomerApp() {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem("zimfeast_cart");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem("zimfeast_cart", JSON.stringify(cartItems));
+  }, [cartItems]);
   const [showNearbyOnly, setShowNearbyOnly] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
