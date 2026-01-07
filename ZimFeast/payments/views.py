@@ -111,7 +111,9 @@ def create_payment(request):
             order.reference = response.poll_url
             order.save()
             return Response({"paynow_url": response.redirect_url})
-        return Response({"error": "Failed to initialize PayNow Web payment"}, status=400)
+        error_msg = getattr(response, 'error', None) or getattr(response, 'errors', None) or str(response)
+        print(f"PayNow Web Error: {error_msg}")
+        return Response({"error": f"PayNow failed: {error_msg}"}, status=400)
 
     # --- 3️⃣ PayNow Mobile ---
     if method == "paynow" and phone:
