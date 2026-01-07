@@ -160,6 +160,13 @@ export default function RestaurantDashboard() {
     };
 
     loadDashboardData();
+
+    // Poll for updates every 15 seconds (fallback when WebSocket isn't available)
+    const pollInterval = setInterval(() => {
+      loadDashboardData();
+    }, 15000);
+
+    return () => clearInterval(pollInterval);
   }, [restaurantId, toast, user]);
 
   // Pagination handlers
