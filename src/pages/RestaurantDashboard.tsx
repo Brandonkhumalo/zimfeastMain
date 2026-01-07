@@ -45,7 +45,12 @@ const fetchOrdersPage = async (url: string): Promise<OrdersPage> => {
     const text = await res.text();
     throw new Error(text || "Failed to fetch orders");
   }
-  return await res.json();
+  const data = await res.json();
+  // Handle both flat array and paginated responses
+  if (Array.isArray(data)) {
+    return { results: data, next: null, previous: null };
+  }
+  return data;
 };
 
 const fetchMenuItems = async () => {
