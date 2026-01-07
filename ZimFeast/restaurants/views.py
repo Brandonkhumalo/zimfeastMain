@@ -357,11 +357,11 @@ def mark_order_preparing(request, order_id):
     dashboard, _ = RestaurantDashboard.objects.get_or_create(restaurant=restaurant)
 
     pending_list = dashboard.pending
-    order_data = next((o for o in pending_list if o["order_id"] == order.id), None)
+    order_data = next((o for o in pending_list if o["order_id"] == str(order.id)), None)
     if not order_data:
         return Response({"detail": "Order not found in pending."}, status=status.HTTP_400_BAD_REQUEST)
 
-    dashboard.pending = [o for o in pending_list if o["order_id"] != order.id]
+    dashboard.pending = [o for o in pending_list if o["order_id"] != str(order.id)]
     dashboard.preparing.append(order_data)
     dashboard.save()
 
@@ -369,31 +369,30 @@ def mark_order_preparing(request, order_id):
     order.save()
 
     send_dashboard_update(restaurant, dashboard)
-    return Response({"detail": "Order marked as preparing."}, status=status.HTTP_200_OK)
+    return Response({"detail": "Order marked as preparing.", "status": "preparing"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def mark_order_completed(request, order_id):
+def mark_order_ready(request, order_id):
     from orders.models import Order
     order = get_object_or_404(Order, id=order_id)
     restaurant = get_object_or_404(Restaurant, owner=request.user)
     dashboard, _ = RestaurantDashboard.objects.get_or_create(restaurant=restaurant)
 
     preparing_list = dashboard.preparing
-    order_data = next((o for o in preparing_list if o["order_id"] == order.id), None)
+    order_data = next((o for o in preparing_list if o["order_id"] == str(order.id)), None)
     if not order_data:
         return Response({"detail": "Order not found in preparing."}, status=status.HTTP_400_BAD_REQUEST)
 
-    dashboard.preparing = [o for o in preparing_list if o["order_id"] != order.id]
+    dashboard.preparing = [o for o in preparing_list if o["order_id"] != str(order.id)]
     dashboard.completed.append(order_data)
     dashboard.save()
 
-    order.status = "completed"
-    order.delivery_complete_time = order.delivery_complete_time or timezone.now()
+    order.status = "ready"
     order.save()
 
     send_dashboard_update(restaurant, dashboard)
-    return Response({"detail": "Order marked as completed."}, status=status.HTTP_200_OK)
+    return Response({"detail": "Order marked as ready for collection.", "status": "ready"}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

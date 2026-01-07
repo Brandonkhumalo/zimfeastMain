@@ -62,8 +62,8 @@ const fetchMenuItems = async () => {
   return await res.json();
 };
 
-// Calls backend endpoints to update order. statusArg must be "preparing" or "completed".
-const updateOrderStatusRest = async (orderId: string, statusArg: "preparing" | "completed") => {
+// Calls backend endpoints to update order. statusArg must be "preparing" or "ready".
+const updateOrderStatusRest = async (orderId: string, statusArg: "preparing" | "ready") => {
   const url = `/api/orders/${orderId}/${statusArg}/`;
   const res = await fetch(url, {
     method: "POST",
@@ -200,7 +200,7 @@ export default function RestaurantDashboard() {
   }, []);
 
   // Update order via REST, called when user clicks UI actions
-  const handleUpdateOrder = async (orderId: string, status: "preparing" | "completed") => {
+  const handleUpdateOrder = async (orderId: string, status: "preparing" | "ready") => {
     // optimistic UI update
     setOrdersData((prev) => ({
       ...prev,
@@ -213,8 +213,8 @@ export default function RestaurantDashboard() {
       if (resp && typeof resp === "object") {
         upsertOrder(resp as Order);
       }
-      // optionally show toast
-      toast({ title: "Order updated", description: `Order ${orderId} set to ${status}`, variant: "default" });
+      const statusLabel = status === "ready" ? "ready for collection" : status;
+      toast({ title: "Order updated", description: `Order set to ${statusLabel}`, variant: "default" });
     } catch (err: any) {
       // revert optimistic update when error
       setOrdersData((prev) => ({
@@ -328,9 +328,9 @@ export default function RestaurantDashboard() {
             selectedStatus={selectedStatus}
             setSelectedStatus={setSelectedStatus}
             updateOrder={(orderId: string, status: string) => {
-              // map "preparing" and "completed" to REST calls
+              // map "preparing" and "ready" to REST calls
               if (status === "preparing") handleUpdateOrder(orderId, "preparing");
-              else if (status === "completed") handleUpdateOrder(orderId, "completed");
+              else if (status === "ready") handleUpdateOrder(orderId, "ready");
               else {
                 // handle other status changes if needed
                 handleUpdateOrder(orderId, status as any);
