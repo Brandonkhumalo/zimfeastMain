@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ZimFeast</string>
+    <string name="tagline">Delicious food delivery across Zimbabwe</string>
+
+    <!-- Landing -->
+    <string name="get_started">Get Started</string>
+    <string name="why_choose_zimfeast">Why Choose ZimFeast?</string>
+    <string name="fast_reliable_delivery">Fast, reliable food delivery with local flavors</string>
+    <string name="fast_delivery">Fast Delivery</string>
+    <string name="fast_delivery_desc">Quick delivery from your favorite local restaurants</string>
+    <string name="local_cuisine">Local Cuisine</string>
+    <string name="local_cuisine_desc">Authentic Zimbabwean dishes and international favorites</string>
+    <string name="secure_payments">Secure Payments</string>
+    <string name="secure_payments_desc">Safe and secure payment options including USD and ZWL</string>
+
+    <!-- Auth -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="role">Role</string>
+    <string name="customer">Customer</string>
+    <string name="restaurant">Restaurant</string>
+    <string name="driver">Driver</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_up">Sign Up</string>
+
+    <!-- Customer -->
+    <string name="delicious_food_delivered">Delicious food, delivered fast</string>
+    <string name="order_from_favorites">Order from your favorite restaurants in Zimbabwe</string>
+    <string name="search_hint">Search restaurants, cuisines, or dishes…</string>
+    <string name="find_nearby">Find Nearby</string>
+    <string name="show_all">Show All</string>
+    <string name="getting_location">Getting Location…</string>
+    <string name="currency">Currency</string>
+    <string name="usd">USD ($)</string>
+    <string name="zwl">ZWL (Z$)</string>
+    <string name="all_restaurants">All Restaurants</string>
+    <string name="top_restaurants">Top Restaurants</string>
+    <string name="view_menu">View Menu</string>
+    <string name="delivery">delivery</string>
+    <string name="min">min</string>
+
+    <!-- Cuisines -->
+    <string name="fast_food">Fast Food</string>
+    <string name="traditional">Traditional</string>
+    <string name="breakfast">Breakfast</string>
+    <string name="pizza">Pizza</string>
+    <string name="chinese">Chinese</string>
+    <string name="indian">Indian</string>
+    <string name="lunch_pack">Lunch Pack</string>
+
+    <!-- Cart -->
+    <string name="cart">Cart</string>
+    <string name="your_cart">Your Cart</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="delivery_fee">Delivery Fee</string>
+    <string name="total">Total</string>
+    <string name="checkout">Checkout</string>
+    <string name="empty_cart">Your cart is empty</string>
+    <string name="add_items">Add some delicious items to your cart</string>
+
+    <!-- Checkout -->
+    <string name="payment_method">Payment Method</string>
+    <string name="paynow_web">PayNow Web</string>
+    <string name="paynow_mobile">PayNow Mobile</string>
+    <string name="feast_voucher">Feast Voucher</string>
+    <string name="mobile_provider">Mobile Provider</string>
+    <string name="ecocash">EcoCash</string>
+    <string name="onemoney">OneMoney</string>
+    <string name="innbucks">InnBucks</string>
+    <string name="pay_now">Pay Now</string>
+    <string name="processing">Processing…</string>
+    <string name="voucher_balance">Voucher Balance</string>
+
+    <!-- Order Tracking -->
+    <string name="track_order">Track Order</string>
+    <string name="order_confirmed">Order Confirmed</string>
+    <string name="restaurant_preparing">Restaurant Preparing</string>
+    <string name="out_for_delivery">Out for Delivery</string>
+    <string name="delivered">Delivered</string>
+    <string name="estimated">Estimated</string>
+    <string name="driver_info">Driver Info</string>
+    <string name="call_driver">Call Driver</string>
+    <string name="view_on_map">View on Map</string>
+
+    <!-- Errors -->
+    <string name="error_login">Login failed. Please check your credentials.</string>
+    <string name="error_register">Registration failed. Please try again.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_location">Unable to get your location.</string>
+    <string name="error_order">Order creation failed. Please try again.</string>
+    <string name="error_payment">Payment failed. Please try again.</string>
+</resources>

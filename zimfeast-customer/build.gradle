@@ -1,0 +1,15 @@
+buildscript {
+    ext {
+        compileSdk = 34
+        minSdk = 24
+        targetSdk = 34
+        retrofit_version = '2.9.0'
+        room_version = '2.6.1'
+        lifecycle_version = '2.7.0'
+        nav_version = '2.7.7'
+    }
+}
+
+plugins {
+    id 'com.android.application' version '8.2.0' apply false
+}
