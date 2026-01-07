@@ -75,6 +75,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
     external_apis = RestaurantExternalAPISerializer(many=True, read_only=True)
     menu_items = MenuItemSerializer(many=True, read_only=True)
     rating = serializers.SerializerMethodField()
+    imageUrl = serializers.SerializerMethodField()
 
     class Meta:
         model = Restaurant
@@ -92,8 +93,18 @@ class RestaurantSerializer(serializers.ModelSerializer):
             "external_apis",
             "menu_items",
             "rating",
+            "imageUrl",
             "created",
         ]
+    
+    def get_imageUrl(self, obj):
+        """Get full URL for profile image"""
+        if obj.profile_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_image.url)
+            return f"/media/{obj.profile_image}"
+        return None
     
     def get_rating(self, obj):
         """Get rating from restaurant dashboard, default to 4.5"""
