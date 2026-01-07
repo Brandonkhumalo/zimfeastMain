@@ -30,15 +30,37 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        from restaurants.models import MenuItem
         items_data = validated_data.pop("items")
         user = self.context["request"].user
         order = Order.objects.create(**validated_data)
 
-        # Create OrderItems
+        # Create OrderItems and build each_item_price with actual item names
+        each_item_price = []
         for item_data in items_data:
             menu_item_id = item_data.pop("menu_item_id")
-            OrderItem.objects.create(order=order,user=user, menu_item_id=menu_item_id, **item_data)
+            quantity = item_data.get("quantity", 1)
+            
+            # Get the actual menu item to include its name and price
+            try:
+                menu_item = MenuItem.objects.get(id=menu_item_id)
+                each_item_price.append({
+                    "name": menu_item.name,
+                    "quantity": quantity,
+                    "price": str(menu_item.price)
+                })
+            except MenuItem.DoesNotExist:
+                each_item_price.append({
+                    "name": "Unknown Item",
+                    "quantity": quantity,
+                    "price": "0.00"
+                })
+            
+            OrderItem.objects.create(order=order, user=user, menu_item_id=menu_item_id, **item_data)
 
+        # Store each_item_price with item details (name, quantity, price)
+        order.each_item_price = each_item_price
+        
         # Compute restaurant names dynamically
         restaurant_names = list(order.items.values_list("menu_item__restaurant__name", flat=True).distinct())
         order.restaurant_names = restaurant_names

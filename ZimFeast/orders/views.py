@@ -50,7 +50,10 @@ class OrderListView(generics.ListAPIView):
         elif user.role == "driver":
             return Order.objects.filter(driver=user)
         elif user.role == "restaurant":
-            return Order.objects.filter(restaurant__owner=user)
+            # Only show paid orders to restaurants (exclude unpaid orders)
+            return Order.objects.filter(
+                restaurant__owner=user
+            ).exclude(status__in=['pending_payment', 'created'])
         return Order.objects.none()
 
 @api_view(['POST'])

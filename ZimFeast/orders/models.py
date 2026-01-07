@@ -14,7 +14,7 @@ class OrderItem(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = (
-        ('created','created'), ('paid','paid'), ('preparing','preparing'), ('ready','ready'),
+        ('pending_payment','pending_payment'), ('paid','paid'), ('preparing','preparing'), ('ready','ready'),
         ('collected','collected'), ('assigned','assigned'), ('out_for_delivery','out_for_delivery'), 
         ('delivered','delivered'), ('cancelled','cancelled')
     )
@@ -26,7 +26,7 @@ class Order(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='customer_orders')
     created = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='created')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='pending_payment')
     method = models.CharField(max_length=20, choices=METHOD_CHOICES, blank=True, null=True)
     restaurant_names = models.TextField()  # comma separated
     total_fee = models.DecimalField(max_digits=10, decimal_places=2)

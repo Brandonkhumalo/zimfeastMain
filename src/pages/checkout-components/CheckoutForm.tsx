@@ -28,6 +28,7 @@ interface Order {
   total_fee: string;
   tip: string;
   items: OrderItem[];
+  each_item_price: OrderItem[];
   restaurant_names: string[];
   delivery_fee: number;
   status: string;
@@ -211,9 +212,14 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
 
   const isProcessing = paymentMutation.isPending || voucherDepositMutation.isPending;
   
-  const itemsSubtotal = currentOrder.items.reduce((sum, item) => {
-    return sum + (parseFloat(item.price) * item.quantity);
-  }, 0);
+  // Calculate subtotal from each_item_price if available, otherwise from items
+  const itemsSubtotal = (currentOrder.each_item_price && currentOrder.each_item_price.length > 0)
+    ? currentOrder.each_item_price.reduce((sum: number, item: any) => {
+        return sum + (parseFloat(item.price || '0') * (item.quantity || 1));
+      }, 0)
+    : currentOrder.items.reduce((sum, item) => {
+        return sum + (parseFloat(item.price) * item.quantity);
+      }, 0);
   const deliveryFee = Number(currentOrder.delivery_fee) || 0;
   const tip = parseFloat(currentOrder.tip) || 0;
   const totalAmount = itemsSubtotal + deliveryFee + tip;
@@ -237,7 +243,15 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
       <CardContent>
         <div className="mb-4">
           <h2 className="font-semibold">Your Order:</h2>
-          {currentOrder.items.length === 0 ? (
+          {currentOrder.each_item_price && currentOrder.each_item_price.length > 0 ? (
+            <ul className="list-disc pl-5">
+              {currentOrder.each_item_price.map((item: any, idx: number) => (
+                <li key={idx}>
+                  {item.name || 'Item'} x {item.quantity || 1} - ${(parseFloat(item.price || '0') * (item.quantity || 1)).toFixed(2)}
+                </li>
+              ))}
+            </ul>
+          ) : currentOrder.items.length === 0 ? (
             <p>No items added yet.</p>
           ) : (
             <ul className="list-disc pl-5">

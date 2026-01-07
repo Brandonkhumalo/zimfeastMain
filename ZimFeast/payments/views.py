@@ -162,7 +162,7 @@ def paynow_callback(request):
     # Update order status if paid
     if status_pay.lower() == "paid" and payment.order:
         order = payment.order
-        order.is_paid = True
+        order.status = "paid"
         order.save()
 
         restaurant_order_numbers = process_restaurant_orders(order)
@@ -213,7 +213,7 @@ def paynow_result(request):
 
     if status_pay.lower() == "paid" and getattr(payment, "order", None):
         order = payment.order
-        order.is_paid = True
+        order.status = "paid"
         order.save()
 
         # Process restaurants and assign driver
