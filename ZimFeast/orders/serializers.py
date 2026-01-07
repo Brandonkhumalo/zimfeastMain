@@ -24,7 +24,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             "id", "customer", "items", "restaurant_names", "total_fee", "tip",
             "driver", "delivery_out_time", "delivery_complete_time", "delivery_fee",
-            "status", "restaurant", "method",
+            "status", "restaurant", "method", "created", "each_item_price",
             "restaurant_lat", "restaurant_lng",
             "delivery_lat", "delivery_lng"
         ]
