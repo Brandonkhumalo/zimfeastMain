@@ -129,13 +129,27 @@ The delivery tracking system uses a separate Node.js server with Socket.IO for r
    - Driver rating system after delivery
 
 ### Delivery Flow
-1. Customer pays for order → Django publishes to Redis `orders.delivery.created`
-2. Real-time server receives order → finds nearest available driver
-3. Driver receives offer (30s timeout) → accepts/rejects
-4. Accepted: Driver assigned, location updates every 5s
-5. Customer app shows live driver location and ETA
-6. Driver updates status: assigned → arrived_restaurant → picked_up → out_for_delivery → delivered
-7. Customer rates driver after delivery
+1. Customer places order and pays → Order status: "pending"
+2. Restaurant reviews order → clicks "Preparing" → status: "preparing" → triggers driver matching
+3. Real-time server finds nearest available driver → sends delivery offer
+4. Driver receives offer (30s timeout) with: restaurant name/address, customer location, distance breakdown, delivery price ($0.45/km)
+5. Driver accepts → status: "ready" → driver assigned → location updates every 5s to customer
+6. Customer (web + mobile) sees live driver location and ETA on tracking map
+7. Driver updates status: assigned → arrived_restaurant → picked_up → out_for_delivery → delivered
+8. Customer rates driver after delivery
+
+### Order Flows
+- **Delivery**: pending → preparing (triggers driver search) → ready → driver_assigned → out_for_delivery → delivered
+- **Collection**: pending → preparing → ready (customer picks up)
+
+### Driver Offer Details
+Drivers see comprehensive information before accepting:
+- Restaurant name and address
+- Customer name and phone
+- Distance to restaurant (from driver's current location)
+- Distance from restaurant to customer
+- Total delivery distance
+- Delivery price: $0.45 per km
 
 ### Running All Three Servers
 - **Backend** (port 8000): `bash start_backend.sh`

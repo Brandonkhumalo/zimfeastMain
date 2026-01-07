@@ -92,3 +92,76 @@ def get_order(request, pk):
 
     serializer = OrderSerializer(order)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # Called by real-time server
+def assign_driver(request, pk):
+    """
+    Assigns a driver to an order. Called by the real-time server.
+    """
+    from accounts.models import User
+    from realtime.redis_publisher import publisher
+    
+    try:
+        order = Order.objects.get(pk=pk)
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+    
+    driver_id = request.data.get('driver_id')
+    driver_name = request.data.get('driver_name', '')
+    driver_phone = request.data.get('driver_phone', '')
+    driver_vehicle = request.data.get('driver_vehicle', '')
+    
+    # Try to find the driver user
+    try:
+        driver = User.objects.get(id=driver_id)
+        order.driver = driver
+    except (User.DoesNotExist, ValueError):
+        pass  # Driver might be from external system
+    
+    order.driver_name = driver_name
+    order.driver_phone = driver_phone
+    order.driver_vehicle = driver_vehicle
+    order.status = 'assigned'
+    order.save()
+    
+    # Publish status update
+    publisher.publish_order_status(order.id, 'assigned')
+    
+    return Response({"detail": "Driver assigned.", "status": "assigned"})
+
+
+@api_view(['PATCH'])
+@permission_classes([AllowAny])  # Called by real-time server
+def update_order_status(request, pk):
+    """
+    Updates order status. Called by the real-time server.
+    """
+    from realtime.redis_publisher import publisher
+    from django.utils import timezone
+    
+    try:
+        order = Order.objects.get(pk=pk)
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+    
+    new_status = request.data.get('status')
+    valid_statuses = ['assigned', 'out_for_delivery', 'delivered', 'cancelled']
+    
+    if new_status not in valid_statuses:
+        return Response({"detail": f"Invalid status. Must be one of: {valid_statuses}"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    order.status = new_status
+    
+    if new_status == 'out_for_delivery':
+        order.delivery_out_time = timezone.now()
+    elif new_status == 'delivered':
+        order.delivery_complete_time = timezone.now()
+    
+    order.save()
+    
+    # Publish status update
+    publisher.publish_order_status(order.id, new_status)
+    
+    return Response({"detail": f"Status updated to {new_status}.", "status": new_status})

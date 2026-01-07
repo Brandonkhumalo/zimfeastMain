@@ -352,6 +352,8 @@ def send_dashboard_update(restaurant, dashboard):
 @permission_classes([IsAuthenticated])
 def mark_order_preparing(request, order_id):
     from orders.models import Order
+    from realtime.redis_publisher import publisher
+    
     order = get_object_or_404(Order, id=order_id)
     restaurant = get_object_or_404(Restaurant, owner=request.user)
     dashboard, _ = RestaurantDashboard.objects.get_or_create(restaurant=restaurant)
@@ -369,12 +371,67 @@ def mark_order_preparing(request, order_id):
     order.save()
 
     send_dashboard_update(restaurant, dashboard)
+    
+    # Publish status update for real-time tracking
+    publisher.publish_order_status(order.id, "preparing")
+    
+    # For delivery orders, start looking for a driver
+    if order.method == "delivery":
+        # Calculate distance and delivery price ($0.45/km)
+        delivery_distance_km = 0
+        if order.restaurant_lat and order.restaurant_lng and order.delivery_lat and order.delivery_lng:
+            from math import radians, sin, cos, sqrt, atan2
+            
+            R = 6371  # Earth's radius in km
+            lat1, lng1 = radians(order.restaurant_lat), radians(order.restaurant_lng)
+            lat2, lng2 = radians(order.delivery_lat), radians(order.delivery_lng)
+            
+            dlat = lat2 - lat1
+            dlng = lng2 - lng1
+            
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            delivery_distance_km = R * c
+        
+        delivery_price = round(delivery_distance_km * 0.45, 2)  # $0.45 per km
+        
+        # Update order with calculated delivery fee
+        order.delivery_fee = delivery_price
+        order.save()
+        
+        # Publish delivery order for driver matching
+        data = {
+            'orderId': str(order.id),
+            'customerId': str(order.customer.id),
+            'customerName': order.customer.get_full_name() or order.customer.email,
+            'customerPhone': getattr(order.customer, 'phone', ''),
+            'restaurantId': str(order.restaurant.id) if order.restaurant else None,
+            'restaurantName': order.restaurant.name if order.restaurant else (
+                order.restaurant_names.split(',')[0] if order.restaurant_names else 'Restaurant'
+            ),
+            'restaurantAddress': order.restaurant.full_address if order.restaurant else '',
+            'restaurantLat': float(order.restaurant_lat) if order.restaurant_lat else (float(order.restaurant.lat) if order.restaurant else -17.8252),
+            'restaurantLng': float(order.restaurant_lng) if order.restaurant_lng else (float(order.restaurant.lng) if order.restaurant else 31.0335),
+            'dropoffLat': float(order.delivery_lat) if order.delivery_lat else -17.8252,
+            'dropoffLng': float(order.delivery_lng) if order.delivery_lng else 31.0335,
+            'dropoffAddress': order.delivery_location.get('address', 'Unknown') if hasattr(order, 'delivery_location') and order.delivery_location else 'Customer Location',
+            'items': order.each_item_price or [],
+            'total': float(order.total_fee or 0),
+            'tip': float(order.tip or 0),
+            'distanceKm': round(delivery_distance_km, 2),
+            'deliveryPrice': delivery_price,
+        }
+        publisher.publish('orders.delivery.created', data)
+        logger.info(f"Started driver search for order {order.id}, distance: {delivery_distance_km:.2f}km, price: ${delivery_price}")
+    
     return Response({"detail": "Order marked as preparing.", "status": "preparing"}, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def mark_order_ready(request, order_id):
     from orders.models import Order
+    from realtime.redis_publisher import publisher
+    
     order = get_object_or_404(Order, id=order_id)
     restaurant = get_object_or_404(Restaurant, owner=request.user)
     dashboard, _ = RestaurantDashboard.objects.get_or_create(restaurant=restaurant)
@@ -392,6 +449,10 @@ def mark_order_ready(request, order_id):
     order.save()
 
     send_dashboard_update(restaurant, dashboard)
+    
+    # Publish status update for real-time tracking
+    publisher.publish_order_status(order.id, "ready")
+    
     return Response({"detail": "Order marked as ready for collection.", "status": "ready"}, status=status.HTTP_200_OK)
 
 
@@ -399,6 +460,8 @@ def mark_order_ready(request, order_id):
 @permission_classes([IsAuthenticated])
 def mark_order_collected(request, order_id):
     from orders.models import Order
+    from realtime.redis_publisher import publisher
+    
     order = get_object_or_404(Order, id=order_id)
     restaurant = get_object_or_404(Restaurant, owner=request.user)
     dashboard, _ = RestaurantDashboard.objects.get_or_create(restaurant=restaurant)
@@ -414,6 +477,10 @@ def mark_order_collected(request, order_id):
     order.save()
 
     send_dashboard_update(restaurant, dashboard)
+    
+    # Publish status update for real-time tracking
+    publisher.publish_order_status(order.id, "collected")
+    
     return Response({"detail": "Order marked as collected.", "status": "collected"}, status=status.HTTP_200_OK)
 
 

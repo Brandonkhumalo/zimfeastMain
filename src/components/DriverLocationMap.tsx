@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import { useAuth } from "@/hooks/useAuth";
+import { useOrderSocket } from "@/hooks/useOrderSocket";
 import { MapPin, Navigation, Clock, Phone } from "lucide-react";
 
 interface DriverLocationMapProps {
@@ -265,35 +264,37 @@ function Map({ driverLocation, deliveryLocation, pickupLocation, showRoute, setE
 }
 
 export default function DriverLocationMap({ orderId, isOpen, onClose }: DriverLocationMapProps) {
-  const { user } = useAuth();
-  const [driverLocation, setDriverLocation] = useState<DriverLocation | undefined>();
+  const [localDriverLocation, setLocalDriverLocation] = useState<DriverLocation | undefined>();
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [eta, setEta] = useState<{ estimatedArrival: string; durationMinutes: number; distance: string } | undefined>();
 
-  // Fetch initial driver location and route data
-  const { data: locationData, isLoading } = useQuery<DriverLocationData>({
+  const { driverLocation: socketDriverLocation, eta: socketEta, connected } = useOrderSocket(isOpen ? orderId : null);
+
+  const { data: locationData, isLoading, refetch } = useQuery<DriverLocationData>({
     queryKey: ['/api/orders', orderId, 'driver-location'],
     enabled: isOpen && !!orderId,
-    refetchInterval: 30000, // Refetch every 30 seconds as fallback
+    refetchInterval: 30000,
   });
 
-  // Memoized WebSocket message handler to prevent connection churn
-  const handleWebSocketMessage = useCallback((data: any) => {
-    if (data.type === 'DRIVER_LOCATION_UPDATE' && data.orderId === orderId) {
-      setDriverLocation(data.location);
-      setLastUpdated(data.timestamp);
-    }
-  }, [orderId]);
+  const driverLocation = socketDriverLocation || localDriverLocation;
 
-  // Set up WebSocket for real-time updates
-  useWebSocket('/ws', handleWebSocketMessage);
+  useEffect(() => {
+    if (socketDriverLocation) {
+      setLocalDriverLocation(socketDriverLocation);
+      setLastUpdated(new Date().toISOString());
+    }
+  }, [socketDriverLocation]);
 
   useEffect(() => {
     if (locationData) {
-      setDriverLocation(locationData.driverLocation);
-      setLastUpdated(locationData.lastUpdated);
+      if (!socketDriverLocation && locationData.driverLocation) {
+        setLocalDriverLocation(locationData.driverLocation);
+      }
+      if (locationData.lastUpdated) {
+        setLastUpdated(locationData.lastUpdated);
+      }
     }
-  }, [locationData]);
+  }, [locationData, socketDriverLocation]);
 
   if (!isOpen) {
     return null;
@@ -367,8 +368,8 @@ export default function DriverLocationMap({ orderId, isOpen, onClose }: DriverLo
               </div>
             </div>
             <div className="text-right">
-              <Badge variant={driverLocation ? "default" : "secondary"} data-testid="badge-driver-status">
-                {driverLocation ? "Live" : "Offline"}
+              <Badge variant={connected && driverLocation ? "default" : "secondary"} data-testid="badge-driver-status">
+                {connected ? (driverLocation ? "Live" : "Waiting...") : "Connecting..."}
               </Badge>
               {/* ETA Display */}
               {eta && (

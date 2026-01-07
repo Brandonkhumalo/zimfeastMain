@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import OrderTracking from "@/components/OrderTracking";
+import OrderTracking, { OrderTrackingButton } from "@/components/OrderTracking";
 import { Button } from "@/components/ui/button";
 
 import Header from "./customer-components/Header";
@@ -13,6 +13,18 @@ import TopRestaurant from "./customer-components/TopRestaurants";
 import AllRestaurants from "./customer-components/AllRestaurants";
 import MenuDialog from "@/components/MenuDialog";
 import { Restaurant, CartItem } from "./customer-components/types";
+
+interface OrderData {
+  id: string;
+  status: string;
+  method: string;
+  restaurant_names: string;
+  driver_name?: string;
+  driver_phone?: string;
+  driver_vehicle?: string;
+  created: string;
+  delivery_address?: string;
+}
 
 export default function CustomerApp() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -41,6 +53,9 @@ export default function CustomerApp() {
   
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
+  
+  const [activeOrder, setActiveOrder] = useState<OrderData | null>(null);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
   // Pagination states
   const [gridPage, setGridPage] = useState(0);
@@ -57,6 +72,35 @@ export default function CustomerApp() {
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
+  
+  const fetchActiveOrder = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch('/api/orders/list/', {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) return;
+      const orders: OrderData[] = await res.json();
+      const active = orders.find(o => 
+        !['delivered', 'collected', 'cancelled'].includes(o.status)
+      );
+      setActiveOrder(active || null);
+    } catch (err) {
+      console.log("No active orders");
+    }
+  };
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchActiveOrder();
+      const interval = setInterval(fetchActiveOrder, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
 
   const fetchRestaurants = async (cursorUrl?: string) => {
     try {
@@ -259,7 +303,16 @@ export default function CustomerApp() {
         userLocation={userLocation}
       />
 
-      <OrderTracking />
+      <OrderTracking 
+        order={activeOrder} 
+        isOpen={isTrackingOpen} 
+        onClose={() => setIsTrackingOpen(false)} 
+      />
+      
+      <OrderTrackingButton 
+        order={activeOrder} 
+        onClick={() => setIsTrackingOpen(true)} 
+      />
 
       <Button
         onClick={() => setIsCartOpen(true)}

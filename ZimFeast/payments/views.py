@@ -159,7 +159,6 @@ def paynow_callback(request):
     payment.save()
 
     restaurant_order_numbers = {}
-    driver = None
 
     # Update order status if paid
     if status_pay.lower() == "paid" and payment.order:
@@ -169,11 +168,8 @@ def paynow_callback(request):
 
         restaurant_order_numbers = process_restaurant_orders(order)
         
-        # Publish to real-time server for delivery orders
-        if order.delivery_location:
-            publisher.publish_delivery_order(order)
-        else:
-            driver = assign_driver(order, restaurant_order_numbers)
+        # Driver matching is now triggered when restaurant clicks "preparing"
+        # Not on payment - this allows restaurant to review order first
 
         try:
             send_order_receipt(
@@ -189,7 +185,6 @@ def paynow_callback(request):
 
     return Response({
         "status": "ok",
-        "assigned_driver": driver.id if driver else None,
         "restaurant_order_numbers": restaurant_order_numbers
     })
 
@@ -227,11 +222,8 @@ def paynow_result(request):
         # Process restaurants
         restaurant_order_numbers = process_restaurant_orders(order)
         
-        # Publish to real-time server for delivery orders
-        if order.delivery_location:
-            publisher.publish_delivery_order(order)
-        else:
-            driver = assign_driver(order, restaurant_order_numbers)
+        # Driver matching is now triggered when restaurant clicks "preparing"
+        # Not on payment - this allows restaurant to review order first
 
         # Send email receipt
         try:
@@ -249,7 +241,6 @@ def paynow_result(request):
     return Response({
         "status": "payment_confirmed" if status_pay.lower() == "paid" else "payment_failed",
         "reference": reference,
-        "assigned_driver": driver.id if driver else None,
         "restaurant_order_numbers": restaurant_order_numbers
     })
 

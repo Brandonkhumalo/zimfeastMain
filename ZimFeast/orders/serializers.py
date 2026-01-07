@@ -23,10 +23,11 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             "id", "customer", "items", "restaurant_names", "total_fee", "tip",
-            "driver", "delivery_out_time", "delivery_complete_time", "delivery_fee",
+            "driver", "driver_name", "driver_phone", "driver_vehicle",
+            "delivery_out_time", "delivery_complete_time", "delivery_fee",
             "status", "restaurant", "method", "created", "each_item_price",
             "restaurant_lat", "restaurant_lng",
-            "delivery_lat", "delivery_lng"
+            "delivery_lat", "delivery_lng", "delivery_address"
         ]
 
     def create(self, validated_data):

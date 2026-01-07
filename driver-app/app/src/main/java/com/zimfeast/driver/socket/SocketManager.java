@@ -26,7 +26,7 @@ public class SocketManager {
     private boolean isConnected = false;
     private List<SocketListener> listeners = new ArrayList<>();
     
-    private static final String SOCKET_URL = "https://your-realtime-server.replit.app";
+    private static final String SOCKET_URL = "https://your-app.replit.app:3001";
     
     public interface SocketListener {
         void onConnected();

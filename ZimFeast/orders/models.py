@@ -44,6 +44,12 @@ class Order(models.Model):
     # delivery location (optional, only for delivery)
     delivery_lat = models.FloatField(blank=True, null=True)
     delivery_lng = models.FloatField(blank=True, null=True)
+    delivery_address = models.TextField(blank=True, null=True)
+    
+    # driver info for tracking
+    driver_name = models.CharField(max_length=255, blank=True, null=True)
+    driver_phone = models.CharField(max_length=50, blank=True, null=True)
+    driver_vehicle = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"Order {self.id} - {self.customer.email}"

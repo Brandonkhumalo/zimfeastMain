@@ -2,6 +2,44 @@ function setupCustomerSocket(namespace, orderService, redisClient) {
   namespace.on('connection', (socket) => {
     console.log('Customer connected:', socket.id);
     
+    socket.on('customer:join', async (data) => {
+      const { orderId, customerId } = data;
+      
+      if (customerId) socket.customerId = customerId;
+      if (orderId) {
+        socket.join(`order:${orderId}`);
+        console.log(`Customer joined order room: ${orderId}`);
+        
+        const order = orderService.getOrder ? orderService.getOrder(orderId) : null;
+        if (order) {
+          socket.emit('order:status', {
+            orderId,
+            status: order.status,
+            driver: order.driverId ? {
+              id: order.driverId,
+              name: order.driverName,
+              phone: order.driverPhone,
+              vehicle: order.driverVehicle
+            } : null
+          });
+          
+          if (order.driverId) {
+            socket.emit('order:driver_assigned', {
+              orderId,
+              driver: {
+                id: order.driverId,
+                name: order.driverName,
+                phone: order.driverPhone,
+                vehicle: order.driverVehicle,
+                lat: order.driverLat,
+                lng: order.driverLng
+              }
+            });
+          }
+        }
+      }
+    });
+    
     socket.on('order:subscribe', async (data) => {
       const { orderId, customerId } = data;
       
@@ -11,7 +49,7 @@ function setupCustomerSocket(namespace, orderService, redisClient) {
       
       console.log(`Customer ${customerId} subscribed to order ${orderId}`);
       
-      const order = orderService.getOrder(orderId);
+      const order = orderService.getOrder ? orderService.getOrder(orderId) : null;
       if (order) {
         socket.emit('order:status', {
           orderId,

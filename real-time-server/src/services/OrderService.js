@@ -16,8 +16,10 @@ class OrderService {
       id: orderData.orderId,
       customerId: orderData.customerId,
       customerName: orderData.customerName,
+      customerPhone: orderData.customerPhone || '',
       restaurantId: orderData.restaurantId,
       restaurantName: orderData.restaurantName,
+      restaurantAddress: orderData.restaurantAddress || '',
       restaurantLat: orderData.restaurantLat,
       restaurantLng: orderData.restaurantLng,
       dropoffLat: orderData.dropoffLat,
@@ -26,6 +28,8 @@ class OrderService {
       items: orderData.items || [],
       total: orderData.total || 0,
       tip: orderData.tip || 0,
+      distanceKm: orderData.distanceKm || 0,
+      deliveryPrice: orderData.deliveryPrice || 0,
       status: 'finding_driver',
       driverId: null,
       createdAt: Date.now()
@@ -93,15 +97,32 @@ class OrderService {
       offeredAt: Date.now()
     });
     
+    // Calculate total delivery distance (driver to restaurant + restaurant to customer)
+    const driverToRestaurant = nearestDriver.distance;
+    const restaurantToCustomer = this.calculateDistance(
+      order.restaurantLat, order.restaurantLng,
+      order.dropoffLat, order.dropoffLng
+    );
+    const totalDistance = driverToRestaurant + restaurantToCustomer;
+    
+    // Calculate delivery price: $0.45 per km
+    const deliveryPrice = order.deliveryPrice || (totalDistance * 0.45);
+    
     const offerData = {
       orderId: order.id,
       restaurantName: order.restaurantName,
+      restaurantAddress: order.restaurantAddress || '',
       restaurantLat: order.restaurantLat,
       restaurantLng: order.restaurantLng,
+      customerName: order.customerName || 'Customer',
+      customerPhone: order.customerPhone || '',
       dropoffAddress: order.dropoffAddress,
       dropoffLat: order.dropoffLat,
       dropoffLng: order.dropoffLng,
-      distance: nearestDriver.distance.toFixed(2),
+      distanceToRestaurant: driverToRestaurant.toFixed(2),
+      distanceToCustomer: restaurantToCustomer.toFixed(2),
+      totalDistance: totalDistance.toFixed(2),
+      deliveryPrice: deliveryPrice.toFixed(2),
       total: order.total,
       tip: order.tip,
       items: order.items,
@@ -154,7 +175,10 @@ class OrderService {
     try {
       const djangoUrl = process.env.DJANGO_URL || 'http://localhost:8000';
       await axios.post(`${djangoUrl}/api/orders/order/${orderId}/assign-driver/`, {
-        driver_id: driverId
+        driver_id: driverId,
+        driver_name: driverData.name,
+        driver_phone: driverData.phone,
+        driver_vehicle: driverData.vehicle
       });
     } catch (err) {
       console.error('Failed to notify Django:', err.message);

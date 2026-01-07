@@ -21,7 +21,7 @@ public class TrackingSocketManager {
     private boolean isConnected = false;
     private List<TrackingListener> listeners = new ArrayList<>();
     
-    private static final String SOCKET_URL = "https://your-realtime-server.replit.app";
+    private static final String SOCKET_URL = "https://your-app.replit.app:3001";
     
     public interface TrackingListener {
         void onDriverAssigned(String driverId, String name, String phone, String vehicle, double lat, double lng);
