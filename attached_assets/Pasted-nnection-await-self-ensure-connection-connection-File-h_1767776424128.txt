@@ -1,0 +1,184 @@
+nnection
+    await self.ensure_connection(connection)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 1182, in ensure_connection
+    await connection.connect()
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 296, in connect
+    await self.connect_check_health(check_health=True)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 315, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:6379. Connect call failed ('127.0.0.1', 6379).
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 118, in __call__
+    return await application(
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/consumer.py", line 95, in app
+    return await consumer(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/consumer.py", line 58, in __call__
+    await await_many_dispatch(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/utils.py", line 57, in await_many_dispatch
+    await task
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels_redis/core.py", line 340, in receive
+    message_channel, message = await self.receive_single(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels_redis/core.py", line 397, in receive_single
+    content = await self._brpop_with_clean(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels_redis/core.py", line 231, in _brpop_with_clean
+    await connection.eval(cleanup_script, 0, channel, backup_queue)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/client.py", line 672, in execute_command
+    conn = self.connection or await pool.get_connection()
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 1149, in get_connection
+    await self.ensure_connection(connection)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 1182, in ensure_connection
+    await connection.connect()
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 296, in connect
+    await self.connect_check_health(check_health=True)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 315, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:6379. Connect call failed ('127.0.0.1', 6379).
+127.0.0.1:41918 - - [07/Jan/2026:08:53:45] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+Unauthorized: /api/accounts/login/
+2026-01-07 08:57:07,026 WARNING  Unauthorized: /api/accounts/login/
+127.0.0.1:52682 - - [07/Jan/2026:08:57:07] "POST /api/accounts/login/" 401 31
+Unauthorized: /api/accounts/login/
+2026-01-07 08:57:12,537 WARNING  Unauthorized: /api/accounts/login/
+127.0.0.1:52688 - - [07/Jan/2026:08:57:12] "POST /api/accounts/login/" 401 31
+Unauthorized: /api/accounts/login/
+2026-01-07 08:58:09,005 WARNING  Unauthorized: /api/accounts/login/
+127.0.0.1:37036 - - [07/Jan/2026:08:58:09] "POST /api/accounts/login/" 401 31
+127.0.0.1:40670 - - [07/Jan/2026:08:58:19] "POST /api/accounts/login/" 200 516
+127.0.0.1:40676 - - [07/Jan/2026:08:58:19] "GET /api/accounts/profile/" 200 180
+127.0.0.1:40680 - - [07/Jan/2026:08:58:20] "GET /api/accounts/profile/" 200 180
+127.0.0.1:40702 - - [07/Jan/2026:08:58:24] "GET /api/orders/list/" 200 2485
+127.0.0.1:40690 - - [07/Jan/2026:08:58:24] "GET /api/restaurants/menu/" 200 2180
+127.0.0.1:42712 - - [07/Jan/2026:08:58:25] "GET /api/restaurants/menu/" 200 2180
+127.0.0.1:42716 - - [07/Jan/2026:08:58:28] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:58:28,833 ERROR    Exception inside application: Error 111 connecting to 127.0.0.1:6379. Connect call failed ('127.0.0.1', 6379).
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 305, in connect_check_health
+    await self.retry.call_with_retry(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/retry.py", line 50, in call_with_retry
+    return await do()
+           ^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 760, in _connect
+    reader, writer = await asyncio.open_connection(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/asyncio/streams.py", line 48, in open_connection
+    transport, _ = await loop.create_connection(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/asyncio/base_events.py", line 1086, in create_connection
+    raise exceptions[0]
+  File "/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/asyncio/base_events.py", line 1070, in create_connection
+    sock = await self._connect_sock(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/asyncio/base_events.py", line 974, in _connect_sock
+    await self.sock_connect(sock, address)
+  File "/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/asyncio/selector_events.py", line 638, in sock_connect
+    return await fut
+           ^^^^^^^^^
+  File "/nix/store/7d088dip86hlzri9sk0h78b63yfmx0a0-python3-3.11.13/lib/python3.11/asyncio/selector_events.py", line 678, in _sock_connect_cb
+    raise OSError(err, f'Connect call failed {address}')
+ConnectionRefusedError: [Errno 111] Connect call failed ('127.0.0.1', 6379)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/utils.py", line 50, in await_many_dispatch
+    await dispatch(result)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/consumer.py", line 74, in dispatch
+    await handler(message)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/generic/websocket.py", line 180, in websocket_connect
+    await self.connect()
+  File "/home/runner/workspace/ZimFeast/restaurants/consumers.py", line 10, in connect
+    await self.channel_layer.group_add(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels_redis/core.py", line 493, in group_add
+    await connection.zadd(group_key, {channel: time.time()})
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/client.py", line 672, in execute_command
+    conn = self.connection or await pool.get_connection()
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 1149, in get_connection
+    await self.ensure_connection(connection)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 1182, in ensure_connection
+    await connection.connect()
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 296, in connect
+    await self.connect_check_health(check_health=True)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 315, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:6379. Connect call failed ('127.0.0.1', 6379).
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 118, in __call__
+    return await application(
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/consumer.py", line 95, in app
+    return await consumer(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/consumer.py", line 58, in __call__
+    await await_many_dispatch(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/utils.py", line 57, in await_many_dispatch
+    await task
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels_redis/core.py", line 340, in receive
+    message_channel, message = await self.receive_single(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels_redis/core.py", line 397, in receive_single
+    content = await self._brpop_with_clean(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels_redis/core.py", line 231, in _brpop_with_clean
+    await connection.eval(cleanup_script, 0, channel, backup_queue)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/client.py", line 672, in execute_command
+    conn = self.connection or await pool.get_connection()
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 1149, in get_connection
+    await self.ensure_connection(connection)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 1182, in ensure_connection
+    await connection.connect()
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 296, in connect
+    await self.connect_check_health(check_health=True)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 315, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:6379. Connect call failed ('127.0.0.1', 6379).
+127.0.0.1:42716 - - [07/Jan/2026:08:58:28] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:42722 - - [07/Jan/2026:08:58:32] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:58:32,839 ERROR    Exception inside application: Error 111 connecting to 127.0.0.1:6379. Connect call failed ('127.0.0.1', 6379).
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/connection.py", line 305, in connect_check_health
+    await self.retry.call_with_retry(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/asyncio/retry.py", line 50, in call_with_retry
+    return await do()
