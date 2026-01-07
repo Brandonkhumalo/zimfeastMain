@@ -131,8 +131,9 @@ export default function RestaurantDashboard() {
         setOrdersData(ordersResponse);
 
         // derive stats from loaded orders (fallback / initial)
-        const todayOrders = ordersResponse.results.length;
-        const todayRevenue = ordersResponse.results.reduce((acc: number, o: any) => acc + (o.total_fee ?? o.total ?? 0), 0);
+        const ordersList = ordersResponse?.results ?? [];
+        const todayOrders = ordersList.length;
+        const todayRevenue = ordersList.reduce((acc: number, o: any) => acc + (o.total_fee ?? o.total ?? 0), 0);
 
         setDashboardData((prev) => ({
           ...prev,

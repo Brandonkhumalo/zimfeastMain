@@ -1,0 +1,321 @@
+2026-01-07 08:00:32,021 INFO     Starting server at tcp:port=8000:interface=0.0.0.0
+2026-01-07 08:00:32,022 INFO     HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+2026-01-07 08:00:32,022 INFO     Configuring endpoint tcp:port=8000:interface=0.0.0.0
+2026-01-07 08:00:32,023 INFO     Listening on TCP address 0.0.0.0:8000
+2026-01-07 08:00:32,901 INFO     API queries_quota: 60
+2026-01-07 08:00:32,913 WARNING  SENDGRID_API_KEY not set - email functionality will be disabled
+127.0.0.1:57258 - - [07/Jan/2026:08:00:32] "GET /" 200 2883
+127.0.0.1:57266 - - [07/Jan/2026:08:00:33] "GET /assets/index-B_hbIWT0.css" 200 74993
+127.0.0.1:57258 - - [07/Jan/2026:08:00:33] "GET /assets/index-h7DHqOlc.js" 200 5127.0.0.1:57258 - - [07/Jan/2026:08:00:41] "GET /favicon.ico" 200 2883
+127.0.0.1:43764 - - [07/Jan/2026:08:04:17] "POST /api/accounts/login/" 200 514
+127.0.0.1:43766 - - [07/Jan/2026:08:04:17] "GET /api/accounts/profile/" 200 174
+127.0.0.1:43772 - - [07/Jan/2026:08:04:18] "GET /api/accounts/profile/" 200 174
+127.0.0.1:43788 - - [07/Jan/2026:08:04:21] "GET /api/logout" 200 2883
+127.0.0.1:41276 - - [07/Jan/2026:08:04:44] "POST /api/accounts/login/" 200 514
+127.0.0.1:36954 - - [07/Jan/2026:08:04:45] "GET /api/accounts/profile/" 200 174
+127.0.0.1:36966 - - [07/Jan/2026:08:04:45] "GET /api/accounts/profile/" 200 174
+127.0.0.1:36976 - - [07/Jan/2026:08:04:47] "GET /api/restaurants/nearby/" 200 14561
+127.0.0.1:36974 - - [07/Jan/2026:08:04:47] "GET /api/restaurants/nearby/?page_size=100" 200 17259
+127.0.0.1:47668 - - [07/Jan/2026:08:05:37] "POST /api/accounts/login/" 200 514
+127.0.0.1:47682 - - [07/Jan/2026:08:05:37] "GET /api/accounts/profile/" 200 174
+127.0.0.1:47692 - - [07/Jan/2026:08:05:37] "GET /api/accounts/profile/" 200 174
+127.0.0.1:47698 - - [07/Jan/2026:08:05:40] "GET /api/logout" 200 2883
+172.31.104.226:59972 - - [07/Jan/2026:08:07:34] "GET /" 200 2883
+172.31.104.226:59972 - - [07/Jan/2026:08:07:35] "GET /assets/index-B_hbIWT0.css" 200 74993
+172.31.104.226:59972 - - [07/Jan/2026:08:07:35] "GET /assets/index-h7DHqOlc.js" 200 550893
+127.0.0.1:40646 - - [07/Jan/2026:08:12:40] "POST /api/accounts/login/" 200 516
+127.0.0.1:40648 - - [07/Jan/2026:08:12:40] "GET /api/accounts/profile/" 200 180
+127.0.0.1:40658 - - [07/Jan/2026:08:12:41] "GET /api/accounts/profile/" 200 180
+127.0.0.1:40670 - - [07/Jan/2026:08:12:44] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:12:45,687 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:40670 - - [07/Jan/2026:08:12:45] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:39438 - - [07/Jan/2026:08:12:47] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:12:48,695 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:39438 - - [07/Jan/2026:08:12:48] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:39446 - - [07/Jan/2026:08:12:51] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:12:52,700 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:39446 - - [07/Jan/2026:08:12:52] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:47508 - - [07/Jan/2026:08:12:58] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:12:58,705 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:47508 - - [07/Jan/2026:08:12:58] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:40154 - - [07/Jan/2026:08:13:08] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:13:08,715 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:40154 - - [07/Jan/2026:08:13:08] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:51528 - - [07/Jan/2026:08:13:25] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:13:26,735 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:51528 - - [07/Jan/2026:08:13:26] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:38488 - - [07/Jan/2026:08:13:58] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:13:58,763 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:38488 - - [07/Jan/2026:08:13:58] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:42606 - - [07/Jan/2026:08:14:30] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:14:30,791 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:42606 - - [07/Jan/2026:08:14:30] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:36256 - - [07/Jan/2026:08:15:03] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:15:03,814 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:36256 - - [07/Jan/2026:08:15:03] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:42202 - - [07/Jan/2026:08:15:35] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:15:35,838 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:42202 - - [07/Jan/2026:08:15:35] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:00:32,021 INFO     Starting server at tcp:port=8000:interface=0.0.0.0
+2026-01-07 08:00:32,022 INFO     HTTP/2 support not enabled (install the http2 and tls Twisted extras)
+2026-01-07 08:00:32,022 INFO     Configuring endpoint tcp:port=8000:interface=0.0.0.0
+2026-01-07 08:00:32,023 INFO     Listening on TCP address 0.0.0.0:8000
+2026-01-07 08:00:32,901 INFO     API queries_quota: 60
+2026-01-07 08:00:32,913 WARNING  SENDGRID_API_KEY not set - email functionality will be disabled
+127.0.0.1:57258 - - [07/Jan/2026:08:00:32] "GET /" 200 2883
+127.0.0.1:57266 - - [07/Jan/2026:08:00:33] "GET /assets/index-B_hbIWT0.css" 200 74993
+127.0.0.1:57258 - - [07/Jan/2026:08:00:33] "GET /assets/index-h7DHqOlc.js" 200 550893
+127.0.0.1:57258 - - [07/Jan/2026:08:00:41] "GET /favicon.ico" 200 2883
+127.0.0.1:43764 - - [07/Jan/2026:08:04:17] "POST /api/accounts/login/" 200 514
+127.0.0.1:43766 - - [07/Jan/2026:08:04:17] "GET /api/accounts/profile/" 200 174
+127.0.0.1:43772 - - [07/Jan/2026:08:04:18] "GET /api/accounts/profile/" 200 174
+127.0.0.1:43788 - - [07/Jan/2026:08:04:21] "GET /api/logout" 200 2883
+127.0.0.1:41276 - - [07/Jan/2026:08:04:44] "POST /api/accounts/login/" 200 514
+127.0.0.1:36954 - - [07/Jan/2026:08:04:45] "GET /api/accounts/profile/" 200 174
+127.0.0.1:36966 - - [07/Jan/2026:08:04:45] "GET /api/accounts/profile/" 200 174
+127.0.0.1:36976 - - [07/Jan/2026:08:04:47] "GET /api/restaurants/nearby/" 200 14561
+127.0.0.1:36974 - - [07/Jan/2026:08:04:47] "GET /api/restaurants/nearby/?page_size=100" 200 17259
+127.0.0.1:47668 - - [07/Jan/2026:08:05:37] "POST /api/accounts/login/" 200 514
+127.0.0.1:47682 - - [07/Jan/2026:08:05:37] "GET /api/accounts/profile/" 200 174
+127.0.0.1:47692 - - [07/Jan/2026:08:05:37] "GET /api/accounts/profile/" 200 174
+127.0.0.1:47698 - - [07/Jan/2026:08:05:40] "GET /api/logout" 200 2883
+172.31.104.226:59972 - - [07/Jan/2026:08:07:34] "GET /" 200 2883
+172.31.104.226:59972 - - [07/Jan/2026:08:07:35] "GET /assets/index-B_hbIWT0.css" 200 74993
+172.31.104.226:59972 - - [07/Jan/2026:08:07:35] "GET /assets/index-h7DHqOlc.js" 200 550893
+127.0.0.1:40646 - - [07/Jan/2026:08:12:40] "POST /api/accounts/login/" 200 516
+127.0.0.1:40648 - - [07/Jan/2026:08:12:40] "GET /api/accounts/profile/" 200 180
+127.0.0.1:40658 - - [07/Jan/2026:08:12:41] "GET /api/accounts/profile/" 200 180
+127.0.0.1:40670 - - [07/Jan/2026:08:12:44] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:12:45,687 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:40670 - - [07/Jan/2026:08:12:45] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+127.0.0.1:39438 - - [07/Jan/2026:08:12:47] "WSCONNECTING /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
+2026-01-07 08:12:48,695 ERROR    Exception inside application: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 48, in __call__
+    return await application(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 44, in __call__
+    return await self.inner(dict(scope, cookies=cookies), receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/sessions.py", line 261, in __call__
+    return await self.inner(wrapper.scope, receive, wrapper.send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/auth.py", line 185, in __call__
+    return await super().__call__(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/middleware.py", line 24, in __call__
+    return await self.inner(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/channels/routing.py", line 136, in __call__
+    raise ValueError("No route found for path %r." % path)
+ValueError: No route found for path 'ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/'.
+127.0.0.1:39438 - - [07/Jan/2026:08:12:48] "WSDISCONNECT /ws/restaurants/9662d7a2-0271-4c08-b3f1-bc9cc1a4d541/dashboard/" - -
