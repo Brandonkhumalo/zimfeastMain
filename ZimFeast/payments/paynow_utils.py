@@ -10,5 +10,5 @@ paynow = Paynow(
 
 def create_paynow_payment(order, user_email):
     payment = paynow.create_payment(f"Order_{order.id}", user_email)
-    payment.add(f"Order #{order.id}", float(order.total))
+    payment.add(f"Order #{order.id}", float(order.total_fee))
     return paynow.send(payment)
