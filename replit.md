@@ -100,10 +100,52 @@ WebSocket connections are available for:
 - Driver location tracking
 - Real-time notifications
 
+## Real-Time Delivery System
+
+### Architecture
+The delivery tracking system uses a separate Node.js server with Socket.IO for real-time communication:
+- **Real-time Server**: Node.js + Socket.IO + Redis (port 3001)
+- **Communication**: Redis Pub/Sub between Django and Node.js
+- **Driver App**: Android app with foreground location service
+- **Customer Tracking**: Socket.IO integration in customer mobile app
+
+### Components
+1. **real-time-server/**: Node.js server for delivery coordination
+   - `src/index.js`: Main server with Socket.IO namespaces
+   - `src/services/DriverService.js`: Driver matching (nearest driver algorithm)
+   - `src/services/OrderService.js`: Delivery order management
+   - `src/handlers/drivers.js`: Driver socket events
+   - `src/handlers/customers.js`: Customer socket events
+
+2. **driver-app/**: Android driver application
+   - Socket.IO client for real-time communication
+   - Foreground location service (5-second updates)
+   - Delivery offer accept/reject UI
+   - Google Maps navigation integration
+
+3. **zimfeast-customer/**: Customer mobile app updates
+   - `TrackingSocketManager.java`: Socket.IO client for tracking
+   - Driver location and ETA display
+   - Driver rating system after delivery
+
+### Delivery Flow
+1. Customer pays for order → Django publishes to Redis `orders.delivery.created`
+2. Real-time server receives order → finds nearest available driver
+3. Driver receives offer (30s timeout) → accepts/rejects
+4. Accepted: Driver assigned, location updates every 5s
+5. Customer app shows live driver location and ETA
+6. Driver updates status: assigned → arrived_restaurant → picked_up → out_for_delivery → delivered
+7. Customer rates driver after delivery
+
+### Running All Three Servers
+- **Backend** (port 8000): `bash start_backend.sh`
+- **Dev Server** (port 5000): `npm run dev`
+- **Realtime Server** (port 3001): `cd real-time-server && npm start`
+
 ## Notes
 - Frontend uses localhost to communicate with backend (both run in same environment)
 - SQLite is used for development; production should use PostgreSQL
-- Redis is optional in development but required in production for WebSocket support
+- Redis is required for real-time delivery features
 - The project includes demo data for testing
 
 ## Recent Changes
@@ -166,3 +208,17 @@ WebSocket connections are available for:
   - Backend binds to `0.0.0.0:8000` (development) and `0.0.0.0:5000` (production)
   - Django now serves both REST API and React SPA in production
   - Development workflow unchanged: Vite dev server on port 5000, Django API on port 8000
+- **Implemented Real-Time Delivery System (Jan 07, 2026)**:
+  - Created Node.js real-time server with Socket.IO and Redis for delivery coordination
+  - Built driver matching system using haversine distance (nearest driver first)
+  - Implemented delivery offer with 30s timeout and auto-retry to next driver
+  - Drivers can accept/reject offers; rejected drivers excluded from same order
+  - Added Redis Pub/Sub integration: Django publishes orders, Node.js server receives
+  - Created driver-app Android project with Socket.IO client and location tracking
+  - Implemented foreground location service with 5-second GPS updates
+  - Built delivery offer UI with accept/deny buttons and countdown timer
+  - Added active delivery screen with status updates and Google Maps navigation
+  - Updated zimfeast-customer app with TrackingSocketManager for driver tracking
+  - Driver location and ETA updates sent to customers in real-time
+  - Added driver rating system after delivery completion
+  - Configured Realtime Server workflow running on port 3001
