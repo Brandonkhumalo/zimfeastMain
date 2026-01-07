@@ -48,8 +48,8 @@ const fetchOrdersPage = async (url: string): Promise<OrdersPage> => {
   return await res.json();
 };
 
-const fetchMenuItems = async (restaurantId: number) => {
-  const res = await fetch(`/api/restaurants/${restaurantId}/menu-items/`, { headers: getAuthHeaders() });
+const fetchMenuItems = async () => {
+  const res = await fetch("/api/restaurants/menu/", { headers: getAuthHeaders() });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || "Failed to fetch menu items");
@@ -142,8 +142,8 @@ export default function RestaurantDashboard() {
         }));
 
         // load menu items
-        const menuRes = await fetchMenuItems(Number(restaurantId));
-        setMenuItems(menuRes);
+        const menuRes = await fetchMenuItems();
+        setMenuItems(Array.isArray(menuRes) ? menuRes : []);
       } catch (err: any) {
         toast({
           title: "Error",
