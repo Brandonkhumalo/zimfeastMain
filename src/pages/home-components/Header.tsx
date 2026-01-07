@@ -16,7 +16,27 @@ export function Header({ user }: HeaderProps) {
           </p>
         </div>
         <Button
-          onClick={() => window.location.href = '/api/logout'}
+          onClick={async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+              window.location.href = "/login";
+              return;
+            }
+            try {
+              await fetch("/api/accounts/logout/", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              localStorage.removeItem("token");
+              window.location.href = "/login";
+            } catch (err) {
+              localStorage.removeItem("token");
+              window.location.href = "/login";
+            }
+          }}
           variant="outline"
           className="border-white/20 text-primary-foreground hover:bg-white/10"
         >

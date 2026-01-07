@@ -45,7 +45,7 @@ export default function Navbar() {
                 if (!token) return window.location.href = "/home";
 
                 try {
-                  const res = await fetch("http://127.0.0.1:8000/api/accounts/logout/", {
+                  const res = await fetch("/api/accounts/logout/", {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
