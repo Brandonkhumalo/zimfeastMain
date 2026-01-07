@@ -118,7 +118,7 @@ export default function MenuManagement({ handleAddItem, isAddDialogOpen, setIsAd
                 </div>
                 <div>
                   <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">${item.price}</p>
+                  <p className="text-sm font-semibold text-primary">${Number(item.price).toFixed(2)}</p>
                   {item.category && (
                     <span className="inline-block px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-full mt-1">
                       {item.category}
