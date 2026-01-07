@@ -8,11 +8,14 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ todayOrders, todayRevenue, avgRating, menuItemsCount }: StatsCardsProps) {
+  const revenue = Number(todayRevenue) || 0;
+  const rating = Number(avgRating) || 0;
+  
   const stats = [
-    { label: "Today's Orders", value: todayOrders, icon: "fa-shopping-bag", color: "primary" },
-    { label: "Revenue", value: `$${todayRevenue.toFixed(2)}`, icon: "fa-dollar-sign", color: "accent" },
-    { label: "Avg Rating", value: avgRating.toFixed(1), icon: "fa-star", color: "yellow-500" },
-    { label: "Menu Items", value: menuItemsCount, icon: "fa-utensils", color: "green-500" },
+    { label: "Today's Orders", value: todayOrders || 0, icon: "fa-shopping-bag", color: "primary" },
+    { label: "Revenue", value: `$${revenue.toFixed(2)}`, icon: "fa-dollar-sign", color: "accent" },
+    { label: "Avg Rating", value: rating.toFixed(1), icon: "fa-star", color: "yellow-500" },
+    { label: "Menu Items", value: menuItemsCount || 0, icon: "fa-utensils", color: "green-500" },
   ];
 
   return (
