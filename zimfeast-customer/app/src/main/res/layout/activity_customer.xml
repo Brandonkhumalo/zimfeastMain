@@ -166,7 +166,20 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_history"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="Order History"
+        android:src="@drawable/ic_delivery"
+        app:backgroundTint="@color/secondary"
+        app:layout_constraintBottom_toTopOf="@id/fab_cart_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@android:color/white" />
+
     <FrameLayout
+        android:id="@+id/fab_cart_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"

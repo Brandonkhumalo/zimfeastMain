@@ -27,6 +27,8 @@ import com.zimfeast.customer.data.model.Restaurant;
 import com.zimfeast.customer.databinding.ActivityCustomerBinding;
 import com.zimfeast.customer.ui.auth.LoginActivity;
 import com.zimfeast.customer.ui.cart.CartActivity;
+import com.zimfeast.customer.ui.history.OrderHistoryActivity;
+import com.zimfeast.customer.ui.menu.MenuActivity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -134,6 +136,10 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
 
         binding.fabCart.setOnClickListener(v -> {
             startActivity(new Intent(this, CartActivity.class));
+        });
+
+        binding.fabHistory.setOnClickListener(v -> {
+            startActivity(new Intent(this, OrderHistoryActivity.class));
         });
 
         binding.swipeRefresh.setOnRefreshListener(this::loadRestaurants);
@@ -285,19 +291,19 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
 
     @Override
     public void onAddToCart(Restaurant restaurant) {
-        CartItem item = new CartItem(
-                restaurant.getId() + "-sample",
-                "Sample Dish from " + restaurant.getName(),
-                5.99,
-                1,
-                restaurant.getId(),
-                restaurant.getName()
-        );
-
-        Executors.newSingleThreadExecutor().execute(() -> {
-            AppDatabase.getInstance(this).cartDao().insert(item);
-            runOnUiThread(() -> Toast.makeText(this, "Added to cart!", Toast.LENGTH_SHORT).show());
-        });
+        Intent intent = new Intent(this, MenuActivity.class);
+        intent.putExtra("restaurantId", restaurant.getId());
+        intent.putExtra("restaurantName", restaurant.getName());
+        intent.putExtra("restaurantImage", restaurant.getImageUrl());
+        intent.putExtra("restaurantCuisine", restaurant.getFormattedCuisine());
+        intent.putExtra("restaurantRating", restaurant.getRating());
+        intent.putExtra("deliveryTime", restaurant.getEstimatedDeliveryTime());
+        if (restaurant.getCoordinates() != null) {
+            intent.putExtra("restaurantLat", restaurant.getCoordinates().getLat());
+            intent.putExtra("restaurantLng", restaurant.getCoordinates().getLng());
+        }
+        intent.putExtra("currency", currentCurrency);
+        startActivity(intent);
     }
 
     private void observeCart() {

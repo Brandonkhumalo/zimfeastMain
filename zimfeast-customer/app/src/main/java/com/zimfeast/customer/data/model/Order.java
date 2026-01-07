@@ -10,8 +10,14 @@ public class Order {
     @SerializedName("restaurantId")
     private String restaurantId;
 
+    @SerializedName("restaurant_names")
+    private String restaurantName;
+
     @SerializedName("items")
     private List<OrderItem> items;
+
+    @SerializedName("each_item_price")
+    private List<OrderItem> eachItemPrice;
 
     @SerializedName("subtotal")
     private double subtotal;
@@ -46,7 +52,13 @@ public class Order {
     public String getRestaurantId() { return restaurantId; }
     public void setRestaurantId(String restaurantId) { this.restaurantId = restaurantId; }
 
-    public List<OrderItem> getItems() { return items; }
+    public String getRestaurantName() { return restaurantName; }
+    public void setRestaurantName(String restaurantName) { this.restaurantName = restaurantName; }
+
+    public List<OrderItem> getItems() {
+        if (items != null && !items.isEmpty()) return items;
+        return eachItemPrice;
+    }
     public void setItems(List<OrderItem> items) { this.items = items; }
 
     public double getSubtotal() { return subtotal; }

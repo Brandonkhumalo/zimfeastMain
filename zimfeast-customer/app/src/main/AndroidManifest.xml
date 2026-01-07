@@ -64,7 +64,16 @@
             android:exported="false"
             android:theme="@style/Theme.ZimFeast.NoActionBar" />
 
-        <!-- Put your actual Google Maps API key here -->
+        <activity
+            android:name=".ui.menu.MenuActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ZimFeast.NoActionBar" />
+
+        <activity
+            android:name=".ui.history.OrderHistoryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ZimFeast.NoActionBar" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyB6rSsWSWLJhcA2pzFtt-Y1I2wx6UAdyD4" />
