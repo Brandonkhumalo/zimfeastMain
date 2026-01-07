@@ -13,7 +13,7 @@ export default function MenuUpload() {
     const formData = new FormData();
     formData.append("menu", file);
 
-    await fetch("http://127.0.0.1:8000/api/upload-menu/", {
+    await fetch("/api/upload-menu/", {
       method: "POST",
       body: formData,
     });

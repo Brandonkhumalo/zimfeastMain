@@ -49,7 +49,7 @@ const fetchOrdersPage = async (url: string): Promise<OrdersPage> => {
 };
 
 const fetchMenuItems = async (restaurantId: number) => {
-  const res = await fetch(`http://127.0.0.1:8000/api/restaurants/${restaurantId}/menu-items/`, { headers: getAuthHeaders() });
+  const res = await fetch(`/api/restaurants/${restaurantId}/menu-items/`, { headers: getAuthHeaders() });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || "Failed to fetch menu items");
@@ -59,7 +59,7 @@ const fetchMenuItems = async (restaurantId: number) => {
 
 // Calls backend endpoints to update order. statusArg must be "preparing" or "completed".
 const updateOrderStatusRest = async (orderId: string, statusArg: "preparing" | "completed") => {
-  const url = `http://127.0.0.1:8000/api/orders/${orderId}/${statusArg}/`;
+  const url = `/api/orders/${orderId}/${statusArg}/`;
   const res = await fetch(url, {
     method: "POST",
     headers: getAuthHeaders(),
@@ -127,7 +127,7 @@ export default function RestaurantDashboard() {
     const loadDashboardData = async () => {
       try {
         // initial orders page (use a dedicated endpoint)
-        const ordersResponse = await fetchOrdersPage("http://127.0.0.1:8000/api/orders/list/");
+        const ordersResponse = await fetchOrdersPage("/api/orders/list/");
         setOrdersData(ordersResponse);
 
         // derive stats from loaded orders (fallback / initial)

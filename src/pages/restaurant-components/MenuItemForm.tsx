@@ -61,7 +61,7 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          "http://127.0.0.1:8000/api/restaurants/get/category/types/",
+          "/api/restaurants/get/category/types/",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -108,7 +108,7 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
       formData.append("item_image", data.image[0]); // Add the image file
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/restaurants/add/menu-items/",
+        "/api/restaurants/add/menu-items/",
         {
           method: "POST",
           headers: {

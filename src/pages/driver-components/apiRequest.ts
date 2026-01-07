@@ -4,7 +4,7 @@ export async function apiRequest<T>(
   body?: any
 ): Promise<T> {
   const token = localStorage.getItem("token");
-  const res = await fetch(`http://127.0.0.1:8000${url}`, {
+  const res = await fetch(url, {
     method,
     headers: {
       "Content-Type": "application/json",

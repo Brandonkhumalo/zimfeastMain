@@ -20,7 +20,7 @@ export default function MenuManagement({ handleAddItem, isAddDialogOpen, setIsAd
   const fetchMenuItems = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:8000/api/restaurants/menu/", {
+      const res = await fetch("/api/restaurants/menu/", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -54,7 +54,7 @@ export default function MenuManagement({ handleAddItem, isAddDialogOpen, setIsAd
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://127.0.0.1:8000/api/restaurants/menu/${item.id}/delete/`, {
+      const res = await fetch(`/api/restaurants/menu/${item.id}/delete/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

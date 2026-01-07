@@ -34,7 +34,7 @@ export default function DriverForm() {
       return;
     }
 
-    fetch("http://127.0.0.1:8000/api/accounts/profile/", {
+    fetch("/api/accounts/profile/", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -65,7 +65,7 @@ export default function DriverForm() {
     if (vehiclePhoto) formData.append("vehicle_photo", vehiclePhoto);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/drivers/profile/create/", {
+      const res = await fetch("/api/drivers/profile/create/", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

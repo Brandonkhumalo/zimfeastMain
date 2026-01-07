@@ -60,7 +60,7 @@ export default function ExternalAPIDialog({
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://127.0.0.1:8000/api/restaurants/${restaurantId}/external-apis/`,
+        `/api/restaurants/${restaurantId}/external-apis/`,
         {
           method: "POST",
           headers: {

@@ -40,7 +40,7 @@ export function useAuth() {
 
   const { data, isLoading, error, refetch } = useQuery<User>({
     queryKey: ["/api/accounts/profile/"],
-    queryFn: () => apiRequest<User>("http://127.0.0.1:8000/api/accounts/profile/"),
+    queryFn: () => apiRequest<User>("/api/accounts/profile/"),
     enabled: !!token, // only fetch if token exists
     retry: false,
     refetchOnWindowFocus: false,

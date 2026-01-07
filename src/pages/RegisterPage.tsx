@@ -35,7 +35,7 @@ export default function RegisterPage() {
 
   const registerMutation = useMutation({
     mutationFn: async (): Promise<RegisterResponse> => {
-      const res = await fetch("http://127.0.0.1:8000/api/accounts/register/", {
+      const res = await fetch("/api/accounts/register/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
