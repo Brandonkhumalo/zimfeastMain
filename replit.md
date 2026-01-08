@@ -1,5 +1,8 @@
 # ZimFeast - Food Delivery Platform
 
+> **Full Documentation**: See [DOCUMENTATION.md](./DOCUMENTATION.md) for complete technical documentation.
+> **Local Setup**: See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for running locally on your machine.
+
 ## Overview
 ZimFeast is a comprehensive food delivery platform designed for the Zimbabwean market. It connects customers, restaurants, and drivers through a full-stack application. The platform aims to provide a seamless ordering, delivery, and management experience, incorporating real-time tracking and multi-role functionalities. Its core purpose is to facilitate food delivery services efficiently across Zimbabwe.
 
