@@ -35,6 +35,11 @@ public class CartItem {
     public String getId() { return id; }
     public void setId(@NonNull String id) { this.id = id; }
 
+    // Alias methods for compatibility
+    @NonNull
+    public String getItemId() { return id; }
+    public void setItemId(@NonNull String itemId) { this.id = itemId; }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
