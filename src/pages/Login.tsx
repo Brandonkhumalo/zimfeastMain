@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { apiRequest, User } from "@/hooks/useAuth";
-import { Link } from "wouter";
-
-interface LoginResponse {
-  accessToken: string;
-}
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -19,38 +11,37 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const loginMutation = useMutation({
-    mutationFn: async (): Promise<LoginResponse> => {
+    mutationFn: async (): Promise<{ accessToken: string }> => {
       const res = await fetch("/api/accounts/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+
       if (!res.ok) {
         const text = (await res.text()) || res.statusText;
         throw new Error(text);
       }
+
       return res.json();
     },
+
     onSuccess: async (data) => {
-      // 1️⃣ Save token
       localStorage.setItem("token", data.accessToken);
 
       try {
-        // 2️⃣ Fetch the real profile with the new token
         const profile = await apiRequest<User>("/api/accounts/profile/");
-
-        // 3️⃣ Populate React Query immediately
         queryClient.setQueryData<User>(["/api/accounts/profile/"], profile);
-
-        // 4️⃣ Redirect to home
         setLocation("/home");
       } catch (err: any) {
-        // If profile fetch fails, clear token and show error
         localStorage.removeItem("token");
-        alert("Failed to fetch user profile: " + err.message);
+        alert("Failed to fetch user profile");
       }
     },
-    onError: (err: any) => alert(err.message || "Login failed"),
+
+    onError: (err: any) => {
+      alert(err.message || "Login failed");
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -59,41 +50,57 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold text-gray-800">Login</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-            />
-            <Input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-            />
-            <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-              {loginMutation.isPending ? "Logging in..." : "Login"}
-            </Button>
-            <div className="text-center mt-4">
-              <span className="text-sm text-gray-600">
-                  Don't have an account?{" "}
-              </span>
-              <Link href="/register" className="text-sm text-blue-600 hover:underline">
-                  Register
-              </Link>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0a0a]">
+      <div className="w-full max-w-md glass-dark p-10 rounded-[32px] shadow-2xl">
+        <h1 className="text-3xl font-black text-center text-gradient">
+          Welcome Back
+        </h1>
+
+        <p className="text-center text-zinc-500 dark:text-white/40 mt-2">
+          Enter your credentials to continue
+        </p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-6">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+          />
+
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+          />
+
+          <button
+            type="submit"
+            disabled={loginMutation.isPending}
+            className="orange-gradient py-4 rounded-2xl font-black text-white shadow-xl"
+          >
+            {loginMutation.isPending ? "Logging in..." : "Login"}
+          </button>
+        </form>
+
+        {/* ✅ THIS NOW WORKS */}
+        <div className="text-center mt-6">
+          <span className="text-sm text-zinc-600 dark:text-white/40">
+            Don’t have an account?{" "}
+          </span>
+          <button
+            onClick={() => setLocation("/register")}
+            className="text-sm font-bold text-blue-600 dark:text-orange-400 hover:underline"
+          >
+            Register
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,7 @@
+{
+  "name": "ZIMFEAST",
+  "description": "A premium, ultra-modern food delivery experience with AI-powered meal recommendations and an immersive visual interface.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

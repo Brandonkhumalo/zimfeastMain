@@ -1,15 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { useLocation, Link } from "wouter";
 import {
   Select,
   SelectTrigger,
@@ -31,7 +22,9 @@ export default function RegisterPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [role, setRole] = useState<"customer" | "restaurant" | "driver">("customer");
+  const [role, setRole] = useState<"customer" | "restaurant" | "driver">(
+    "customer"
+  );
 
   const registerMutation = useMutation({
     mutationFn: async (): Promise<RegisterResponse> => {
@@ -55,21 +48,22 @@ export default function RegisterPage() {
 
       return res.json();
     },
+
     onSuccess: async (data) => {
-      // 1. Save token
       localStorage.setItem("token", data.accessToken);
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/accounts/profile/"],
+      });
 
-      // 2. Refetch the user profile immediately
-      await queryClient.invalidateQueries({ queryKey: ["/api/accounts/profile/"] });
-
-      // 3. Redirect based on role
       if (role === "restaurant" || role === "driver") {
         setLocation("/business-hub");
       } else {
         setLocation("/home");
       }
     },
-    onError: (err: any) => alert(err.message || "Registration failed"),
+
+    onError: (err: any) =>
+      alert(err.message || "Registration failed"),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,115 +72,109 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold text-gray-800">
-            Register
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                First Name
-              </label>
-              <Input
-                type="text"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="John"
-              />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0a0a] relative">
+      {/* Optional background mesh */}
+      <div className="hero-mesh absolute inset-0 pointer-events-none" />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Last Name
-              </label>
-              <Input
-                type="text"
-                required
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Doe"
-              />
-            </div>
+      <div className="relative z-10 w-full max-w-md">
+        <div className="glass-dark p-10 rounded-[32px] shadow-2xl">
+          <h1 className="text-3xl font-black text-center text-gradient">
+            Create Account
+          </h1>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <Input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-              />
-            </div>
+          <p className="text-center text-zinc-500 dark:text-white/40 mt-2">
+            Join the platform in seconds
+          </p>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <Input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-              />
-            </div>
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4 mt-6"
+          >
+            <input
+              type="text"
+              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <Input
-                type="tel"
-                required
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+263 77 123 4567"
-              />
-            </div>
+            <input
+              type="text"
+              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
-              <Select value={role} onValueChange={(val) => setRole(val as any)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer">Customer</SelectItem>
-                  <SelectItem value="restaurant">Restaurant</SelectItem>
-                  <SelectItem value="driver">Driver</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+            />
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={registerMutation.isPending}
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+            />
+
+            <input
+              type="tel"
+              required
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+263 77 123 4567"
+              className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+            />
+
+            <Select
+              value={role}
+              onValueChange={(val) =>
+                setRole(val as "customer" | "restaurant" | "driver")
+              }
             >
-              {registerMutation.isPending ? "Registering..." : "Register"}
-            </Button>
+              <SelectTrigger className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="customer">Customer</SelectItem>
+                <SelectItem value="restaurant">Restaurant</SelectItem>
+                <SelectItem value="driver">Driver</SelectItem>
+              </SelectContent>
+            </Select>
 
-            <div className="text-center mt-4">
-              <span className="text-sm text-gray-600">
-                Already have an account?{" "}
-              </span>
-              <Link href="/login" className="text-sm text-blue-600 hover:underline">
-                Login
-              </Link>
-            </div>
+            <button
+              type="submit"
+              disabled={registerMutation.isPending}
+              className="orange-gradient py-4 rounded-2xl font-black text-white shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              {registerMutation.isPending
+                ? "Creating account..."
+                : "Register"}
+            </button>
           </form>
-        </CardContent>
-      </Card>
+
+          <div className="text-center mt-6">
+            <span className="text-sm text-zinc-600 dark:text-white/40">
+              Already have an account?{" "}
+            </span>
+            <Link
+              href="/login"
+              className="text-sm font-bold text-blue-600 dark:text-orange-400 hover:underline"
+            >
+              Login
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
