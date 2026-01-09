@@ -53,6 +53,8 @@ MIDDLEWARE = [
 
 GOOGLE_MAPS_API_KEY = config("GOOGLE_API_KEY")
 
+OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
+
 SENDGRID_API_KEY = config("SENDGRID_API_KEY")
 
 PAYNOW_SANDBOX_URL = config("PAYNOW_SANDBOX_URL")  # change to live URL in production

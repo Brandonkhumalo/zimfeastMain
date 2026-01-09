@@ -17,12 +17,13 @@ logger = logging.getLogger(__name__)
 OPENAI_MODEL = "gpt-5"
 
 def get_openai_client():
-    """Get OpenAI client with API key from environment."""
+    """Get OpenAI client with API key from Django settings or environment."""
     try:
         from openai import OpenAI
-        api_key = os.environ.get("OPENAI_API_KEY")
+        from django.conf import settings
+        api_key = getattr(settings, 'OPENAI_API_KEY', None) or os.environ.get("OPENAI_API_KEY")
         if not api_key:
-            logger.warning("OPENAI_API_KEY not found in environment")
+            logger.warning("OPENAI_API_KEY not found in settings or environment")
             return None
         return OpenAI(api_key=api_key)
     except ImportError:
