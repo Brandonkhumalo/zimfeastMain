@@ -15,15 +15,12 @@ def create_order(request):
 
         # Calculate delivery fee only if method is delivery
         if order.method == "delivery" and order.delivery_lat and order.delivery_lng:
-            '''
-            # Example: compute distance-based fee
-            distance = calculate_distance_kms(
-                (order.restaurant_lat, order.restaurant_lng),
-                (order.delivery_lat, order.delivery_lng)
+            # Calculate distance-based fee at $0.35/km
+            from .utils import calculate_delivery_fee
+            order.delivery_fee = calculate_delivery_fee(
+                order.restaurant_lat, order.restaurant_lng,
+                order.delivery_lat, order.delivery_lng
             )
-            order.delivery_fee = round(distance * 0.35, 2)
-            '''
-            order.delivery_fee = 5  # placeholder fee
         else:
             order.delivery_fee = 0
 

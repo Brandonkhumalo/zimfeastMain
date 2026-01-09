@@ -1,5 +1,9 @@
 const axios = require('axios');
 
+// Delivery rate: $0.35 per km
+const DELIVERY_RATE_PER_KM = 0.35;
+const MIN_DELIVERY_FEE = 1.50;
+
 class OrderService {
   constructor(redisClient, driverService) {
     this.redis = redisClient;
@@ -7,6 +11,119 @@ class OrderService {
     this.activeOrders = new Map();
     this.orderRejections = new Map();
     this.pendingOffers = new Map();
+  }
+
+  static optimizePickupOrder(restaurants, driverLat, driverLng, deliveryLat, deliveryLng) {
+    if (!restaurants || restaurants.length <= 1) {
+      return restaurants;
+    }
+
+    const calculateDistance = (lat1, lng1, lat2, lng2) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    // Find restaurant closest to delivery (pickup last)
+    const withDeliveryDist = restaurants.map(r => ({
+      ...r,
+      _deliveryDist: calculateDistance(r.lat, r.lng, deliveryLat, deliveryLng)
+    }));
+    withDeliveryDist.sort((a, b) => a._deliveryDist - b._deliveryDist);
+    
+    const lastRestaurant = withDeliveryDist[0];
+    const remaining = withDeliveryDist.slice(1);
+
+    if (remaining.length === 0) {
+      delete lastRestaurant._deliveryDist;
+      return [lastRestaurant];
+    }
+
+    // Find restaurant closest to driver (pickup first)
+    remaining.forEach(r => {
+      r._driverDist = calculateDistance(driverLat, driverLng, r.lat, r.lng);
+    });
+    remaining.sort((a, b) => a._driverDist - b._driverDist);
+    
+    const firstRestaurant = remaining[0];
+    const middle = remaining.slice(1);
+
+    // Nearest-neighbor for middle restaurants
+    const ordered = [firstRestaurant];
+    let current = firstRestaurant;
+    
+    while (middle.length > 0) {
+      middle.forEach(r => {
+        r._currentDist = calculateDistance(current.lat, current.lng, r.lat, r.lng);
+      });
+      middle.sort((a, b) => a._currentDist - b._currentDist);
+      const next = middle.shift();
+      ordered.push(next);
+      current = next;
+    }
+
+    ordered.push(lastRestaurant);
+
+    // Clean up temp properties
+    ordered.forEach(r => {
+      delete r._deliveryDist;
+      delete r._driverDist;
+      delete r._currentDist;
+    });
+
+    return ordered;
+  }
+
+  static calculateMultiRestaurantFee(restaurants, deliveryLat, deliveryLng) {
+    const calculateDistance = (lat1, lng1, lat2, lng2) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    if (!restaurants || restaurants.length === 0) {
+      return { totalFee: 0, totalDistance: 0 };
+    }
+
+    if (restaurants.length === 1) {
+      const distance = calculateDistance(
+        restaurants[0].lat, restaurants[0].lng,
+        deliveryLat, deliveryLng
+      );
+      return {
+        totalFee: Math.max(MIN_DELIVERY_FEE, distance * DELIVERY_RATE_PER_KM),
+        totalDistance: distance
+      };
+    }
+
+    let totalDistance = 0;
+    for (let i = 0; i < restaurants.length - 1; i++) {
+      totalDistance += calculateDistance(
+        restaurants[i].lat, restaurants[i].lng,
+        restaurants[i + 1].lat, restaurants[i + 1].lng
+      );
+    }
+
+    const lastRestaurant = restaurants[restaurants.length - 1];
+    totalDistance += calculateDistance(
+      lastRestaurant.lat, lastRestaurant.lng,
+      deliveryLat, deliveryLng
+    );
+
+    return {
+      totalFee: Math.max(MIN_DELIVERY_FEE, totalDistance * DELIVERY_RATE_PER_KM),
+      totalDistance
+    };
   }
 
   static async handleNewDeliveryOrder(io, redisClient, orderData) {
@@ -105,8 +222,8 @@ class OrderService {
     );
     const totalDistance = driverToRestaurant + restaurantToCustomer;
     
-    // Calculate delivery price: $0.45 per km
-    const deliveryPrice = order.deliveryPrice || (totalDistance * 0.45);
+    // Calculate delivery price: $0.35 per km
+    const deliveryPrice = order.deliveryPrice || (totalDistance * 0.35);
     
     const offerData = {
       orderId: order.id,

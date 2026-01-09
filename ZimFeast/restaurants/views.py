@@ -377,23 +377,22 @@ def mark_order_preparing(request, order_id):
     
     # For delivery orders, start looking for a driver
     if order.method == "delivery":
-        # Calculate distance and delivery price ($0.45/km)
+        # Calculate distance and delivery price ($0.35/km) using shared utility
+        from orders.utils import calculate_delivery_fee, DELIVERY_RATE_PER_KM, MIN_DELIVERY_FEE
+        
         delivery_distance_km = 0
         if order.restaurant_lat and order.restaurant_lng and order.delivery_lat and order.delivery_lng:
-            from math import radians, sin, cos, sqrt, atan2
-            
-            R = 6371  # Earth's radius in km
-            lat1, lng1 = radians(order.restaurant_lat), radians(order.restaurant_lng)
-            lat2, lng2 = radians(order.delivery_lat), radians(order.delivery_lng)
-            
-            dlat = lat2 - lat1
-            dlng = lng2 - lng1
-            
-            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
-            c = 2 * atan2(sqrt(a), sqrt(1-a))
-            delivery_distance_km = R * c
+            from orders.utils import haversine_distance
+            delivery_distance_km = haversine_distance(
+                order.restaurant_lat, order.restaurant_lng,
+                order.delivery_lat, order.delivery_lng
+            )
         
-        delivery_price = round(delivery_distance_km * 0.45, 2)  # $0.45 per km
+        # Use shared utility for consistent minimum fee handling
+        delivery_price = calculate_delivery_fee(
+            order.restaurant_lat, order.restaurant_lng,
+            order.delivery_lat, order.delivery_lng
+        )
         
         # Update order with calculated delivery fee
         order.delivery_fee = delivery_price

@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Restaurant } from "@/pages/customer-components/types";
-import { calculateDeliveryFeeFromCoordinates, DEFAULT_DELIVERY_FEE } from "@shared/deliveryUtils";
+import { DELIVERY_RATE_PER_KM } from "@shared/deliveryUtils";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -14,20 +14,9 @@ interface RestaurantCardProps {
 export default function RestaurantCard({ restaurant, currency, onViewMenu, userLocation }: RestaurantCardProps) {
   const getCurrencySymbol = (curr: string) => curr === 'USD' ? '$' : 'Z$';
   
-  // Calculate delivery fee based on distance
-  const getDeliveryFee = (): string => {
-    if (!userLocation || !restaurant.lat || !restaurant.lng) {
-      return DEFAULT_DELIVERY_FEE.toFixed(2); // Default delivery fee when location not available
-    }
-    
-    const fee = calculateDeliveryFeeFromCoordinates(
-      userLocation.lat,
-      userLocation.lng,
-      restaurant.lat,
-      restaurant.lng
-    );
-    
-    return fee.toFixed(2);
+  // Show delivery rate per km instead of calculated fee
+  const getDeliveryRateDisplay = (): string => {
+    return `${getCurrencySymbol(currency)}${DELIVERY_RATE_PER_KM.toFixed(2)}/km`;
   };
 
   return (
@@ -63,7 +52,7 @@ export default function RestaurantCard({ restaurant, currency, onViewMenu, userL
             {restaurant.est_delivery_time || '30-40 mins'}
           </span>
           <span className="text-sm font-medium" data-testid={`text-delivery-fee-${restaurant.id}`}>
-            {getCurrencySymbol(currency)}{getDeliveryFee()} delivery
+            Delivery {getDeliveryRateDisplay()}
           </span>
         </div>
         <Button 

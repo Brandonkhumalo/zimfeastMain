@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { MobilePaymentFields } from "./MobilePaymentFields";
+import { DELIVERY_RATE_PER_KM } from "@shared/deliveryUtils";
 
 interface OrderItem {
   name: string;
@@ -32,6 +33,7 @@ interface Order {
   restaurant_names: string[];
   delivery_fee: number;
   status: string;
+  currency?: string;
 }
 
 interface CheckoutFormProps {
@@ -263,7 +265,10 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
             </ul>
           )}
           <p className="mt-2 text-sm text-muted-foreground">Subtotal: ${itemsSubtotal.toFixed(2)}</p>
-          <p className="text-sm text-muted-foreground">Delivery Fee: ${deliveryFee.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">
+            Delivery Fee: ${deliveryFee.toFixed(2)} 
+            <span className="text-xs text-gray-400 ml-1">(${DELIVERY_RATE_PER_KM.toFixed(2)}/km)</span>
+          </p>
           {tip > 0 && <p className="text-sm text-muted-foreground">Tip: ${tip.toFixed(2)}</p>}
           <p className="mt-1 font-semibold text-lg">Total: ${totalAmount.toFixed(2)}</p>
         </div>

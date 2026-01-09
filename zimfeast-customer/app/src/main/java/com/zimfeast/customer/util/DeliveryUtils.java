@@ -1,11 +1,11 @@
 package com.zimfeast.customer.util;
 
 public class DeliveryUtils {
-    public static final double DEFAULT_DELIVERY_FEE = 2.5;
+    public static final double DEFAULT_DELIVERY_FEE = 3.0;
     public static final double BASE_FEE = 1.5;
-    public static final double PER_KM_RATE = 0.5;
+    public static final double PER_KM_RATE = 0.35;  // $0.35 per km
     public static final double MIN_FEE = 1.5;
-    public static final double MAX_FEE = 10.0;
+    public static final double MAX_FEE = 50.0;
 
     public static double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
         final double EARTH_RADIUS_KM = 6371.0;
@@ -46,5 +46,55 @@ public class DeliveryUtils {
             return clean;
         }
         return "+263" + clean;
+    }
+
+    public static String getDeliveryRateDisplay(String currency) {
+        String symbol = "USD".equals(currency) ? "$" : "Z$";
+        return symbol + String.format("%.2f", PER_KM_RATE) + "/km";
+    }
+
+    public static class MultiRestaurantResult {
+        public double totalFee;
+        public double totalDistance;
+        
+        public MultiRestaurantResult(double totalFee, double totalDistance) {
+            this.totalFee = totalFee;
+            this.totalDistance = totalDistance;
+        }
+    }
+
+    public static MultiRestaurantResult calculateMultiRestaurantDeliveryFee(
+            double[][] restaurantCoords,
+            double deliveryLat, double deliveryLng) {
+        if (restaurantCoords == null || restaurantCoords.length == 0) {
+            return new MultiRestaurantResult(0, 0);
+        }
+        
+        if (restaurantCoords.length == 1) {
+            double distance = calculateDistance(
+                restaurantCoords[0][0], restaurantCoords[0][1],
+                deliveryLat, deliveryLng
+            );
+            double fee = Math.max(MIN_FEE, distance * PER_KM_RATE);
+            return new MultiRestaurantResult(fee, distance);
+        }
+        
+        double totalDistance = 0;
+        
+        for (int i = 0; i < restaurantCoords.length - 1; i++) {
+            totalDistance += calculateDistance(
+                restaurantCoords[i][0], restaurantCoords[i][1],
+                restaurantCoords[i + 1][0], restaurantCoords[i + 1][1]
+            );
+        }
+        
+        double[] lastRestaurant = restaurantCoords[restaurantCoords.length - 1];
+        totalDistance += calculateDistance(
+            lastRestaurant[0], lastRestaurant[1],
+            deliveryLat, deliveryLng
+        );
+        
+        double fee = Math.max(MIN_FEE, totalDistance * PER_KM_RATE);
+        return new MultiRestaurantResult(fee, totalDistance);
     }
 }
