@@ -139,14 +139,18 @@ public class MenuActivity extends AppCompatActivity implements MenuAdapter.OnMen
     }
 
     private void observeCart() {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            AppDatabase db = AppDatabase.getInstance(this);
-            List<CartItem> items = db.cartDao().getAllItems();
+        AppDatabase db = AppDatabase.getInstance(this);
+
+        db.cartDao().getAllItems().observe(this, items -> {
             cartItemCount = 0;
-            for (CartItem item : items) {
-                cartItemCount += item.getQuantity();
+
+            if (items != null) {
+                for (CartItem item : items) {
+                    cartItemCount += item.getQuantity();
+                }
             }
-            runOnUiThread(() -> updateCartButton());
+
+            updateCartButton();
         });
     }
 
