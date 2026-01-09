@@ -9,6 +9,10 @@ urlpatterns = [
     path('nearby/', views.list_nearby_restaurants, name='nearby_restaurants'),
     path('get/all/', views.list_restaurants),
     
+    # Search and AI recommendations (PUT BEFORE DYNAMIC PATHS)
+    path('search/', views.search, name='search'),
+    path('ai/recommendations/', views.ai_recommendations, name='ai_recommendations'),
+    
     # Menu items (PUT BEFORE DYNAMIC RESTAURANT_ID)
     path('add/menu-items/', views.add_menu_item, name='add_menu_item'),
     path("menu/<str:menu_id>/delete/", views.delete_menu_item, name="delete_menu_item"),

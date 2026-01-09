@@ -489,3 +489,64 @@ def list_restaurants(request):
     restaurants = Restaurant.objects.all()
     serializer = RestaurantSerializer(restaurants, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def search(request):
+    """
+    Unified search API for restaurants, cuisines, and menu items.
+    Query params: q (search query), lat, lng (optional user location)
+    """
+    from .ai_service import search_restaurants_and_items
+    
+    query = request.GET.get('q', '').strip()
+    user_lat = request.GET.get('lat')
+    user_lng = request.GET.get('lng')
+    
+    if user_lat:
+        try:
+            user_lat = float(user_lat)
+        except ValueError:
+            user_lat = None
+    if user_lng:
+        try:
+            user_lng = float(user_lng)
+        except ValueError:
+            user_lng = None
+    
+    results = search_restaurants_and_items(query, user_lat, user_lng)
+    return Response(results, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ai_recommendations(request):
+    """
+    Chef Zim AI recommendation endpoint.
+    Expects JSON body with: mood, craving, day_type, weather, party_size
+    Returns personalized food recommendations based on all available menus.
+    """
+    from .ai_service import get_all_menu_items, generate_ai_recommendations
+    
+    mood = request.data.get('mood', '')
+    craving = request.data.get('craving', '')
+    day_type = request.data.get('day_type', '')
+    weather = request.data.get('weather', '')
+    party_size = request.data.get('party_size', '')
+    
+    user_lat = request.data.get('lat')
+    user_lng = request.data.get('lng')
+    
+    menu_items = get_all_menu_items(user_lat, user_lng)
+    
+    recommendations = generate_ai_recommendations(
+        mood=mood,
+        craving=craving,
+        day_type=day_type,
+        weather=weather,
+        party_size=party_size,
+        menu_items=menu_items
+    )
+    
+    return Response(recommendations, status=status.HTTP_200_OK)

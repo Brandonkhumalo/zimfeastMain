@@ -12,6 +12,9 @@ import CartComponent from "./customer-components/CartComponent";
 import TopRestaurant from "./customer-components/TopRestaurants";
 import AllRestaurants from "./customer-components/AllRestaurants";
 import MenuDialog from "@/components/MenuDialog";
+import ChefZimCard from "./customer-components/ChefZimCard";
+import ChefZimDialog from "./customer-components/ChefZimDialog";
+import ChefZimResults from "./customer-components/ChefZimResults";
 import { Restaurant, CartItem } from "./customer-components/types";
 
 interface OrderData {
@@ -60,6 +63,15 @@ export default function CustomerApp() {
   // Pagination states
   const [gridPage, setGridPage] = useState(0);
   const [topPage, setTopPage] = useState(0);
+  
+  // Chef Zim AI states
+  const [isChefZimOpen, setIsChefZimOpen] = useState(false);
+  const [isChefZimResultsOpen, setIsChefZimResultsOpen] = useState(false);
+  const [aiRecommendations, setAiRecommendations] = useState<{
+    greeting: string;
+    recommendations: any[];
+    closing: string;
+  }>({ greeting: "", recommendations: [], closing: "" });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -227,6 +239,42 @@ export default function CustomerApp() {
     setIsMenuDialogOpen(true);
   };
 
+  const handleSelectRestaurantFromSearch = async (restaurantId: string) => {
+    const restaurant = [...restaurantsData, ...allRestaurantsData].find(
+      (r) => r.id === restaurantId
+    );
+    if (restaurant) {
+      setSelectedRestaurant(restaurant);
+      setIsMenuDialogOpen(true);
+    } else {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/restaurants/${restaurantId}/detail/`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        if (res.ok) {
+          const restaurantData = await res.json();
+          setSelectedRestaurant(restaurantData);
+          setIsMenuDialogOpen(true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch restaurant:", error);
+      }
+    }
+  };
+
+  const handleAiRecommendations = (data: any) => {
+    setAiRecommendations({
+      greeting: data.greeting || "",
+      recommendations: data.recommendations || [],
+      closing: data.closing || "",
+    });
+    setIsChefZimResultsOpen(true);
+  };
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   // Pagination slices
@@ -248,7 +296,12 @@ export default function CustomerApp() {
         showNearbyOnly={showNearbyOnly}
         isGettingLocation={isGettingLocation}
         userLocation={userLocation}
+        onSelectRestaurant={handleSelectRestaurantFromSearch}
+        onSelectCuisine={setSelectedCuisine}
       />
+      
+      <ChefZimCard onOpenDialog={() => setIsChefZimOpen(true)} />
+      
       <QuickFilters selectedCuisine={selectedCuisine} setSelectedCuisine={setSelectedCuisine} />
 
       {/* Restaurants Grid */}
@@ -324,6 +377,21 @@ export default function CustomerApp() {
           </span>
         )}
       </Button>
+
+      <ChefZimDialog
+        isOpen={isChefZimOpen}
+        onClose={() => setIsChefZimOpen(false)}
+        onRecommendationsReceived={handleAiRecommendations}
+      />
+
+      <ChefZimResults
+        isOpen={isChefZimResultsOpen}
+        onClose={() => setIsChefZimResultsOpen(false)}
+        greeting={aiRecommendations.greeting}
+        recommendations={aiRecommendations.recommendations}
+        closing={aiRecommendations.closing}
+        onViewRestaurant={handleSelectRestaurantFromSearch}
+      />
     </div>
   );
 }
