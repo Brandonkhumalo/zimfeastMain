@@ -34,6 +34,7 @@ urlpatterns = [
     # Categories and menu data
     path('<str:restaurant_id>/categories/', views.get_categories, name='get_categories'),
     path('<str:restaurant_id>/menu/', views.get_menu_data, name='get_menu_data'),
+    path('<str:restaurant_id>/menu-data/', views.get_menu_data, name='get_menu_data_alias'),
 
     # Order status updates
     path('orders/<str:order_id>/preparing/', views.mark_order_preparing, name='mark_order_preparing'),

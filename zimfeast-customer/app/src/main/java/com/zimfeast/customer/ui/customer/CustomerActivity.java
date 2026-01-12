@@ -22,7 +22,7 @@ import com.google.android.gms.location.LocationServices;
 import com.zimfeast.customer.R;
 import com.zimfeast.customer.data.api.ApiClient;
 import com.zimfeast.customer.data.local.AppDatabase;
-import com.zimfeast.customer.data.model.CartItem;
+import com.zimfeast.customer.data.model.RestaurantResponse;
 import com.zimfeast.customer.data.model.Restaurant;
 import com.zimfeast.customer.databinding.ActivityCustomerBinding;
 import com.zimfeast.customer.ui.auth.LoginActivity;
@@ -148,18 +148,18 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
     private void loadRestaurants() {
         binding.swipeRefresh.setRefreshing(true);
 
-        ApiClient.getInstance().getApiService().getRestaurants().enqueue(new Callback<List<Restaurant>>() {
+        ApiClient.getInstance().getApiService().getNearbyRestaurants(null, null, 100).enqueue(new Callback<RestaurantResponse>() {
             @Override
-            public void onResponse(Call<List<Restaurant>> call, Response<List<Restaurant>> response) {
+            public void onResponse(Call<RestaurantResponse> call, Response<RestaurantResponse> response) {
                 binding.swipeRefresh.setRefreshing(false);
 
                 if (response.isSuccessful() && response.body() != null) {
-                    allRestaurants = response.body();
+                    allRestaurants = response.body().getResults();
                     filterRestaurants();
 
                     List<Restaurant> topRated = new ArrayList<>();
                     for (Restaurant r : allRestaurants) {
-                        if (r.getRating() >= 4.5) {
+                        if (r.getRating() >= 4.0) {
                             topRated.add(r);
                         }
                     }
@@ -170,7 +170,7 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
             }
 
             @Override
-            public void onFailure(Call<List<Restaurant>> call, Throwable t) {
+            public void onFailure(Call<RestaurantResponse> call, Throwable t) {
                 binding.swipeRefresh.setRefreshing(false);
                 loadDemoRestaurants();
             }

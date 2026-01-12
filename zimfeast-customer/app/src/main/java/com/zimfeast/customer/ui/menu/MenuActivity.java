@@ -103,7 +103,7 @@ public class MenuActivity extends AppCompatActivity implements MenuAdapter.OnMen
     private void loadMenuItems() {
         setLoading(true);
 
-        ApiClient.getInstance().getApiService().getRestaurantMenu(restaurantId).enqueue(new Callback<List<MenuItem>>() {
+        ApiClient.getInstance().getApiService().getRestaurantMenuData(restaurantId).enqueue(new Callback<List<MenuItem>>() {
             @Override
             public void onResponse(Call<List<MenuItem>> call, Response<List<MenuItem>> response) {
                 setLoading(false);

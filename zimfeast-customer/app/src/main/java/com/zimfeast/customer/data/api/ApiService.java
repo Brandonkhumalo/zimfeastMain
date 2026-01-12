@@ -6,6 +6,7 @@ import com.zimfeast.customer.data.model.Order;
 import com.zimfeast.customer.data.model.PaymentRequest;
 import com.zimfeast.customer.data.model.PaymentResponse;
 import com.zimfeast.customer.data.model.Restaurant;
+import com.zimfeast.customer.data.model.RestaurantResponse;
 import com.zimfeast.customer.data.model.User;
 import com.zimfeast.customer.data.model.VoucherBalance;
 
@@ -30,7 +31,14 @@ public interface ApiService {
     @GET("api/accounts/profile/")
     Call<User> getProfile();
 
-    @GET("api/restaurants/")
+    @GET("api/restaurants/nearby/")
+    Call<RestaurantResponse> getNearbyRestaurants(
+            @Query("lat") Double lat,
+            @Query("lng") Double lng,
+            @Query("page_size") Integer pageSize
+    );
+
+    @GET("api/restaurants/get/all/")
     Call<List<Restaurant>> getRestaurants();
 
     @GET("api/restaurants/")
@@ -41,6 +49,9 @@ public interface ApiService {
 
     @GET("api/restaurants/{id}/menu/")
     Call<List<MenuItem>> getRestaurantMenu(@Path("id") String restaurantId);
+
+    @GET("api/restaurants/{id}/menu-data/")
+    Call<List<MenuItem>> getRestaurantMenuData(@Path("id") String restaurantId);
 
     @POST("api/orders/")
     Call<Order> createOrder(@Body Map<String, Object> orderData);
