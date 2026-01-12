@@ -41,8 +41,8 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.7.5'
     
     // Socket.IO Client
-    implementation ('io.socket:socket.io-client:2.1.0') {
-        exclude group: 'org.json', module: 'json'
+    implementation('io.socket:socket.io-client:2.1.0') {
+        exclude group: 'org.json'
     }
     
     // Location Services
