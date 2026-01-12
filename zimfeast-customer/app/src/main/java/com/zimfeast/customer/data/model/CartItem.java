@@ -15,6 +15,8 @@ public class CartItem {
     private int quantity;
     private String restaurantId;
     private String restaurantName;
+    private Double restaurantLat;
+    private Double restaurantLng;
     private String imageUrl;
 
     public CartItem() {
@@ -54,6 +56,12 @@ public class CartItem {
 
     public String getRestaurantName() { return restaurantName; }
     public void setRestaurantName(String restaurantName) { this.restaurantName = restaurantName; }
+
+    public Double getRestaurantLat(){ return restaurantLat; }
+    public void setRestaurantLat(Double restaurantLat) {this.restaurantLat = restaurantLat;}
+
+    public Double getRestaurantLng(){ return restaurantLng; }
+    public void setRestaurantLng(Double restaurantLng) {this.restaurantLng = restaurantLng;}
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
