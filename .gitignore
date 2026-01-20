@@ -9,20 +9,21 @@ venv/
 ENV/
 .venv
 *.egg-info/
-dist/
-build/
 .pythonlibs/
 
 # Django
 *.log
 db.sqlite3-journal
+db.sqlite3-shm
+db.sqlite3-wal
 staticfiles/
-.env
 *.pot
 *.pyc
 
-# Keep restaurant profile images and menu item images
-# They are in ZimFeast/media/ folder and tracked in git
+# Environment variables (keep secrets out of git)
+.env
+.env.local
+.env.production
 
 # Node
 node_modules/
@@ -31,7 +32,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Build
+# Build outputs
 dist/
 build/
 *.tsbuildinfo
@@ -47,8 +48,20 @@ build/
 .DS_Store
 Thumbs.db
 
-# Replit
-.replit
-.config/
+# Replit specific (remove these lines if not using Replit)
 .cache/
 .upm/
+.local/
+dump.rdb
+
+# Android build outputs
+zimfeast-customer/app/build/
+zimfeast-customer/build/
+zimfeast-customer/.gradle/
+zimfeast-customer/local.properties
+driver-app/app/build/
+driver-app/build/
+driver-app/.gradle/
+driver-app/local.properties
+*.apk
+*.aab
