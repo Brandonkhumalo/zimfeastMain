@@ -88,6 +88,12 @@ public class RegisterActivity extends AppCompatActivity {
                     if (authResponse.getUser() != null) {
                         tokenManager.saveUserRole(authResponse.getUser().getRole());
                         tokenManager.saveUserId(authResponse.getUser().getId());
+                        if (authResponse.getUser().getEmail() != null) {
+                            tokenManager.saveUserEmail(authResponse.getUser().getEmail());
+                        }
+                        if (authResponse.getUser().getFirstName() != null) {
+                            tokenManager.saveUserName(authResponse.getUser().getFirstName());
+                        }
                     }
 
                     Toast.makeText(RegisterActivity.this, "Registration successful!", Toast.LENGTH_SHORT).show();

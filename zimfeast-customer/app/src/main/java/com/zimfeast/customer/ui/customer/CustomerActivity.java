@@ -31,6 +31,7 @@ import com.zimfeast.customer.ui.auth.LoginActivity;
 import com.zimfeast.customer.ui.cart.CartActivity;
 import com.zimfeast.customer.ui.history.OrderHistoryActivity;
 import com.zimfeast.customer.ui.menu.MenuActivity;
+import com.zimfeast.customer.util.TokenManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,6 +105,21 @@ public class CustomerActivity extends AppCompatActivity implements
         drawerToggle.syncState();
 
         binding.navView.setNavigationItemSelectedListener(this);
+        
+        View headerView = binding.navView.getHeaderView(0);
+        android.widget.TextView tvUserName = headerView.findViewById(R.id.tv_user_name);
+        android.widget.TextView tvUserEmail = headerView.findViewById(R.id.tv_user_email);
+        
+        TokenManager tokenManager = ApiClient.getInstance().getTokenManager();
+        String userName = tokenManager.getUserName();
+        String userEmail = tokenManager.getUserEmail();
+        
+        if (userName != null && !userName.isEmpty()) {
+            tvUserName.setText("Welcome, " + userName + "!");
+        }
+        if (userEmail != null && !userEmail.isEmpty()) {
+            tvUserEmail.setText(userEmail);
+        }
     }
 
     private void setupCuisineFilters() {
