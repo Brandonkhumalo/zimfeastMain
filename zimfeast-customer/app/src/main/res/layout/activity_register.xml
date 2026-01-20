@@ -21,9 +21,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="32dp"
-                app:cardBackgroundColor="@color/glass_dark"
+                app:cardBackgroundColor="@color/glass"
                 app:cardElevation="16dp"
-                app:strokeColor="@color/glass_dark_border"
+                app:strokeColor="@color/glass_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -157,7 +157,7 @@
                         android:layout_marginTop="8dp"
                         android:background="@drawable/bg_input_glass"
                         android:padding="12dp"
-                        android:popupBackground="@color/glass_dark" />
+                        android:popupBackground="@color/surface" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_register"

@@ -21,9 +21,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="32dp"
-                app:cardBackgroundColor="@color/glass_dark"
+                app:cardBackgroundColor="@color/glass"
                 app:cardElevation="16dp"
-                app:strokeColor="@color/glass_dark_border"
+                app:strokeColor="@color/glass_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
