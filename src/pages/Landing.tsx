@@ -208,7 +208,9 @@ const App: React.FC = () => {
                       className="bg-transparent border-none outline-none w-full text-lg font-medium text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-white/20"
                     />
                   </div>
-                  <button className="orange-gradient h-14 md:h-16 px-10 rounded-3xl font-black text-sm tracking-wide shadow-xl shadow-orange-600/20 hover:scale-[1.02] active:scale-95 transition-all text-white">
+                  <button 
+                    onClick={() => window.location.href = '/login'}
+                    className="orange-gradient h-14 md:h-16 px-10 rounded-3xl font-black text-sm tracking-wide shadow-xl shadow-orange-600/20 hover:scale-[1.02] active:scale-95 transition-all text-white">
                     SEARCH
                   </button>
                 </div>

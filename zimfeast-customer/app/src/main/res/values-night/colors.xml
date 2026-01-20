@@ -37,6 +37,9 @@
     <color name="glass_dark">#1C1C1E</color>
     <color name="glass_dark_border">#2C2C2E</color>
 
+    <!-- Surface Variant -->
+    <color name="surface_variant">#27272A</color>
+
     <!-- Accent Colors -->
     <color name="rating_star">#FBBF24</color>
     <color name="orange_gradient_start">#F97316</color>
