@@ -195,80 +195,79 @@
 
         </HorizontalScrollView>
 
-        <!-- Curated Spots Section -->
+        <!-- Curated Spots Section - 2x2 Grid -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp">
+            android:paddingHorizontal="16dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="CURATED SPOTS"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Hand-picked by our food experts"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <!-- Row 1 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
+                android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
-                <LinearLayout
+                <include
+                    android:id="@+id/curated_spot_1"
+                    layout="@layout/item_curated_spot_grid"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:layout_marginEnd="8dp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-black"
-                        android:text="CURATED SPOTS"
-                        android:textColor="@color/text_primary"
-                        android:textSize="20sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="Hand-picked by our food experts"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
+                <include
+                    android:id="@+id/curated_spot_2"
+                    layout="@layout/item_curated_spot_grid"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <ImageButton
-                        android:id="@+id/btn_curated_prev"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:background="@drawable/bg_nav_button"
-                        android:contentDescription="Previous"
-                        android:src="@drawable/ic_chevron_left"
-                        app:tint="@color/text_primary" />
-
-                    <ImageButton
-                        android:id="@+id/btn_curated_next"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_nav_button"
-                        android:contentDescription="Next"
-                        android:src="@drawable/ic_chevron_right"
-                        app:tint="@color/text_primary" />
-
-                </LinearLayout>
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp" />
 
             </LinearLayout>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_curated_spots"
+            <!-- Row 2 -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:clipToPadding="false"
-                android:orientation="horizontal"
-                tools:listitem="@layout/item_curated_spot" />
+                android:orientation="horizontal">
+
+                <include
+                    android:id="@+id/curated_spot_3"
+                    layout="@layout/item_curated_spot_grid"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp" />
+
+                <include
+                    android:id="@+id/curated_spot_4"
+                    layout="@layout/item_curated_spot_grid"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

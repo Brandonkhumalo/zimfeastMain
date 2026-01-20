@@ -11,8 +11,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.zimfeast.customer.R;
@@ -38,11 +36,11 @@ public class LandingActivity extends AppCompatActivity {
             new Category("Sushi", "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=150"),
             new Category("Tacos", "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&q=80&w=150"),
             new Category("Salad", "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=150"),
-            new Category("Chicken", "https://images.unsplash.com/photo-1567620905732-2d1ec7bb7445?auto=format&fit=crop&q=80&w=150"),
+            new Category("Chicken", "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?auto=format&fit=crop&q=80&w=150"),
             new Category("Pasta", "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=150"),
             new Category("Dessert", "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&q=80&w=150"),
             new Category("Coffee", "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=150"),
-            new Category("Indian", "https://images.unsplash.com/photo-1585937421612-71100e957b7d?auto=format&fit=crop&q=80&w=150")
+            new Category("Indian", "https://images.unsplash.com/photo-1596797038530-2c107229654b?auto=format&fit=crop&q=80&w=150")
     );
 
     private static final List<CuratedSpot> CURATED_SPOTS = Arrays.asList(
@@ -89,27 +87,6 @@ public class LandingActivity extends AppCompatActivity {
             startActivity(new Intent(this, LoginActivity.class));
         });
 
-        binding.btnCuratedPrev.setOnClickListener(v -> {
-            RecyclerView rv = binding.rvCuratedSpots;
-            LinearLayoutManager lm = (LinearLayoutManager) rv.getLayoutManager();
-            if (lm != null) {
-                int firstVisible = lm.findFirstVisibleItemPosition();
-                if (firstVisible > 0) {
-                    rv.smoothScrollToPosition(firstVisible - 1);
-                }
-            }
-        });
-
-        binding.btnCuratedNext.setOnClickListener(v -> {
-            RecyclerView rv = binding.rvCuratedSpots;
-            LinearLayoutManager lm = (LinearLayoutManager) rv.getLayoutManager();
-            if (lm != null) {
-                int lastVisible = lm.findLastVisibleItemPosition();
-                if (lastVisible < CURATED_SPOTS.size() - 1) {
-                    rv.smoothScrollToPosition(lastVisible + 1);
-                }
-            }
-        });
     }
 
     private void setupCategories() {
@@ -138,11 +115,35 @@ public class LandingActivity extends AppCompatActivity {
     }
 
     private void setupCuratedSpots() {
-        binding.rvCuratedSpots.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        binding.rvCuratedSpots.setAdapter(new CuratedSpotsAdapter(CURATED_SPOTS, () -> {
-            startActivity(new Intent(this, LoginActivity.class));
-        }));
+        View[] spotViews = {
+                binding.curatedSpot1.getRoot(),
+                binding.curatedSpot2.getRoot(),
+                binding.curatedSpot3.getRoot(),
+                binding.curatedSpot4.getRoot()
+        };
+
+        for (int i = 0; i < Math.min(4, CURATED_SPOTS.size()); i++) {
+            CuratedSpot spot = CURATED_SPOTS.get(i);
+            View spotView = spotViews[i];
+
+            ImageView ivImage = spotView.findViewById(R.id.iv_spot_image);
+            TextView tvName = spotView.findViewById(R.id.tv_spot_name);
+            TextView tvCuisine = spotView.findViewById(R.id.tv_spot_cuisine);
+            TextView tvRating = spotView.findViewById(R.id.tv_spot_rating);
+
+            tvName.setText(spot.name);
+            tvCuisine.setText(spot.cuisine);
+            tvRating.setText(String.format("%.1f", spot.rating));
+
+            Glide.with(this)
+                    .load(spot.imageUrl)
+                    .centerCrop()
+                    .into(ivImage);
+
+            spotView.setOnClickListener(v -> {
+                startActivity(new Intent(this, LoginActivity.class));
+            });
+        }
     }
 
     private void loadFeatureImages() {
