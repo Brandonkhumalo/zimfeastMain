@@ -3,22 +3,24 @@ package com.zimfeast.customer.ui.customer;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.view.GravityCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.material.navigation.NavigationView;
 import com.zimfeast.customer.R;
 import com.zimfeast.customer.data.api.ApiClient;
 import com.zimfeast.customer.data.local.AppDatabase;
@@ -33,20 +35,23 @@ import com.zimfeast.customer.ui.menu.MenuActivity;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class CustomerActivity extends AppCompatActivity implements RestaurantAdapter.OnRestaurantClickListener {
+public class CustomerActivity extends AppCompatActivity implements 
+        RestaurantAdapter.OnRestaurantClickListener,
+        NavigationView.OnNavigationItemSelectedListener {
 
     private static final int LOCATION_PERMISSION_CODE = 1001;
 
     private ActivityCustomerBinding binding;
     private RestaurantAdapter restaurantAdapter;
     private RestaurantAdapter topRestaurantAdapter;
+    private RestaurantAdapter nearbyRestaurantAdapter;
     private FusedLocationProviderClient fusedLocationClient;
+    private ActionBarDrawerToggle drawerToggle;
 
     private List<Restaurant> allRestaurants = new ArrayList<>();
     private String selectedCuisine = "";
@@ -69,7 +74,8 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        setupCurrencySpinner();
+        setupToolbar();
+        setupNavigationDrawer();
         setupCuisineFilters();
         setupRecyclerViews();
         setupSearch();
@@ -79,10 +85,25 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
         observeCart();
     }
 
-    private void setupCurrencySpinner() {
-        String[] currencies = {getString(R.string.usd), getString(R.string.zwl)};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, currencies);
-        binding.spinnerCurrency.setAdapter(adapter);
+    private void setupToolbar() {
+        setSupportActionBar(binding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+    }
+
+    private void setupNavigationDrawer() {
+        drawerToggle = new ActionBarDrawerToggle(
+                this,
+                binding.drawerLayout,
+                binding.toolbar,
+                R.string.app_name,
+                R.string.app_name
+        );
+        binding.drawerLayout.addDrawerListener(drawerToggle);
+        drawerToggle.syncState();
+
+        binding.navView.setNavigationItemSelectedListener(this);
     }
 
     private void setupCuisineFilters() {
@@ -114,6 +135,10 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
         topRestaurantAdapter = new RestaurantAdapter(new ArrayList<>(), currentCurrency, this);
         binding.rvTopRestaurants.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         binding.rvTopRestaurants.setAdapter(topRestaurantAdapter);
+
+        nearbyRestaurantAdapter = new RestaurantAdapter(new ArrayList<>(), currentCurrency, this);
+        binding.rvNearbyRestaurants.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        binding.rvNearbyRestaurants.setAdapter(nearbyRestaurantAdapter);
     }
 
     private void setupSearch() {
@@ -138,11 +163,18 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
             startActivity(new Intent(this, CartActivity.class));
         });
 
-        binding.fabHistory.setOnClickListener(v -> {
-            startActivity(new Intent(this, OrderHistoryActivity.class));
+        binding.ivSettings.setOnClickListener(v -> {
+            Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show();
         });
 
+        binding.cardChefZim.setOnClickListener(v -> openChefZimDialog());
+        binding.btnTryAi.setOnClickListener(v -> openChefZimDialog());
+
         binding.swipeRefresh.setOnRefreshListener(this::loadRestaurants);
+    }
+
+    private void openChefZimDialog() {
+        Toast.makeText(this, "Chef Zim AI recommendations coming soon!", Toast.LENGTH_SHORT).show();
     }
 
     private void loadRestaurants() {
@@ -155,15 +187,7 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
 
                 if (response.isSuccessful() && response.body() != null) {
                     allRestaurants = response.body().getResults();
-                    filterRestaurants();
-
-                    List<Restaurant> topRated = new ArrayList<>();
-                    for (Restaurant r : allRestaurants) {
-                        if (r.getRating() >= 4.0) {
-                            topRated.add(r);
-                        }
-                    }
-                    topRestaurantAdapter.updateData(topRated);
+                    updateAllSections();
                 } else {
                     loadDemoRestaurants();
                 }
@@ -179,15 +203,46 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
 
     private void loadDemoRestaurants() {
         allRestaurants = getDemoRestaurants();
+        updateAllSections();
+    }
+
+    private void updateAllSections() {
         filterRestaurants();
 
         List<Restaurant> topRated = new ArrayList<>();
+        List<Restaurant> nearby = new ArrayList<>();
+
         for (Restaurant r : allRestaurants) {
             if (r.getRating() >= 4.5) {
                 topRated.add(r);
             }
         }
+
+        if (hasLocation) {
+            List<Restaurant> sortedByDistance = new ArrayList<>(allRestaurants);
+            sortedByDistance.sort((a, b) -> {
+                double distA = calculateDistance(a);
+                double distB = calculateDistance(b);
+                return Double.compare(distA, distB);
+            });
+            nearby = sortedByDistance.subList(0, Math.min(5, sortedByDistance.size()));
+        } else {
+            nearby = allRestaurants.subList(0, Math.min(5, allRestaurants.size()));
+        }
+
         topRestaurantAdapter.updateData(topRated);
+        nearbyRestaurantAdapter.updateData(nearby);
+    }
+
+    private double calculateDistance(Restaurant restaurant) {
+        if (restaurant.getCoordinates() == null || !hasLocation) {
+            return Double.MAX_VALUE;
+        }
+        double rLat = restaurant.getCoordinates().getLat();
+        double rLng = restaurant.getCoordinates().getLng();
+        double latDiff = userLat - rLat;
+        double lngDiff = userLng - rLng;
+        return Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
     }
 
     private List<Restaurant> getDemoRestaurants() {
@@ -228,6 +283,24 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
         nandos.setRating(4.5);
         nandos.setEstimatedDeliveryTime(20);
         demos.add(nandos);
+
+        Restaurant wimpy = new Restaurant();
+        wimpy.setId("wimpy-borrowdale");
+        wimpy.setName("Wimpy Borrowdale");
+        wimpy.setDescription("Classic burgers and fries");
+        wimpy.setCuisineType("fast_food");
+        wimpy.setRating(4.2);
+        wimpy.setEstimatedDeliveryTime(25);
+        demos.add(wimpy);
+
+        Restaurant mugg = new Restaurant();
+        mugg.setId("mugg-bean");
+        mugg.setName("Mugg & Bean");
+        mugg.setDescription("Coffee and breakfast");
+        mugg.setCuisineType("breakfast");
+        mugg.setRating(4.4);
+        mugg.setEstimatedDeliveryTime(30);
+        demos.add(mugg);
 
         return demos;
     }
@@ -273,6 +346,9 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
                 hasLocation = true;
                 binding.btnLocation.setText(getString(R.string.show_all));
                 restaurantAdapter.setUserLocation(userLat, userLng);
+                nearbyRestaurantAdapter.setUserLocation(userLat, userLng);
+                binding.tvNearbyTitle.setText(getString(R.string.restaurants_near_you));
+                updateAllSections();
                 Toast.makeText(this, "Location found!", Toast.LENGTH_SHORT).show();
             } else {
                 binding.btnLocation.setText(getString(R.string.find_nearby));
@@ -286,6 +362,43 @@ public class CustomerActivity extends AppCompatActivity implements RestaurantAda
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             requestLocation();
+        }
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.nav_home) {
+            binding.drawerLayout.closeDrawer(GravityCompat.START);
+        } else if (id == R.id.nav_orders) {
+            startActivity(new Intent(this, OrderHistoryActivity.class));
+        } else if (id == R.id.nav_favorites) {
+            Toast.makeText(this, "Favorites coming soon", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.nav_settings) {
+            Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.nav_help) {
+            Toast.makeText(this, "Help & Support coming soon", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.nav_logout) {
+            logout();
+        }
+
+        binding.drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    private void logout() {
+        ApiClient.getInstance().getTokenManager().clearTokens();
+        startActivity(new Intent(this, LoginActivity.class));
+        finish();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            binding.drawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
         }
     }
 

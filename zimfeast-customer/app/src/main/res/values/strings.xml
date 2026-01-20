@@ -42,9 +42,25 @@
     <string name="zwl">ZWL (Z$)</string>
     <string name="all_restaurants">All Restaurants</string>
     <string name="top_restaurants">Top Restaurants</string>
+    <string name="restaurants_near_you">Restaurants Near You</string>
     <string name="view_menu">View Menu</string>
     <string name="delivery">delivery</string>
     <string name="min">min</string>
+    <string name="no_restaurants">No restaurants found</string>
+    
+    <!-- Chef Zim AI -->
+    <string name="chef_zim_title">Meet Chef Zim</string>
+    <string name="chef_zim_subtitle">Your AI food concierge. Tell me your mood and I\'ll find your perfect meal!</string>
+    <string name="try_ai_recommendation">Try AI Recommendation</string>
+    
+    <!-- Navigation -->
+    <string name="home">Home</string>
+    <string name="order_history">Order History</string>
+    <string name="favorites">Favorites</string>
+    <string name="settings">Settings</string>
+    <string name="help">Help &amp; Support</string>
+    <string name="logout">Logout</string>
+    <string name="other">Other</string>
 
     <!-- Cuisines -->
     <string name="fast_food">Fast Food</string>
