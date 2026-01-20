@@ -388,7 +388,7 @@ public class CustomerActivity extends AppCompatActivity implements
     }
 
     private void logout() {
-        ApiClient.getInstance().getTokenManager().clearTokens();
+        ApiClient.getInstance().getTokenManager().clearAll();
         startActivity(new Intent(this, LoginActivity.class));
         finish();
     }
