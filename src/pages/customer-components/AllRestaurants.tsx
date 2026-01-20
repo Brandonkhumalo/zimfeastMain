@@ -11,22 +11,29 @@ interface AllRestaurantsProps {
 export default function AllRestaurants({ restaurants, currency, onViewMenu, userLocation }: AllRestaurantsProps) {
   if (!restaurants || restaurants.length === 0) {
     return (
-      <div className="text-center py-12">
-        <i className="fas fa-search text-4xl text-muted-foreground mb-4"></i>
-        <p className="text-muted-foreground">No restaurants found</p>
+      <div className="text-center py-16">
+        <div className="w-20 h-20 mx-auto mb-4 bg-zinc-100 dark:bg-white/10 rounded-full flex items-center justify-center">
+          <i className="fas fa-utensils text-3xl text-zinc-400 dark:text-white/40"></i>
+        </div>
+        <p className="text-zinc-500 dark:text-white/50 font-medium">No restaurants found</p>
       </div>
     );
   }
 
   return (
-    <section className="py-8">
+    <section className="py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold">All Restaurants</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Showing all {restaurants.length} restaurants
-            </p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <i className="fas fa-th-large text-white"></i>
+            </div>
+            <div>
+              <h2 className="text-2xl font-black tracking-tight">All Restaurants</h2>
+              <p className="text-sm text-zinc-500 dark:text-white/50 font-medium">
+                Showing all {restaurants.length} restaurants
+              </p>
+            </div>
           </div>
         </div>
         

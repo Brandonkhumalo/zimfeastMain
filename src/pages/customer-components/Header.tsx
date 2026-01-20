@@ -130,19 +130,27 @@ export default function Header({
   };
 
   return (
-    <header className="bg-primary text-primary-foreground">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <header className="relative overflow-hidden" style={{
+      background: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%)',
+    }}>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none" />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center">
           <div className="mb-6 lg:mb-0">
-            <h1 className="text-3xl lg:text-4xl font-bold mb-2">Delicious food, delivered fast</h1>
-            <p className="text-xl opacity-90">Order from your favorite restaurants in Zimbabwe</p>
+            <h1 className="text-4xl lg:text-5xl font-black text-white mb-2 tracking-tight">
+              Delicious food, delivered fast
+            </h1>
+            <p className="text-xl text-white/90 font-medium">
+              Order from your favorite restaurants in Zimbabwe
+            </p>
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="text-sm opacity-75">Currency</p>
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 border border-white/20">
+              <p className="text-xs text-white/80 font-medium mb-1">Currency</p>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="bg-white/10 border-white/20 text-primary-foreground">
+                <SelectTrigger className="bg-transparent border-0 text-white font-bold p-0 h-auto shadow-none focus:ring-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -154,57 +162,69 @@ export default function Header({
           </div>
         </div>
 
-        <div className="mt-8 max-w-2xl" ref={searchContainerRef}>
-          <div className="flex space-x-4">
-            <div className="relative flex-1">
-              <i className={`fas ${isSearching ? 'fa-spinner fa-spin' : 'fa-search'} absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400`}></i>
-              <Input
-                type="text"
-                placeholder="Search restaurants, cuisines, or dishes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => searchTerm && setShowResults(true)}
-                className="w-full pl-12 pr-4 py-4 rounded-xl bg-white text-gray-900 text-lg placeholder-gray-400"
-              />
+        <div className="mt-8 max-w-3xl" ref={searchContainerRef}>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-white/20 blur-xl rounded-3xl" />
+            <div className="relative flex gap-3">
+              <div className="relative flex-1">
+                <div className="absolute inset-0 bg-white/10 rounded-2xl" />
+                <div className="relative bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 flex items-center">
+                  <i className={`fas ${isSearching ? 'fa-spinner fa-spin' : 'fa-search'} ml-5 text-zinc-400`}></i>
+                  <Input
+                    type="text"
+                    placeholder="Search restaurants, cuisines, or dishes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={() => searchTerm && setShowResults(true)}
+                    className="flex-1 border-0 bg-transparent text-lg py-5 px-4 focus:ring-0 focus-visible:ring-0 placeholder:text-zinc-400"
+                  />
+                </div>
+                
+                <SearchResults
+                  isVisible={showResults}
+                  restaurants={searchResults.restaurants}
+                  dishes={searchResults.dishes}
+                  cuisines={searchResults.cuisines}
+                  query={searchTerm}
+                  onSelectRestaurant={handleSelectRestaurant}
+                  onSelectCuisine={handleSelectCuisine}
+                  onClose={() => setShowResults(false)}
+                />
+              </div>
               
-              <SearchResults
-                isVisible={showResults}
-                restaurants={searchResults.restaurants}
-                dishes={searchResults.dishes}
-                cuisines={searchResults.cuisines}
-                query={searchTerm}
-                onSelectRestaurant={handleSelectRestaurant}
-                onSelectCuisine={handleSelectCuisine}
-                onClose={() => setShowResults(false)}
-              />
+              <Button
+                onClick={toggleNearbyView}
+                disabled={isGettingLocation}
+                className={`px-6 py-5 h-auto rounded-2xl text-base font-bold whitespace-nowrap transition-all shadow-lg ${
+                  showNearbyOnly
+                    ? 'bg-white text-orange-600 hover:bg-zinc-100 shadow-xl'
+                    : 'bg-white/20 text-white border-2 border-white/30 hover:bg-white/30 backdrop-blur-sm'
+                }`}
+              >
+                {isGettingLocation ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>Getting...
+                  </>
+                ) : showNearbyOnly ? (
+                  <>
+                    <i className="fas fa-map-marker-alt mr-2"></i>Show All
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-location-arrow mr-2"></i>Find Nearby
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={toggleNearbyView}
-              disabled={isGettingLocation}
-              className={`px-6 py-4 rounded-xl text-lg whitespace-nowrap ${
-                showNearbyOnly
-                  ? 'bg-white text-primary border-2 border-white hover:bg-gray-50'
-                  : 'bg-white/20 text-white border-2 border-white/30 hover:bg-white/30'
-              }`}
-            >
-              {isGettingLocation ? (
-                <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>Getting Location...
-                </>
-              ) : showNearbyOnly ? (
-                <>
-                  <i className="fas fa-map-marker-alt mr-2"></i>Show All
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-location-arrow mr-2"></i>Find Nearby
-                </>
-              )}
-            </Button>
           </div>
+          
           {showNearbyOnly && userLocation && (
-            <div className="mt-2 text-sm text-white/80">
-              <i className="fas fa-info-circle mr-1"></i>Showing restaurants within 10km of your location
+            <div className="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-sm text-white font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+              Showing restaurants within 10km of your location
             </div>
           )}
         </div>

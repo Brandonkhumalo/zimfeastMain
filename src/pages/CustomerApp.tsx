@@ -311,9 +311,22 @@ export default function CustomerApp() {
         onViewMenu={handleViewMenu}
         userLocation={userLocation}
       />
-      <div className="flex justify-center gap-4 py-4">
-        <Button onClick={() => setGridPage(p => Math.max(p - 1, 0))} disabled={gridPage === 0}>Previous 5</Button>
-        <Button onClick={() => setGridPage(p => (p + 1) * 5 < restaurantsData.length ? p + 1 : p)} disabled={(gridPage + 1) * 5 >= restaurantsData.length}>Next 5</Button>
+      <div className="flex justify-center gap-4 py-6">
+        <Button 
+          onClick={() => setGridPage(p => Math.max(p - 1, 0))} 
+          disabled={gridPage === 0}
+          className="rounded-xl font-bold px-6 disabled:opacity-40"
+          variant="outline"
+        >
+          <i className="fas fa-chevron-left mr-2"></i>Previous
+        </Button>
+        <Button 
+          onClick={() => setGridPage(p => (p + 1) * 5 < restaurantsData.length ? p + 1 : p)} 
+          disabled={(gridPage + 1) * 5 >= restaurantsData.length}
+          className="rounded-xl font-bold px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/20 disabled:opacity-40"
+        >
+          Next<i className="fas fa-chevron-right ml-2"></i>
+        </Button>
       </div>
 
       {/* Top Restaurants */}
@@ -323,9 +336,22 @@ export default function CustomerApp() {
         onViewMenu={handleViewMenu}
         userLocation={userLocation}
       />
-      <div className="flex justify-center gap-4 py-4">
-        <Button onClick={() => setTopPage(p => Math.max(p - 1, 0))} disabled={topPage === 0}>Previous Top 5</Button>
-        <Button onClick={() => setTopPage(p => (p + 1) * 5 < restaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)} disabled={(topPage + 1) * 5 >= restaurantsData.filter(r => r.rating && r.rating >= 4).length}>Next Top 5</Button>
+      <div className="flex justify-center gap-4 py-6 bg-zinc-50/50 dark:bg-white/5">
+        <Button 
+          onClick={() => setTopPage(p => Math.max(p - 1, 0))} 
+          disabled={topPage === 0}
+          className="rounded-xl font-bold px-6 disabled:opacity-40"
+          variant="outline"
+        >
+          <i className="fas fa-chevron-left mr-2"></i>Previous
+        </Button>
+        <Button 
+          onClick={() => setTopPage(p => (p + 1) * 5 < restaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)} 
+          disabled={(topPage + 1) * 5 >= restaurantsData.filter(r => r.rating && r.rating >= 4).length}
+          className="rounded-xl font-bold px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/20 disabled:opacity-40"
+        >
+          Next<i className="fas fa-chevron-right ml-2"></i>
+        </Button>
       </div>
 
       {/* All Restaurants */}
@@ -367,16 +393,17 @@ export default function CustomerApp() {
         onClick={() => setIsTrackingOpen(true)} 
       />
 
-      <Button
+      <button
         onClick={() => setIsCartOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-shadow">
+        className="fixed bottom-6 right-6 w-16 h-16 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+      >
         <i className="fas fa-shopping-cart text-xl"></i>
         {cartItems.length > 0 && (
-          <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-xs w-6 h-6 rounded-full flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 bg-white text-orange-600 text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-orange-500">
             {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
           </span>
         )}
-      </Button>
+      </button>
 
       <ChefZimDialog
         isOpen={isChefZimOpen}
