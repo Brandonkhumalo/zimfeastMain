@@ -132,7 +132,7 @@
                     android:layout_marginStart="6dp"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp"
-                    tools:text="$2.50 delivery" />
+                    tools:text="$0.35/km delivery" />
 
             </LinearLayout>
 

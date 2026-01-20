@@ -90,7 +90,7 @@
                 android:maxLines="1"
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp"
-                tools:text="Fast Food • $2.50 delivery" />
+                tools:text="Fast Food • $0.35/km delivery" />
 
         </LinearLayout>
 
