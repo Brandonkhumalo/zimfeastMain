@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.ZimFeast" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.ZimFeast" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorPrimaryVariant">@color/primary_variant</item>
@@ -15,7 +15,8 @@
         <item name="colorOnBackground">@color/on_background</item>
         <item name="colorOnSurface">@color/on_surface</item>
         <item name="colorOnError">@color/on_error</item>
-        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
     </style>
 
     <style name="Theme.ZimFeast.NoActionBar">
@@ -25,12 +26,12 @@
 
     <style name="TextAppearance.ZimFeast.Headline" parent="TextAppearance.Material3.HeadlineLarge">
         <item name="android:textColor">@color/text_primary</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">sans-serif-black</item>
     </style>
 
     <style name="TextAppearance.ZimFeast.Title" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textColor">@color/text_primary</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">sans-serif-black</item>
     </style>
 
     <style name="TextAppearance.ZimFeast.Body" parent="TextAppearance.Material3.BodyMedium">
@@ -38,30 +39,43 @@
     </style>
 
     <style name="Widget.ZimFeast.Button.Primary" parent="Widget.Material3.Button">
-        <item name="backgroundTint">@color/primary</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:background">@drawable/bg_button_orange_gradient</item>
         <item name="android:textColor">@color/on_primary</item>
-        <item name="cornerRadius">8dp</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-black</item>
     </style>
 
     <style name="Widget.ZimFeast.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
         <item name="strokeColor">@color/primary</item>
         <item name="android:textColor">@color/primary</item>
-        <item name="cornerRadius">8dp</item>
+        <item name="cornerRadius">16dp</item>
     </style>
 
     <style name="Widget.ZimFeast.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
-        <item name="boxCornerRadiusTopStart">8dp</item>
-        <item name="boxCornerRadiusTopEnd">8dp</item>
-        <item name="boxCornerRadiusBottomStart">8dp</item>
-        <item name="boxCornerRadiusBottomEnd">8dp</item>
-        <item name="boxStrokeColor">@color/primary</item>
-        <item name="hintTextColor">@color/primary</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeColor">@color/border</item>
+        <item name="boxBackgroundColor">@color/glass_dark</item>
+        <item name="hintTextColor">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_secondary</item>
     </style>
 
     <style name="Widget.ZimFeast.Card" parent="Widget.Material3.CardView.Elevated">
-        <item name="cardCornerRadius">12dp</item>
-        <item name="cardElevation">2dp</item>
-        <item name="cardBackgroundColor">@color/card_background</item>
+        <item name="cardCornerRadius">24dp</item>
+        <item name="cardElevation">8dp</item>
+        <item name="cardBackgroundColor">@color/glass_dark</item>
+    </style>
+
+    <style name="Widget.ZimFeast.Card.Glass" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">32dp</item>
+        <item name="cardElevation">16dp</item>
+        <item name="cardBackgroundColor">@color/glass_dark</item>
+        <item name="strokeColor">@color/glass_dark_border</item>
+        <item name="strokeWidth">1dp</item>
     </style>
 
 </resources>
