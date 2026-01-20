@@ -178,7 +178,7 @@ public class MenuActivity extends AppCompatActivity implements MenuAdapter.OnMen
                 newItem.setName(menuItem.getName());
                 newItem.setPrice(menuItem.getPrice());
                 newItem.setQuantity(1);
-                newItem.setImageUrl(menuItem.getImageUrl());
+                newItem.setImageUrl(menuItem.getItemImage());
                 newItem.setRestaurantId(restaurantId);
                 newItem.setRestaurantName(restaurantName);
                 newItem.setRestaurantLat(restaurantLat);

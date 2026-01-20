@@ -1,0 +1,33 @@
+modules = ["nodejs-20", "web"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Android Project Info"
+
+[[workflows.workflow]]
+name = "Android Project Info"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"ZimFeast Android Project\" && echo \"========================\" && echo \"\" && echo \"This is a native Android Studio project that needs to be built locally.\" && echo \"\" && echo \"To build and run:\" && echo \"1. Download this project to your local machine\" && echo \"2. Open it in Android Studio\" && echo \"3. Sync Gradle files\" && echo \"4. Build and run on an emulator or device\" && echo \"\" && echo \"Project structure:\" && find app -type f -name \"*.java\" | head -20 && echo \"\" && echo \"See README.md for full documentation.\""
+
+[[ports]]
+localPort = 8081
+externalPort = 80

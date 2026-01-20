@@ -1,11 +1,15 @@
 package com.zimfeast.customer.data.model;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
 public class MenuItem {
 
     @SerializedName("id")
     private String id;
+
+    @SerializedName("restaurant")
+    private String restaurant;
 
     @SerializedName("name")
     private String name;
@@ -13,79 +17,76 @@ public class MenuItem {
     @SerializedName("description")
     private String description;
 
+    // Backend sends price as STRING
     @SerializedName("price")
-    private Object price;
+    private String price;
 
-    @SerializedName("image_url")
-    private String imageUrl;
+    // FIXED: correct backend field
+    @SerializedName("item_image")
+    private String itemImage;
 
     @SerializedName("available")
     private boolean available;
 
+    // FIXED: backend sends ARRAY
     @SerializedName("category")
-    private String category;
+    private List<String> category;
+
+    @SerializedName("prep_time")
+    private int prepTime;
+
+    @SerializedName("created")
+    private String created;
+
+    // -------- Getters --------
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public String getRestaurant() {
+        return restaurant;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public double getPrice() {
-        if (price instanceof Number) {
-            return ((Number) price).doubleValue();
-        } else if (price instanceof String) {
-            try {
-                return Double.parseDouble((String) price);
-            } catch (NumberFormatException ignored) {
-            }
+        try {
+            return Double.parseDouble(price);
+        } catch (Exception e) {
+            return 0.0;
         }
-        return 0.0;
     }
 
-    public void setPrice(Object price) {
-        this.price = price;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public String getItemImage() {
+        return itemImage;
     }
 
     public boolean isAvailable() {
         return available;
     }
 
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
-
-    public String getCategory() {
+    public List<String> getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+    public String getCategoryDisplay() {
+        return category != null && !category.isEmpty()
+                ? category.get(0)
+                : "";
+    }
+
+    public int getPrepTime() {
+        return prepTime;
+    }
+
+    public String getCreated() {
+        return created;
     }
 }

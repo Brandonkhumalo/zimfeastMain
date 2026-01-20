@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.zimfeast.customer.R;
+import com.zimfeast.customer.data.api.ApiClient;
 import com.zimfeast.customer.data.model.MenuItem;
 import com.zimfeast.customer.util.DeliveryUtils;
 
@@ -56,16 +57,23 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ViewHolder> {
         MenuItem item = menuItems.get(position);
 
         holder.tvName.setText(item.getName());
-        holder.tvDescription.setText(item.getDescription() != null ? item.getDescription() : "");
-        holder.tvPrice.setText(DeliveryUtils.formatCurrency(item.getPrice(), currency));
+        holder.tvDescription.setText(
+                item.getDescription() != null ? item.getDescription() : ""
+        );
+        holder.tvPrice.setText(
+                DeliveryUtils.formatCurrency(item.getPrice(), currency)
+        );
 
-        if (item.getCategory() != null && !item.getCategory().isEmpty()) {
-            holder.tvCategory.setText(item.getCategory());
+        // CATEGORY FIX
+        String category = item.getCategoryDisplay();
+        if (!category.isEmpty()) {
+            holder.tvCategory.setText(category);
             holder.tvCategory.setVisibility(View.VISIBLE);
         } else {
             holder.tvCategory.setVisibility(View.GONE);
         }
 
+        // AVAILABILITY
         if (!item.isAvailable()) {
             holder.tvUnavailable.setVisibility(View.VISIBLE);
             holder.btnAddToCart.setEnabled(false);
@@ -76,9 +84,11 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ViewHolder> {
             holder.btnAddToCart.setAlpha(1.0f);
         }
 
-        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+        // IMAGE FIX
+        String imageUrl = item.getItemImage(); // relative path
+        if (imageUrl != null && !imageUrl.isEmpty()) {
             Glide.with(holder.itemView.getContext())
-                    .load(item.getImageUrl())
+                    .load(ApiClient.getBaseUrl() + imageUrl)
                     .placeholder(R.drawable.placeholder_restaurant)
                     .error(R.drawable.placeholder_restaurant)
                     .centerCrop()
