@@ -24,6 +24,12 @@
         <item name="windowNoTitle">true</item>
     </style>
 
+    <style name="Theme.ZimFeast.Splash" parent="Theme.ZimFeast.NoActionBar">
+        <item name="android:windowBackground">@color/primary</item>
+        <item name="android:statusBarColor">@color/primary</item>
+        <item name="android:navigationBarColor">@color/primary</item>
+    </style>
+
     <style name="TextAppearance.ZimFeast.Headline" parent="TextAppearance.Material3.HeadlineLarge">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:fontFamily">sans-serif-black</item>
