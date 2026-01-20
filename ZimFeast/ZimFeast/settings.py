@@ -13,6 +13,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']  # For testing only
 
+# Site URL for absolute media URLs (used when request context unavailable)
+SITE_URL = os.environ.get('REPLIT_DEV_DOMAIN', '')
+if SITE_URL and not SITE_URL.startswith('http'):
+    SITE_URL = f"https://{SITE_URL}"
+
 CORS_ALLOW_ALL_ORIGINS = True  # For development in Replit environment
 
 CORS_ALLOW_HEADERS = list(default_headers) + [

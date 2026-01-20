@@ -103,6 +103,11 @@ class RestaurantSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.profile_image.url)
+            # Fallback: construct absolute URL using settings
+            from django.conf import settings
+            base_url = getattr(settings, 'SITE_URL', '')
+            if base_url:
+                return f"{base_url}/media/{obj.profile_image}"
             return f"/media/{obj.profile_image}"
         return None
     

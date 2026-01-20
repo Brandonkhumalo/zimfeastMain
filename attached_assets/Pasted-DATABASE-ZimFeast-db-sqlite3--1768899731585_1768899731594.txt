@@ -1,0 +1,578 @@
+DATABASE: ZimFeast/db.sqlite3
+================================================================================
+
+================================================================================
+TABLE: accounts_address
+================================================================================
+Columns: id, label, address_text, lat, lng, created, user_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: accounts_blacklistedtoken
+================================================================================
+Columns: id, token, blacklisted_at
+--------------------------------------------------------------------------------
+Row count: 18
+--------------------------------------------------------------------------------
+(1, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzYxODk4MjM0LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.XgUnnmnuYclQ4NrQwf0bVnk7Ih_LL8yJ6aX0c6RQ_Y0', '2025-10-01 11:18:14.508251')
+(2, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzYyMDU5ODIxLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.n7s4-llfwaEBwekYr_iy_jyQUel6wdCtuwKftuTVlS0', '2025-10-03 09:00:33.999205')
+(3, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYzliYTllNjMtN2Q0Zi00OThmLThhZDgtODNmMDhlYjQ2Y2Q0IiwiZXhwIjoxNzYyMDgwOTA2LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJjOWJhOWU2My03ZDRmLTQ5OGYtOGFkOC04M2YwOGViNDZjZDQifQ.5otfA---KiDDQiYCFT7nn3p-MCyQBERAW4MYBdBSC8U', '2025-10-03 12:57:54.527774')
+(4, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNDg4NDNhYTItYTgyOC00NDA2LWIwNTQtZjI1MWE5MzUzNTY1IiwiZXhwIjoxNzYyNDA2Nzk2LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiI0ODg0M2FhMi1hODI4LTQ0MDYtYjA1NC1mMjUxYTkzNTM1NjUifQ.lYFz8Cs7PFvk2WnZs5SELb_mG5m7xP0YDNRPNVYEC-U', '2025-10-07 08:23:47.070497')
+(5, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzYzMDMzOTkxLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.gA-9iZkXjl77E3cK7aiee5OvyBncfoqRcu5BPDJRvU0', '2025-10-14 13:39:57.174104')
+(6, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOTY2MmQ3YTItMDI3MS00YzA4LWIzZjEtYmM5Y2MxYTRkNTQxIiwiZXhwIjoxNzcwMzY4NDY4LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiI5NjYyZDdhMi0wMjcxLTRjMDgtYjNmMS1iYzljYzFhNGQ1NDEifQ.QrEOtmfOOBUF9oh2oYZFnclxxvwIN0V5Yw_FHL4ZXOM', '2026-01-07 09:03:31.948006')
+(7, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcwMzY4NjI1LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.ZRJx927AMzp7Qhb6y_dlIORTJ4eXQ5hvgUGLS8Gv3i8', '2026-01-07 09:18:09.870668')
+(8, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcwMzcyOTMxLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.as2MnGQftQifVODsLx2DrUs7dsDacGeM-kEjrvdJjXo', '2026-01-07 10:26:24.502040')
+(9, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcwMzc1MTE1LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.kJQA8fOy0FWRYr905EPbAGXigXN6CkT4UW91WVoWJz0', '2026-01-07 10:53:21.666986')
+(10, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOTY2MmQ3YTItMDI3MS00YzA4LWIzZjEtYmM5Y2MxYTRkNTQxIiwiZXhwIjoxNzcwMzc5NTc2LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiI5NjYyZDdhMi0wMjcxLTRjMDgtYjNmMS1iYzljYzFhNGQ1NDEifQ.w-s67L8Lfmc8_rBD8solJM0JYCnSNh78dETwio7QjqY', '2026-01-07 12:35:32.774465')
+(11, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMDA4MjRiZGQtNDc4ZC00NGQ2LTkyYzktZjc5MTE0MzQ5YjJmIiwiZXhwIjoxNzcwMzgxNTExLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiIwMDgyNGJkZC00NzhkLTQ0ZDYtOTJjOS1mNzkxMTQzNDliMmYifQ.7kfzTheZBztr2EZEK7lnspeTkonOHQDvKhtRAdvTEys', '2026-01-07 12:39:59.519603')
+(12, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcwMzgxNjY4LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.xTGtzeWft_xi3qGo5VgJ-TgdWM1ByGJwAttM-UDBV84', '2026-01-07 12:41:49.664726')
+(13, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMDA4MjRiZGQtNDc4ZC00NGQ2LTkyYzktZjc5MTE0MzQ5YjJmIiwiZXhwIjoxNzcwMzgzNjgxLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiIwMDgyNGJkZC00NzhkLTQ0ZDYtOTJjOS1mNzkxMTQzNDliMmYifQ.RKQER33X-PobNilfcWvkOyRC2IzZ818BpVDMq6hGkYk', '2026-01-07 13:15:53.578777')
+(14, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcwMzgzNDM4LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.Abb7ClNhtNsJyjZpONzyWiHpUdSoC2iuOVSgeeWy-1I', '2026-01-07 13:20:03.236436')
+(15, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcwNTM2ODE5LCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.shIKjqQIjwquKWY511HPvst_b2n9rRaXPc3U5n1GaSs', '2026-01-09 07:49:13.584221')
+(16, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOTY2MmQ3YTItMDI3MS00YzA4LWIzZjEtYmM5Y2MxYTRkNTQxIiwiZXhwIjoxNzcwNTM2OTYzLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiI5NjYyZDdhMi0wMjcxLTRjMDgtYjNmMS1iYzljYzFhNGQ1NDEifQ.fYMgSCqelbfhYbokEYJRHjCKENfy_D_4VadKVAIaqOw', '2026-01-09 07:49:36.690720')
+(17, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcxNDg2NjYwLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.AZnx1T4jrexpIAAApa_VzedLrWZFNqCGwH8C-e3-UNA', '2026-01-20 07:44:36.805040')
+(18, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYmJkOTUzNmMtMGYwMy00NzQ5LTljNmUtY2VhOWYwMjdlN2YxIiwiZXhwIjoxNzcxNDg5MDEzLCJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwiaWQiOiJiYmQ5NTM2Yy0wZjAzLTQ3NDktOWM2ZS1jZWE5ZjAyN2U3ZjEifQ.1QJpUqY_S5FKvCajri-aLNh_9eSMPo5Ex_J_xCbkHnk', '2026-01-20 08:17:45.426350')
+
+================================================================================
+TABLE: accounts_customuser
+================================================================================
+Columns: password, last_login, is_superuser, id, email, first_name, last_name, phone_number, role, is_active, is_staff
+--------------------------------------------------------------------------------
+Row count: 16
+--------------------------------------------------------------------------------
+('pbkdf2_sha256$1000000$JoBeQYTYHirEkApwntSAT8$a03vTGZB5AFkka871jLeTVMHukDeWH5X5YugkO0TRB8=', None, 0, 'bbd9536c0f0347499c6ecea9f027e7f1', 'brandonkhumz40@gmail.com', 'Brandon', 'Khumalo', '+263835345048', 'customer', 1, 0)
+('pbkdf2_sha256$600000$LZsIVa2czuqboJsxJOspc1$G89ZH820DM7Lw3ndx+VNf15ZjHAIVKYCH1ieYVP7zFw=', None, 0, '9662d7a202714c08b3f1bc9cc1a4d541', 'brandonkhumalo1604@gmail.com', 'Brandon', 'Khumalo', '+263835345048', 'restaurant', 1, 0)
+('pbkdf2_sha256$1000000$fpoeWKvY2594FHD1xnyMav$V+nlQ3aRfuhtBzlqnl+14ecNiqaIF+/LshcPogX1WEA=', None, 0, 'c9ba9e637d4f498f8ad883f08eb46cd4', 'test@gmail.com', 'brando', 'khum', '+2634556778', 'customer', 1, 0)
+('pbkdf2_sha256$1000000$fz1bjnk7nLC08uqU5Im1aK$wicm7pncZzBJMr4EadM0utPLxrPE3MijUyL4NZB44rU=', None, 0, '48843aa2a8284406b054f251a9353565', 'brandon@tishanyq.co.zw', 'Steve', 'Mahlangu', '+263835345045', 'driver', 1, 0)
+('pbkdf2_sha256$600000$3D9C8rcCk1VlbQMFd4oV2T$4EqmHoNFN141fnReAxgT3FpYANHNnm7jg+4/nllhmQg=', None, 0, 'ce6eab07a3e44b8a93aa2b679cdef01f', 'restaurant1@zimfeast.com', 'KFC', '', '+263771234561', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$7eKAobWF6SgndOkfSHsoNm$dpTYWdGxFEds1sy4yPOzE98Hr55/Alq3Td73mdkpvnk=', None, 0, '275bb1b9a9fb4534be911426150bf9f2', 'restaurant2@zimfeast.com', "Nando's", '', '+263771234562', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$u7cSVJ0XdJVrRFHkVECKjN$50CMj7jsrxx/2NQSk4GlIRJpvoBQbS9Fhhs3Mz6UAXY=', None, 0, '9cd5507a401b4260bba635a5d7899089', 'restaurant3@zimfeast.com', 'Pizza', '', '+263771234563', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$u8EoBTTT4Bk7SpPQYX9ezL$I3aCBg3WvG8rNtXi7PGPQLWbpOVSnf+085yASy02oCQ=', None, 0, 'a5e9389e29804e24bc00e0ca038bd675', 'restaurant4@zimfeast.com', 'Ocean', '', '+263771234564', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$RWXtKvGI28qiPzlO0YO5Ge$VPUtb4Fp/PDXHotyu+xmJJhfwbPDHkQWLVC4ADjeNeM=', None, 0, 'c61902d76ebc453e806cdca4ea080906', 'restaurant5@zimfeast.com', 'Chicken', '', '+263771234565', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$9divrvmswYswWfFYGzDSwo$WBZLyHJ5BfliA1zIrLmaT6+NHInon+37bP7XXHM9d/4=', None, 0, '3022849492ca48a0b46112cc542ff8f5', 'restaurant6@zimfeast.com', 'Steers', '', '+263771234566', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$9YBzjz3AZ8b4NZm7ntvxWx$foWYDIG1V0e5/GKMNMy3Hl5vIcUOuBdH+PKmYRy7EeQ=', None, 0, 'bb62f9b02a444b69965fa7171eb2daea', 'restaurant7@zimfeast.com', 'Amanzi', '', '+263771234567', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$BRpB5z6HlURtgLQKJjaaKu$NZyBSQQzDn45IuH4IR9bd7GTAyE+S9fR9tGlJeEo93E=', None, 0, '9d8101947f874c2b89128dedd3118e23', 'restaurant8@zimfeast.com', "Gava's", '', '+263771234568', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$O4LDsSitF7XOjj76hQ7NpJ$K7SiGoVLaG1AqzPUUhGvIr4ExJViUPpUfNkIoiKeJWk=', None, 0, '2a4c08c0623c430ebd88a55458a48c71', 'restaurant9@zimfeast.com', 'Pariah', '', '+263771234569', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$GA4HsLJRnwBMM0E2tlbuxW$/yNxrDZ8B3JDluzB8HpNTvKJSxvIhJmfWP+gHP+nhcQ=', None, 0, 'afa433eb94404e0a86fe9c05cf495f2e', 'restaurant10@zimfeast.com', 'The', '', '+2637712345610', 'restaurant', 1, 0)
+('pbkdf2_sha256$600000$yukfdMuWwqndeaikCJQfLe$eO8aEwwzOlX3pRM3ANtEClK2YEmTD2Ytbe3R1MpL2kI=', None, 0, '83b9454f23ef4563a92095688d356298', 'customer@test.com', 'Test', 'Customer', '+263771234567', 'customer', 1, 0)
+('pbkdf2_sha256$600000$XsWhvdzw0hsBVgiMcXJBV5$ZFlnf4xhXxe5SRqbf7ieJSem8Jxw9Oy7xP1eExCwuxw=', None, 0, '00824bdd478d44d692c9f79114349b2f', 'josias@tishanyq.co.zw', 'Josias', 'Hove', '+263782216826', 'customer', 1, 0)
+
+================================================================================
+TABLE: accounts_customuser_groups
+================================================================================
+Columns: id, customuser_id, group_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: accounts_customuser_user_permissions
+================================================================================
+Columns: id, customuser_id, permission_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: auth_group
+================================================================================
+Columns: id, name
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: auth_group_permissions
+================================================================================
+Columns: id, group_id, permission_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: auth_permission
+================================================================================
+Columns: id, content_type_id, codename, name
+--------------------------------------------------------------------------------
+Row count: 92
+--------------------------------------------------------------------------------
+(1, 1, 'add_logentry', 'Can add log entry')
+(2, 1, 'change_logentry', 'Can change log entry')
+(3, 1, 'delete_logentry', 'Can delete log entry')
+(4, 1, 'view_logentry', 'Can view log entry')
+(5, 2, 'add_permission', 'Can add permission')
+(6, 2, 'change_permission', 'Can change permission')
+(7, 2, 'delete_permission', 'Can delete permission')
+(8, 2, 'view_permission', 'Can view permission')
+(9, 3, 'add_group', 'Can add group')
+(10, 3, 'change_group', 'Can change group')
+(11, 3, 'delete_group', 'Can delete group')
+(12, 3, 'view_group', 'Can view group')
+(13, 4, 'add_contenttype', 'Can add content type')
+(14, 4, 'change_contenttype', 'Can change content type')
+(15, 4, 'delete_contenttype', 'Can delete content type')
+(16, 4, 'view_contenttype', 'Can view content type')
+(17, 5, 'add_session', 'Can add session')
+(18, 5, 'change_session', 'Can change session')
+(19, 5, 'delete_session', 'Can delete session')
+(20, 5, 'view_session', 'Can view session')
+(21, 6, 'add_blacklistedtoken', 'Can add blacklisted token')
+(22, 6, 'change_blacklistedtoken', 'Can change blacklisted token')
+(23, 6, 'delete_blacklistedtoken', 'Can delete blacklisted token')
+(24, 6, 'view_blacklistedtoken', 'Can view blacklisted token')
+(25, 7, 'add_customuser', 'Can add custom user')
+(26, 7, 'change_customuser', 'Can change custom user')
+(27, 7, 'delete_customuser', 'Can delete custom user')
+(28, 7, 'view_customuser', 'Can view custom user')
+(29, 8, 'add_address', 'Can add address')
+(30, 8, 'change_address', 'Can change address')
+(31, 8, 'delete_address', 'Can delete address')
+(32, 8, 'view_address', 'Can view address')
+(33, 9, 'add_cuisinetype', 'Can add cuisine type')
+(34, 9, 'change_cuisinetype', 'Can change cuisine type')
+(35, 9, 'delete_cuisinetype', 'Can delete cuisine type')
+(36, 9, 'view_cuisinetype', 'Can view cuisine type')
+(37, 10, 'add_restaurant', 'Can add restaurant')
+(38, 10, 'change_restaurant', 'Can change restaurant')
+(39, 10, 'delete_restaurant', 'Can delete restaurant')
+(40, 10, 'view_restaurant', 'Can view restaurant')
+(41, 11, 'add_restaurantdashboard', 'Can add restaurant dashboard')
+(42, 11, 'change_restaurantdashboard', 'Can change restaurant dashboard')
+(43, 11, 'delete_restaurantdashboard', 'Can delete restaurant dashboard')
+(44, 11, 'view_restaurantdashboard', 'Can view restaurant dashboard')
+(45, 12, 'add_menuitem', 'Can add menu item')
+(46, 12, 'change_menuitem', 'Can change menu item')
+(47, 12, 'delete_menuitem', 'Can delete menu item')
+(48, 12, 'view_menuitem', 'Can view menu item')
+(49, 13, 'add_restaurantexternalapi', 'Can add restaurant external api')
+(50, 13, 'change_restaurantexternalapi', 'Can change restaurant external api')
+(51, 13, 'delete_restaurantexternalapi', 'Can delete restaurant external api')
+(52, 13, 'view_restaurantexternalapi', 'Can view restaurant external api')
+(53, 14, 'add_order', 'Can add order')
+(54, 14, 'change_order', 'Can change order')
+(55, 14, 'delete_order', 'Can delete order')
+(56, 14, 'view_order', 'Can view order')
+(57, 15, 'add_orderitem', 'Can add order item')
+(58, 15, 'change_orderitem', 'Can change order item')
+(59, 15, 'delete_orderitem', 'Can delete order item')
+(60, 15, 'view_orderitem', 'Can view order item')
+(61, 16, 'add_driver', 'Can add driver')
+(62, 16, 'change_driver', 'Can change driver')
+(63, 16, 'delete_driver', 'Can delete driver')
+(64, 16, 'view_driver', 'Can view driver')
+(65, 17, 'add_driverorderstatus', 'Can add driver order status')
+(66, 17, 'change_driverorderstatus', 'Can change driver order status')
+(67, 17, 'delete_driverorderstatus', 'Can delete driver order status')
+(68, 17, 'view_driverorderstatus', 'Can view driver order status')
+(69, 18, 'add_driverreject', 'Can add driver reject')
+(70, 18, 'change_driverreject', 'Can change driver reject')
+(71, 18, 'delete_driverreject', 'Can delete driver reject')
+(72, 18, 'view_driverreject', 'Can view driver reject')
+(73, 19, 'add_feastvoucher', 'Can add feast voucher')
+(74, 19, 'change_feastvoucher', 'Can change feast voucher')
+(75, 19, 'delete_feastvoucher', 'Can delete feast voucher')
+(76, 19, 'view_feastvoucher', 'Can view feast voucher')
+(77, 20, 'add_payment', 'Can add payment')
+(78, 20, 'change_payment', 'Can change payment')
+(79, 20, 'delete_payment', 'Can delete payment')
+(80, 20, 'view_payment', 'Can view payment')
+(81, 21, 'add_categorytype', 'Can add category type')
+(82, 21, 'change_categorytype', 'Can change category type')
+(83, 21, 'delete_categorytype', 'Can delete category type')
+(84, 21, 'view_categorytype', 'Can view category type')
+(85, 22, 'add_driverfinance', 'Can add driver finance')
+(86, 22, 'change_driverfinance', 'Can change driver finance')
+(87, 22, 'delete_driverfinance', 'Can delete driver finance')
+(88, 22, 'view_driverfinance', 'Can view driver finance')
+(89, 23, 'add_driverrating', 'Can add driver rating')
+(90, 23, 'change_driverrating', 'Can change driver rating')
+(91, 23, 'delete_driverrating', 'Can delete driver rating')
+(92, 23, 'view_driverrating', 'Can view driver rating')
+
+================================================================================
+TABLE: django_admin_log
+================================================================================
+Columns: id, object_id, object_repr, action_flag, change_message, content_type_id, user_id, action_time
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: django_content_type
+================================================================================
+Columns: id, app_label, model
+--------------------------------------------------------------------------------
+Row count: 23
+--------------------------------------------------------------------------------
+(1, 'admin', 'logentry')
+(2, 'auth', 'permission')
+(3, 'auth', 'group')
+(4, 'contenttypes', 'contenttype')
+(5, 'sessions', 'session')
+(6, 'accounts', 'blacklistedtoken')
+(7, 'accounts', 'customuser')
+(8, 'accounts', 'address')
+(9, 'restaurants', 'cuisinetype')
+(10, 'restaurants', 'restaurant')
+(11, 'restaurants', 'restaurantdashboard')
+(12, 'restaurants', 'menuitem')
+(13, 'restaurants', 'restaurantexternalapi')
+(14, 'orders', 'order')
+(15, 'orders', 'orderitem')
+(16, 'drivers', 'driver')
+(17, 'drivers', 'driverorderstatus')
+(18, 'drivers', 'driverreject')
+(19, 'payments', 'feastvoucher')
+(20, 'payments', 'payment')
+(21, 'restaurants', 'categorytype')
+(22, 'drivers', 'driverfinance')
+(23, 'drivers', 'driverrating')
+
+================================================================================
+TABLE: django_migrations
+================================================================================
+Columns: id, app, name, applied
+--------------------------------------------------------------------------------
+Row count: 37
+--------------------------------------------------------------------------------
+(1, 'contenttypes', '0001_initial', '2025-10-01 09:18:24.456977')
+(2, 'contenttypes', '0002_remove_content_type_name', '2025-10-01 09:18:24.471589')
+(3, 'auth', '0001_initial', '2025-10-01 09:18:24.563313')
+(4, 'auth', '0002_alter_permission_name_max_length', '2025-10-01 09:18:24.652138')
+(5, 'auth', '0003_alter_user_email_max_length', '2025-10-01 09:18:24.765814')
+(6, 'auth', '0004_alter_user_username_opts', '2025-10-01 09:18:24.785456')
+(7, 'auth', '0005_alter_user_last_login_null', '2025-10-01 09:18:24.796488')
+(8, 'auth', '0006_require_contenttypes_0002', '2025-10-01 09:18:24.849090')
+(9, 'auth', '0007_alter_validators_add_error_messages', '2025-10-01 09:18:24.913669')
+(10, 'auth', '0008_alter_user_username_max_length', '2025-10-01 09:18:24.960080')
+(11, 'auth', '0009_alter_user_last_name_max_length', '2025-10-01 09:18:24.999432')
+(12, 'auth', '0010_alter_group_name_max_length', '2025-10-01 09:18:25.040227')
+(13, 'auth', '0011_update_proxy_permissions', '2025-10-01 09:18:25.074301')
+(14, 'auth', '0012_alter_user_first_name_max_length', '2025-10-01 09:18:25.110723')
+(15, 'accounts', '0001_initial', '2025-10-01 09:18:25.166303')
+(16, 'admin', '0001_initial', '2025-10-01 09:18:25.267871')
+(17, 'admin', '0002_logentry_remove_auto_add', '2025-10-01 09:18:25.358907')
+(18, 'admin', '0003_logentry_add_action_flag_choices', '2025-10-01 09:18:25.377915')
+(19, 'restaurants', '0001_initial', '2025-10-01 09:18:25.464760')
+(20, 'orders', '0001_initial', '2025-10-01 09:18:25.516371')
+(21, 'drivers', '0001_initial', '2025-10-01 09:18:25.637326')
+(22, 'payments', '0001_initial', '2025-10-01 09:18:25.743796')
+(23, 'sessions', '0001_initial', '2025-10-01 09:18:25.776776')
+(24, 'orders', '0002_alter_order_driver_alter_order_restaurant', '2025-10-03 07:12:54.762963')
+(25, 'restaurants', '0002_alter_menuitem_id', '2025-10-03 07:27:42.712796')
+(26, 'orders', '0003_orderitem_order', '2025-10-03 08:53:52.600572')
+(27, 'restaurants', '0003_categorytype_and_more', '2025-10-03 10:06:04.437721')
+(28, 'drivers', '0002_alter_driver_vehicle_details', '2025-10-07 07:40:34.248299')
+(29, 'orders', '0004_order_lat_order_lng', '2025-10-07 10:23:25.975717')
+(30, 'drivers', '0003_driverfinance_driverrating', '2025-10-16 09:36:06.839561')
+(31, 'orders', '0005_rename_lat_order_delivery_lat_and_more', '2025-10-16 09:36:07.008600')
+(32, 'restaurants', '0004_alter_menuitem_item_image', '2025-10-20 09:38:33.752242')
+(33, 'restaurants', '0005_restaurant_profile_image_alter_menuitem_item_image', '2025-10-20 09:58:15.542695')
+(34, 'orders', '0006_add_preparing_ready_status', '2026-01-07 11:20:32.509309')
+(35, 'orders', '0007_add_collected_status', '2026-01-07 12:11:53.079490')
+(36, 'orders', '0008_alter_order_status', '2026-01-07 13:04:02.944999')
+(37, 'orders', '0009_order_delivery_address_order_driver_name_and_more', '2026-01-07 14:01:19.224917')
+
+================================================================================
+TABLE: django_session
+================================================================================
+Columns: session_key, session_data, expire_date
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: drivers_driver
+================================================================================
+Columns: id, license_number, license_photo, vehicle_photo, is_online, lat, lng, user_id, vehicle_details
+--------------------------------------------------------------------------------
+Row count: 1
+--------------------------------------------------------------------------------
+('44cde965fe3246dd8d55e19e880c0432', '293764877474', 'drivers/license_photos/Email_Signature_page.jpg', 'drivers/vehicle_photos/tishanyq.jpg', 0, -17.9002516, 31.2399508, '48843aa2a8284406b054f251a9353565', '{"type": "car", "model": "Toyota Corrolla", "number": "ADB 1864", "color": "Red"}')
+
+================================================================================
+TABLE: drivers_driverfinance
+================================================================================
+Columns: id, date, today_deliveries, today_earnings, rating_sum, rating_count, hours_online, last_updated, driver_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: drivers_driverorderstatus
+================================================================================
+Columns: id, status, assigned_at, completed_at, driver_id, order_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: drivers_driverrating
+================================================================================
+Columns: id, rating, comment, created_at, driver_id, user_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: drivers_driverreject
+================================================================================
+Columns: id, order_id, reason, rejected_at, driver_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: orders_order
+================================================================================
+Columns: id, created, restaurant_names, total_fee, tip, each_item_price, delivery_out_time, delivery_complete_time, external_order_numbers, delivery_fee, customer_id, driver_id, restaurant_id, delivery_lat, delivery_lng, method, restaurant_lat, restaurant_lng, status, delivery_address, driver_name, driver_phone, driver_vehicle
+--------------------------------------------------------------------------------
+Row count: 5
+--------------------------------------------------------------------------------
+('0f1ae05fa0ca4255adae444f1bfc8790', '2026-01-07 12:01:41.642464', 'Pizza Inn', 15, 0, '[{"name": "Garlic Bread", "quantity": 2, "price": 7.5}]', None, None, '{}', 0, 'bbd9536c0f0347499c6ecea9f027e7f1', None, '1929260b96b34011a9468687b177007b', None, None, 'collection', -17.831, 31.045, 'paid', None, None, None, None)
+('0e949ac43ff34b2a99e2ad8cb4541716', '2026-01-07 12:17:24.129576', "Lali's", 16, 0, '[{"name": "Strawberry Ice Cream 500ml", "quantity": 2, "price": 3.75}, {"name": "Frozen Chicken Wings 1kg", "quantity": 1, "price": 8.5}]', None, '2026-01-07 12:23:50.772609', '{}', 0, 'bbd9536c0f0347499c6ecea9f027e7f1', None, '35fbde085be9420f95018e511d06dc0f', None, None, 'collection', -17.8897, 31.245, 'collected', None, None, None, None)
+('f547849cafb841c1a02f1479890c9919', '2026-01-07 12:56:57.986168', '["Lali\'s"]', 1, 0, '[]', None, None, '{}', 0, '00824bdd478d44d692c9f79114349b2f', None, '35fbde085be9420f95018e511d06dc0f', None, None, 'collection', -17.8897, 31.245, 'created', None, None, None, None)     
+('3b6ea13dbbd3452dbd0bf88f4ec1dd48', '2026-01-07 13:00:41.552638', '["Lali\'s"]', 1, 0, '[]', None, None, '{}', 0, '00824bdd478d44d692c9f79114349b2f', None, '35fbde085be9420f95018e511d06dc0f', None, None, 'collection', -17.8897, 31.245, 'created', None, None, None, None)     
+('32f1055162514d38af43efdebc16615b', '2026-01-07 13:17:16.390305', '["Lali\'s"]', 1, 0, '[{"name": "Coffee", "quantity": 1, "price": "1.00"}]', None, None, '{}', 0, 'bbd9536c0f0347499c6ecea9f027e7f1', None, '35fbde085be9420f95018e511d06dc0f', None, None, 'collection', -17.8897, 31.245, 'pending_payment', None, None, None, None)
+
+================================================================================
+TABLE: orders_orderitem
+================================================================================
+Columns: id, quantity, added, menu_item_id, user_id, order_id
+--------------------------------------------------------------------------------
+Row count: 3
+--------------------------------------------------------------------------------
+(26, 1, '2026-01-07 12:56:58.038790', '71d0f64846cf4891b567c7c7bbbd4069', '00824bdd478d44d692c9f79114349b2f', 'f547849cafb841c1a02f1479890c9919')
+(27, 1, '2026-01-07 13:00:41.579189', '71d0f64846cf4891b567c7c7bbbd4069', '00824bdd478d44d692c9f79114349b2f', '3b6ea13dbbd3452dbd0bf88f4ec1dd48')
+(28, 1, '2026-01-07 13:17:16.434539', '71d0f64846cf4891b567c7c7bbbd4069', 'bbd9536c0f0347499c6ecea9f027e7f1', '32f1055162514d38af43efdebc16615b')
+
+================================================================================
+TABLE: payments_feastvoucher
+================================================================================
+Columns: id, balance, created_at, updated_at, user_id
+--------------------------------------------------------------------------------
+(empty table)
+
+================================================================================
+TABLE: payments_payment
+================================================================================
+Columns: id, reference, amount, method, status, created_at, order_id, user_id
+--------------------------------------------------------------------------------
+Row count: 4
+--------------------------------------------------------------------------------
+(14, 'https://www.paynow.co.zw/Interface/CheckPayment/?guid=1880c881-77bd-422c-b3be-e53e056bdefb', 1, 'paynow', 'pending', '2026-01-07 12:57:01.918402', 'f547849cafb841c1a02f1479890c9919', '00824bdd478d44d692c9f79114349b2f')
+(15, 'https://www.paynow.co.zw/Interface/CheckPayment/?guid=2f38aac9-be17-4fb5-b721-34246a79122c', 1, 'paynow', 'pending', '2026-01-07 13:00:58.577312', '3b6ea13dbbd3452dbd0bf88f4ec1dd48', '00824bdd478d44d692c9f79114349b2f')
+(16, 'https://www.paynow.co.zw/Interface/CheckPayment/?guid=99a72880-83ab-4059-a7cc-b33ffad93b95', 1, 'paynow', 'pending', '2026-01-07 13:01:18.380439', '3b6ea13dbbd3452dbd0bf88f4ec1dd48', '00824bdd478d44d692c9f79114349b2f')
+(17, 'https://www.paynow.co.zw/Interface/CheckPayment/?guid=4925a180-87f6-48a5-b4f4-3df9a509445e', 1, 'paynow', 'pending', '2026-01-07 13:17:28.187001', '32f1055162514d38af43efdebc16615b', 'bbd9536c0f0347499c6ecea9f027e7f1')
+
+================================================================================
+TABLE: restaurants_categorytype
+================================================================================
+Columns: id, name
+--------------------------------------------------------------------------------
+Row count: 17
+--------------------------------------------------------------------------------
+(1, 'breakfast')
+(2, 'lunch')
+(3, 'supper')
+(4, 'Burgers')
+(5, 'Pizza')
+(6, 'Chicken')
+(7, 'Salads')
+(8, 'Sides')
+(9, 'Desserts')
+(10, 'Drinks')
+(11, 'Breakfast')
+(12, 'Sandwiches')
+(13, 'Pasta')
+(14, 'Ice Cream')
+(15, 'Frozen Meat')
+(16, 'Frozen Seafood')
+(17, 'Frozen Vegetables')
+
+================================================================================
+TABLE: restaurants_cuisinetype
+================================================================================
+Columns: id, name
+--------------------------------------------------------------------------------
+Row count: 23
+--------------------------------------------------------------------------------
+(1, 'Fast Food')
+(2, 'Chinese')
+(3, 'Italian')
+(4, 'Pizza')
+(5, 'breakfast')
+(6, 'dessert')
+(7, 'Indian')
+(8, 'Traditional')
+(9, 'African')
+(10, 'Asian')
+(11, 'American')
+(12, 'Mexican')
+(13, 'Healthy')
+(14, 'Desserts')
+(15, 'Vegetarian')
+(16, 'Seafood')
+(17, 'Frozen Foods')
+(18, 'fast_food')
+(19, 'traditional')
+(20, 'pizza')
+(21, 'chinese')
+(22, 'indian')
+(23, 'lunch_pack')
+
+================================================================================
+TABLE: restaurants_menuitem
+================================================================================
+Columns: id, name, price, description, prep_time, available, created, restaurant_id, item_image
+--------------------------------------------------------------------------------
+Row count: 37
+--------------------------------------------------------------------------------
+('14c3913291e044afae56e9f7960d3980', 'Original Recipe Bucket', 25.99, '12 pieces of our signature fried chicken', 15, 1, '2025-10-20 09:59:28.105213', '8369f767e51d46c997cfaf0b3abf0b80', '')
+('86fe437ce4d74bca9a425d1ebbb39bb3', 'Zinger Burger Meal', 8.99, 'Spicy chicken fillet burger with fries and drink', 15, 1, '2025-10-20 09:59:28.141818', '8369f767e51d46c997cfaf0b3abf0b80', '')
+('19873300447643d0bb0e04a6f24d7ea7', 'Coleslaw', 2.5, 'Fresh and creamy coleslaw', 15, 1, '2025-10-20 09:59:28.171826', '8369f767e51d46c997cfaf0b3abf0b80', '')
+('61800369f5ac40d1aedccaf0335485db', 'Full Chicken Peri-Peri', 18.5, 'Whole chicken with your choice of peri-peri spice', 15, 1, '2025-10-20 09:59:28.396459', '9ade8d7a2b174ce98559081fb06383c4', '')
+('0835bbe9892245e3878dc4f4d081cf20', 'Chicken Wrap', 7.99, 'Grilled chicken strips wrapped with fresh veggies', 15, 1, '2025-10-20 09:59:28.428606', '9ade8d7a2b174ce98559081fb06383c4', '')
+('272f622ea2124fd59d97692c3d6199dd', 'Portuguese Roll', 1.5, 'Soft Portuguese-style bread roll', 15, 1, '2025-10-20 09:59:28.461051', '9ade8d7a2b174ce98559081fb06383c4', '')
+('864f898294804c2db933dc691d263cdf', 'Meat Lovers Pizza', 14.99, 'Loaded with beef, sausage, bacon and pepperoni', 15, 1, '2025-10-20 09:59:28.693714', '1929260b96b34011a9468687b177007b', '')
+('a2037634a4b84fb8ab038dc424ef43c3', 'Margherita Pizza', 9.99, 'Classic tomato sauce, mozzarella and fresh basil', 15, 1, '2025-10-20 09:59:28.723459', '1929260b96b34011a9468687b177007b', '')
+('2d02a607313243399eb56c0717493a7f', 'Garlic Bread', 3.5, 'Toasted bread with garlic butter', 15, 1, '2025-10-20 09:59:28.764593', '1929260b96b34011a9468687b177007b', '')
+('62a94f2d01ab40dfbed2de1edfe8b2ed', 'Grilled Calamari', 16.99, 'Tender calamari rings grilled with lemon butter', 15, 1, '2025-10-20 09:59:29.007651', 'f37140bc6210407783ec3a8093d464f8', '')
+('107178981de643469e631167a2d08b3c', 'Fish and Chips', 12.99, 'Battered fish fillet with golden fries', 15, 1, '2025-10-20 09:59:29.020684', 'f37140bc6210407783ec3a8093d464f8', '')
+('b1c10bb7835a4b36abe711d3d549390d', 'Greek Salad', 6.99, 'Fresh salad with feta, olives and cucumbers', 15, 1, '2025-10-20 09:59:29.040640', 'f37140bc6210407783ec3a8093d464f8', '')
+('3cf9eeb29a2d45fdbba04bc2ee185594', 'Chicken Pieces Meal', 7.99, '4 pieces of crispy fried chicken with chips', 15, 1, '2025-10-20 09:59:29.291915', '26132676bc4948278f152aa8390bad2b', '')
+('b6f7fc84691146cb9610a15e9b71272b', 'Chicken Burger', 4.99, 'Fried chicken patty with lettuce and mayo', 15, 1, '2025-10-20 09:59:29.320231', '26132676bc4948278f152aa8390bad2b', '')
+('f6ec7705fdda461ea1224934336a564b', 'Sadza and Chicken', 8.5, 'Traditional sadza with chicken stew', 15, 1, '2025-10-20 09:59:29.348336', '26132676bc4948278f152aa8390bad2b', '')
+('2a501310468e49b891a63d7a8064e1de', 'King Steer Burger', 9.99, 'Double beef patty with cheese, bacon and special sauce', 15, 1, '2025-10-20 09:59:29.558728', '4d8d8bddae8044328e664100f1c66aae', '')
+('c0c26aad893949aeb8db13a69e5cc500', 'Chicken Burger Combo', 7.99, 'Grilled chicken burger with chips and drink', 15, 1, '2025-10-20 09:59:29.593132', '4d8d8bddae8044328e664100f1c66aae', '')
+('5c9cb08d88a741b4bab51ba1fb0a9406', 'Chips & Cheese', 3.99, 'Crispy fries topped with melted cheese', 15, 1, '2025-10-20 09:59:29.623685', '4d8d8bddae8044328e664100f1c66aae', '')
+('6452d8832a844d5baf9e9f306fc1c14c', 'Nyama Choma Platter', 19.99, 'Grilled meat selection with sadza and relish', 15, 1, '2025-10-20 09:59:29.847351', '609b07eb9a944e88b7db2643f033b644', '')
+('cf8924c570544507afee7b15aa339a3b', 'Vegetable Curry', 9.99, 'Mixed vegetables in aromatic curry sauce', 15, 1, '2025-10-20 09:59:29.864623', '609b07eb9a944e88b7db2643f033b644', '')
+('b42b8a9e1f35451ab37a8fb02609ebb9', 'Madora (Mopane Worms)', 6.5, 'Traditional protein-rich delicacy', 15, 1, '2025-10-20 09:59:29.883948', '609b07eb9a944e88b7db2643f033b644', '')
+('87ac6ecd47b14474aa8f12ed5892c072', 'Sadza ne Huku', 8.99, 'Sadza with chicken in peanut butter sauce', 15, 1, '2025-10-20 09:59:30.089172', 'a8f5a4bab0d44c7cb695f322360855f6', '')
+('5ae48ccb654b40f18e2113a1a11d830a', 'Oxtail Stew', 15.99, 'Slow-cooked oxtail in rich gravy', 15, 1, '2025-10-20 09:59:30.103922', 'a8f5a4bab0d44c7cb695f322360855f6', '')
+('0dee491438a44ef0abed48c72ba9f558', 'Chakalaka', 3.5, 'Spicy vegetable relish', 15, 1, '2025-10-20 09:59:30.118980', 'a8f5a4bab0d44c7cb695f322360855f6', '')
+('19c07ab8cb7b460496cd8d65ae64ecd7', 'Pariah Burger', 11.99, 'Gourmet beef burger with caramelized onions and bacon', 15, 1, '2025-10-20 09:59:30.360811', '84797995b2e340aea6ad2d4ba51f999c', '')
+('267236f869314eb6b0aa230d28d5bd45', 'Loaded Fries', 6.99, 'Fries topped with cheese, bacon and sour cream', 15, 1, '2025-10-20 09:59:30.397106', '84797995b2e340aea6ad2d4ba51f999c', '')
+('1a3bfcf7e2434dd1bcb7b8c97cc40d48', 'Chicken Wings', 8.99, 'Spicy buffalo wings with ranch dip', 15, 1, '2025-10-20 09:59:30.423379', '84797995b2e340aea6ad2d4ba51f999c', '')
+('1baa3cb4cdb74aeeb915f61e1f5dcc6a', 'BBQ Ribs Platter', 22.99, 'Slow-smoked ribs with BBQ sauce and coleslaw', 15, 1, '2025-10-20 09:59:31.008827', 'b21c0014df5d401e8e0710865897313b', '')
+('787d1fe26bad4794959441104905acaa', 'Pulled Pork Sandwich', 10.99, 'Tender pulled pork on toasted bun', 15, 1, '2025-10-20 09:59:31.026677', 'b21c0014df5d401e8e0710865897313b', '')
+('d6d7f6ed7422437083eb2590e7e7ad47', 'Mac and Cheese', 4.99, 'Creamy macaroni and cheese', 15, 1, '2025-10-20 09:59:31.080135', 'b21c0014df5d401e8e0710865897313b', '')
+('f4db0967aa614203ad0350ad3914d7f3', 'Vanilla Ice Cream 500ml', 3.5, 'Premium vanilla ice cream', 10, 1, '2025-10-20 10:38:36.688848', '35fbde085be9420f95018e511d06dc0f', 'menu_items/vanilla_ice_cream_product.png')
+('46306cea46d640bc94ae38cf52735808', 'Chocolate Ice Cream 500ml', 3.5, 'Rich chocolate ice cream', 10, 1, '2025-10-20 10:38:36.855580', '35fbde085be9420f95018e511d06dc0f', 'menu_items/chocolate_ice_cream_product.png')
+('1c519dd1f8e746a580004413e4580a69', 'Strawberry Ice Cream 500ml', 3.75, 'Fresh strawberry ice cream', 10, 1, '2025-10-20 10:38:36.933196', '35fbde085be9420f95018e511d06dc0f', 'menu_items/strawberry_ice_cream_product.png')
+('9da5db1c70864f5aaee0e42b3801c46f', 'Frozen Chicken Wings 1kg', 8.5, 'Premium frozen chicken wings', 10, 1, '2025-10-20 10:38:37.005868', '35fbde085be9420f95018e511d06dc0f', 'menu_items/frozen_chicken_wings_pack.png')
+('4b99a845121a4dc2b2d12694d709d030', 'Frozen Fish Fillets 500g', 6, 'Fresh frozen fish fillets', 10, 1, '2025-10-20 10:38:37.073336', '35fbde085be9420f95018e511d06dc0f', 'menu_items/frozen_fish_fillets_pack.png')
+('bc3486a5299d43caadf953b2e3a392c6', 'Frozen Vegetables Mix 1kg', 4.5, 'Mixed frozen vegetables', 10, 1, '2025-10-20 10:38:37.127930', '35fbde085be9420f95018e511d06dc0f', 'menu_items/frozen_vegetables_mix_pack.png')
+('71d0f64846cf4891b567c7c7bbbd4069', 'Coffee', 1, '', 5, 1, '2026-01-07 12:55:57.232293', '35fbde085be9420f95018e511d06dc0f', 'menu_items/coffee.jpg')
+
+================================================================================
+TABLE: restaurants_menuitem_category
+================================================================================
+Columns: id, menuitem_id, categorytype_id
+--------------------------------------------------------------------------------
+Row count: 27
+--------------------------------------------------------------------------------
+(2, '14c3913291e044afae56e9f7960d3980', 6)
+(3, '86fe437ce4d74bca9a425d1ebbb39bb3', 4)
+(4, '19873300447643d0bb0e04a6f24d7ea7', 8)
+(5, '61800369f5ac40d1aedccaf0335485db', 6)
+(6, '0835bbe9892245e3878dc4f4d081cf20', 12)
+(7, '272f622ea2124fd59d97692c3d6199dd', 8)
+(8, '864f898294804c2db933dc691d263cdf', 5)
+(9, 'a2037634a4b84fb8ab038dc424ef43c3', 5)
+(10, '2d02a607313243399eb56c0717493a7f', 8)
+(11, 'b1c10bb7835a4b36abe711d3d549390d', 7)
+(12, '3cf9eeb29a2d45fdbba04bc2ee185594', 6)
+(13, 'b6f7fc84691146cb9610a15e9b71272b', 4)
+(14, '2a501310468e49b891a63d7a8064e1de', 4)
+(15, 'c0c26aad893949aeb8db13a69e5cc500', 4)
+(16, '5c9cb08d88a741b4bab51ba1fb0a9406', 8)
+(17, '0dee491438a44ef0abed48c72ba9f558', 8)
+(18, '19c07ab8cb7b460496cd8d65ae64ecd7', 4)
+(19, '267236f869314eb6b0aa230d28d5bd45', 8)
+(20, '1a3bfcf7e2434dd1bcb7b8c97cc40d48', 6)
+(21, '787d1fe26bad4794959441104905acaa', 12)
+(22, 'd6d7f6ed7422437083eb2590e7e7ad47', 8)
+(23, 'f4db0967aa614203ad0350ad3914d7f3', 14)
+(24, '46306cea46d640bc94ae38cf52735808', 14)
+(25, '1c519dd1f8e746a580004413e4580a69', 14)
+(26, '9da5db1c70864f5aaee0e42b3801c46f', 15)
+(27, '4b99a845121a4dc2b2d12694d709d030', 16)
+(28, 'bc3486a5299d43caadf953b2e3a392c6', 17)
+
+================================================================================
+TABLE: restaurants_restaurant
+================================================================================
+Columns: id, name, phone_number, description, full_address, lat, lng, minimum_order_price, est_delivery_time, created, owner_id, profile_image
+--------------------------------------------------------------------------------
+Row count: 11
+--------------------------------------------------------------------------------
+('8369f767e51d46c997cfaf0b3abf0b80', 'KFC Zimbabwe', '+263771234561', 'World-famous fried chicken with signature taste', "Sam Levy's Village, Borrowdale, Harare", -17.8252, 31.0335, 5, '20-30 mins', '2025-10-20 09:59:28.024083', 'ce6eab07a3e44b8a93aa2b679cdef01f', 'restaurant_profiles/kfc.jpg')
+('9ade8d7a2b174ce98559081fb06383c4', "Nando's Harare", '+263771234562', 'Peri-Peri chicken grilled to perfection', 'Arundel Village, Harare', -17.8292, 31.0522, 7, '25-35 mins', '2025-10-20 09:59:28.331036', '275bb1b9a9fb4534be911426150bf9f2', 'restaurant_profiles/nandos.jpg')
+('1929260b96b34011a9468687b177007b', 'Pizza Inn', '+263771234563', 'Premium pizzas with fresh toppings', 'Newlands Shopping Center, Harare', -17.831, 31.045, 10, '30-40 mins', '2025-10-20 09:59:28.627366', '9cd5507a401b4260bba635a5d7899089', 'restaurant_profiles/pizza_inn.jpg')
+('f37140bc6210407783ec3a8093d464f8', 'Ocean Basket', '+263771234564', 'Fresh seafood and Mediterranean cuisine', "Sam Levy's Village, Borrowdale, Harare", -17.82, 31.029, 12, '35-45 mins', '2025-10-20 09:59:28.940610', 'a5e9389e29804e24bc00e0ca038bd675', 'restaurant_profiles/ocean_basket.jpg')
+('26132676bc4948278f152aa8390bad2b', 'Chicken Inn', '+263771234565', 'Southern fried chicken and more', 'Avondale Shopping Centre, Harare', -17.835, 31.038, 5, '20-30 mins', '2025-10-20 09:59:29.227215', 'c61902d76ebc453e806cdca4ea080906', 'restaurant_profiles/chicken_inn.jpg')
+('4d8d8bddae8044328e664100f1c66aae', 'Steers', '+263771234566', 'Flame-grilled burgers and ribs', 'Eastgate Mall, Harare', -17.818, 31.047, 6, '25-30 mins', '2025-10-20 09:59:29.485584', '3022849492ca48a0b46112cc542ff8f5', 'restaurant_profiles/steers.jpg')
+('609b07eb9a944e88b7db2643f033b644', 'Amanzi Restaurant', '+263771234567', 'Authentic African cuisine and hospitality', 'Borrowdale Road, Harare', -17.833, 31.055, 8, '30-40 mins', '2025-10-20 09:59:29.780359', 'bb62f9b02a444b69965fa7171eb2daea', 'restaurant_profiles/amanzi.jpg')
+('a8f5a4bab0d44c7cb695f322360855f6', "Gava's Restaurant", '+263771234568', 'Traditional Zimbabwean dishes', 'Robert Mugabe Road, Harare', -17.84, 31.032, 7, '30-35 mins', '2025-10-20 09:59:30.039654', '9d8101947f874c2b89128dedd3118e23', 'restaurant_profiles/gavas.jpg')       
+('84797995b2e340aea6ad2d4ba51f999c', 'Pariah State', '+263771234569', 'Trendy burgers and craft beers', 'Fife Avenue, Harare', -17.827, 31.05, 10, '25-35 mins', '2025-10-20 09:59:30.304043', '2a4c08c0623c430ebd88a55458a48c71', 'restaurant_profiles/pariah_state.jpg')
+('b21c0014df5d401e8e0710865897313b', 'The Smokehouse', '+2637712345610', 'BBQ meats and smoky flavors', 'Borrowdale Village, Harare', -17.815, 31.041, 12, '35-45 mins', '2025-10-20 09:59:30.927709', 'afa433eb94404e0a86fe9c05cf495f2e', 'restaurant_profiles/smokehouse.jpg')    
+('35fbde085be9420f95018e511d06dc0f', "Lali's", '+263771234567', 'Premium frozen goods and ice cream shop in Ruwa. Fresh frozen products daily from 7am to 6pm.', 'Damofalls Park, Ruwa, Harare', -17.8897, 31.245, 5, '25-35 mins', '2025-10-20 10:38:15.796979', '9662d7a202714c08b3f1bc9cc1a4d541', "restaurant_profiles/lali's_frozen_foods_logo.png")
+
+================================================================================
+TABLE: restaurants_restaurant_cuisines
+================================================================================
+Columns: id, restaurant_id, cuisinetype_id
+--------------------------------------------------------------------------------
+Row count: 16
+--------------------------------------------------------------------------------
+(21, '35fbde085be9420f95018e511d06dc0f', 17)
+(22, '8369f767e51d46c997cfaf0b3abf0b80', 18)
+(23, '9ade8d7a2b174ce98559081fb06383c4', 18)
+(24, '1929260b96b34011a9468687b177007b', 18)
+(25, '26132676bc4948278f152aa8390bad2b', 18)
+(26, '4d8d8bddae8044328e664100f1c66aae', 18)
+(27, '84797995b2e340aea6ad2d4ba51f999c', 18)
+(28, 'b21c0014df5d401e8e0710865897313b', 18)
+(29, '609b07eb9a944e88b7db2643f033b644', 19)
+(30, 'a8f5a4bab0d44c7cb695f322360855f6', 19)
+(31, 'f37140bc6210407783ec3a8093d464f8', 18)
+(32, '35fbde085be9420f95018e511d06dc0f', 5)
+(33, '1929260b96b34011a9468687b177007b', 20)
+(34, 'f37140bc6210407783ec3a8093d464f8', 21)
+(35, '609b07eb9a944e88b7db2643f033b644', 22)
+(36, '8369f767e51d46c997cfaf0b3abf0b80', 23)
+
+================================================================================
+TABLE: restaurants_restaurantdashboard
+================================================================================
+Columns: id, today_orders, today_revenue, today_average_rating, preparing, pending, completed, last_updated, restaurant_id
+--------------------------------------------------------------------------------
+Row count: 11
+--------------------------------------------------------------------------------
+(1, 0, 0, 3.9, '[]', '[]', '[]', '2026-01-07 12:01:41.445777', '8369f767e51d46c997cfaf0b3abf0b80')
+(2, 0, 0, 4.8, '[]', '[]', '[]', '2026-01-07 12:01:41.461540', '9ade8d7a2b174ce98559081fb06383c4')
+(3, 1, 15, 4.7, '[]', '[{"order_id": "0f1ae05f-a0ca-4255-adae-444f1bfc8790", "customer_email": "brandonkhumz40@gmail.com", "items": [{"name": "Garlic Bread", "quantity": 2, "price": 7.5}], "total": 15.0}]', '[]', '2026-01-07 12:01:41.659267', '1929260b96b34011a9468687b177007b')
+(4, 0, 0, 4.3, '[]', '[]', '[]', '2026-01-07 12:01:41.499383', 'f37140bc6210407783ec3a8093d464f8')
+(5, 0, 0, 4.7, '[]', '[]', '[]', '2026-01-07 12:01:41.516599', '26132676bc4948278f152aa8390bad2b')
+(6, 0, 0, 3.9, '[]', '[]', '[]', '2026-01-07 12:01:41.532997', '4d8d8bddae8044328e664100f1c66aae')
+(7, 0, 0, 4.4, '[]', '[]', '[]', '2026-01-07 12:01:41.549252', '609b07eb9a944e88b7db2643f033b644')
+(8, 0, 0, 4.6, '[]', '[]', '[]', '2026-01-07 12:01:41.569224', 'a8f5a4bab0d44c7cb695f322360855f6')
+(9, 0, 0, 4.4, '[]', '[]', '[]', '2026-01-07 12:01:41.591624', '84797995b2e340aea6ad2d4ba51f999c')
+(10, 0, 0, 3.9, '[]', '[]', '[]', '2026-01-07 12:01:41.607067', 'b21c0014df5d401e8e0710865897313b')
+(11, 1, 16, 4.5, '[]', '[]', '[]', '2026-01-07 12:23:50.753277', '35fbde085be9420f95018e511d06dc0f')
+
+================================================================================
+TABLE: restaurants_restaurantexternalapi
+================================================================================
+Columns: id, category, api_url, api_key, restaurant_id
+--------------------------------------------------------------------------------
+Row count: 10
+--------------------------------------------------------------------------------
+(1, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', '8369f767e51d46c997cfaf0b3abf0b80')
+(2, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', '9ade8d7a2b174ce98559081fb06383c4')
+(3, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', '1929260b96b34011a9468687b177007b')
+(4, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', 'f37140bc6210407783ec3a8093d464f8')
+(5, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', '26132676bc4948278f152aa8390bad2b')
+(6, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', '4d8d8bddae8044328e664100f1c66aae')
+(7, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', '609b07eb9a944e88b7db2643f033b644')
+(8, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', 'a8f5a4bab0d44c7cb695f322360855f6')
+(9, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', '84797995b2e340aea6ad2d4ba51f999c')
+(10, 'get_menu', 'https://kfc-chickens.p.rapidapi.com/chickens/2', '', 'b21c0014df5d401e8e0710865897313b')
+
+================================================================================
+END OF DATABASE DUMP
+================================================================================
+PS D:\Tishanyq Digital\zimfeastMain> 

@@ -13,7 +13,11 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
-    private static final String BASE_URL = "http://192.168.1.7:8000/";
+    private static final String BASE_URL = "https://2d8d3232-66c2-43c2-9587-32dfd8fe00de-00-xr3sjktqw8gq.worf.replit.dev/";
+    
+    public static String getBaseUrl() {
+        return BASE_URL;
+    }
     private static ApiClient instance;
     private final ApiService apiService;
     private final TokenManager tokenManager;
