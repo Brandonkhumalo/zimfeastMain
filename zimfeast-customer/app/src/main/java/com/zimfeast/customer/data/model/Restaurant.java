@@ -122,7 +122,7 @@ public class Restaurant {
     }
 
     public String getDeliveryTimeRange() {
-        int base = estimatedDeliveryTime > 0 ? estimatedDeliveryTime : 30;
+        int base = getEstimatedDeliveryTime();
         return base + "-" + (base + 10) + " min";
     }
 }
