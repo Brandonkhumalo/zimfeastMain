@@ -1,6 +1,7 @@
 package com.zimfeast.customer.data.api;
 
 import com.zimfeast.customer.data.model.AuthResponse;
+import com.zimfeast.customer.data.model.CreateOrderResponse;
 import com.zimfeast.customer.data.model.MenuItem;
 import com.zimfeast.customer.data.model.Order;
 import com.zimfeast.customer.data.model.PaymentRequest;
@@ -54,7 +55,7 @@ public interface ApiService {
     Call<List<MenuItem>> getRestaurantMenuData(@Path("id") String restaurantId);
 
     @POST("api/orders/create/")
-    Call<Order> createOrder(@Body Map<String, Object> orderData);
+    Call<CreateOrderResponse> createOrder(@Body Map<String, Object> orderData);
 
     @GET("api/orders/order/{id}/")
     Call<Order> getOrder(@Path("id") String id);

@@ -21,6 +21,7 @@ import com.zimfeast.customer.R;
 import com.zimfeast.customer.data.api.ApiClient;
 import com.zimfeast.customer.data.local.AppDatabase;
 import com.zimfeast.customer.data.model.CartItem;
+import com.zimfeast.customer.data.model.CreateOrderResponse;
 import com.zimfeast.customer.data.model.Order;
 import com.zimfeast.customer.databinding.ActivityCartBinding;
 import com.zimfeast.customer.ui.address.AddressPickerActivity;
@@ -342,8 +343,6 @@ public class CartActivity extends AppCompatActivity
 
             Map<String, Object> itemMap = new HashMap<>();
             itemMap.put("menu_item_id", item.getId());
-            itemMap.put("menu_item", item.getName());
-            itemMap.put("price", item.getPrice());
             itemMap.put("quantity", item.getQuantity());
             itemsList.add(itemMap);
         }
@@ -353,34 +352,33 @@ public class CartActivity extends AppCompatActivity
                 ? subtotal + deliveryFee + tipAmount
                 : subtotal;
 
-        orderData.put("total", String.format("%.2f", total));
+        orderData.put("total_fee", String.format("%.2f", total));
         orderData.put("restaurant", restaurantId);
         orderData.put("items", itemsList);
-        orderData.put("subtotal", String.format("%.2f", subtotal));
-        orderData.put("deliveryFee", String.format("%.2f", deliveryFee));
-        orderData.put("deliveryAddress", "Current Location");
-        orderData.put("currency", currency);
-        orderData.put("status", "pending");
         orderData.put("method", isDelivery ? "delivery" : "collection");
         orderData.put("tip", String.format("%.2f", tipAmount));
-        orderData.put("deliveryAddress",
-                isDelivery ? binding.etAddress.getText().toString() : "N/A");
+        
         if (isDelivery) {
+            String address = selectedAddress != null && !selectedAddress.isEmpty() 
+                    ? selectedAddress 
+                    : binding.etAddress.getText().toString();
+            orderData.put("delivery_address", address);
             orderData.put("delivery_lat", userLat);
             orderData.put("delivery_lng", userLng);
         }
 
         ApiClient.getInstance().getApiService()
                 .createOrder(orderData)
-                .enqueue(new Callback<Order>() {
+                .enqueue(new Callback<CreateOrderResponse>() {
                     @Override
                     public void onResponse(
-                            Call<Order> call,
-                            Response<Order> response) {
+                            Call<CreateOrderResponse> call,
+                            Response<CreateOrderResponse> response) {
 
                         setLoading(false);
 
-                        if (response.isSuccessful() && response.body() != null) {
+                        if (response.isSuccessful() && response.body() != null 
+                                && response.body().getOrder() != null) {
                             Executors.newSingleThreadExecutor().execute(() ->
                                     AppDatabase.getInstance(
                                                     CartActivity.this)
@@ -391,21 +389,31 @@ public class CartActivity extends AppCompatActivity
                                     CheckoutActivity.class);
                             intent.putExtra(
                                     "orderId",
-                                    response.body().getId());
+                                    response.body().getOrder().getId());
                             startActivity(intent);
                             finish();
                         } else {
+                            String errorMsg = getString(R.string.error_order);
+                            try {
+                                if (response.errorBody() != null) {
+                                    String errorBody = response.errorBody().string();
+                                    Log.e("CartActivity", "Order creation failed: " + errorBody);
+                                }
+                            } catch (Exception e) {
+                                Log.e("CartActivity", "Error reading error body", e);
+                            }
                             Toast.makeText(
                                     CartActivity.this,
-                                    getString(R.string.error_order),
+                                    errorMsg,
                                     Toast.LENGTH_SHORT
                             ).show();
                         }
                     }
 
                     @Override
-                    public void onFailure(Call<Order> call, Throwable t) {
+                    public void onFailure(Call<CreateOrderResponse> call, Throwable t) {
                         setLoading(false);
+                        Log.e("CartActivity", "Order creation network error", t);
                         Toast.makeText(
                                 CartActivity.this,
                                 getString(R.string.error_network),

@@ -7,10 +7,14 @@ from accounts.serializers import UserSerializer
 class OrderItemSerializer(serializers.ModelSerializer):
     menu_item_id = serializers.UUIDField(write_only=True)
     menu_item = MenuItemSerializer(read_only=True)
+    price = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = OrderItem
         fields = ["id", "menu_item_id", "menu_item", "quantity", "price"]
+    
+    def get_price(self, obj):
+        return obj.price()
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)

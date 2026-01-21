@@ -22,10 +22,10 @@ public class Order {
     @SerializedName("subtotal")
     private double subtotal;
 
-    @SerializedName("deliveryFee")
+    @SerializedName("delivery_fee")
     private double deliveryFee;
 
-    @SerializedName("total")
+    @SerializedName("total_fee")
     private double total;
 
     @SerializedName("status")
@@ -34,7 +34,7 @@ public class Order {
     @SerializedName("deliveryCoordinates")
     private Restaurant.Coordinates deliveryCoordinates;
 
-    @SerializedName("deliveryAddress")
+    @SerializedName("delivery_address")
     private String deliveryAddress;
 
     @SerializedName("currency")
@@ -43,7 +43,7 @@ public class Order {
     @SerializedName("driver")
     private Driver driver;
 
-    @SerializedName("createdAt")
+    @SerializedName("created")
     private String createdAt;
 
     public String getId() { return id; }
