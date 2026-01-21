@@ -9,6 +9,10 @@ from rest_framework import generics
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_order(request):
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Order creation request data: {request.data}")
+    
     serializer = OrderSerializer(data=request.data, context={"request": request})
     if serializer.is_valid():
         order = serializer.save(customer=request.user)
