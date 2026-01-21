@@ -161,9 +161,9 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
       />
       
       {/* Sidebar */}
-      <div className="ml-auto w-96 bg-white shadow-xl border-l border-border h-full flex flex-col">
+      <div className="ml-auto w-96 bg-white dark:bg-gray-900 shadow-xl border-l border-border h-full flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h3 className="text-xl font-semibold" data-testid="text-cart-title">Your Cart</h3>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white" data-testid="text-cart-title">Your Cart</h3>
           <Button
             variant="ghost"
             size="sm"
@@ -177,25 +177,25 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
         <div className="flex-1 overflow-y-auto p-6">
           {items.length === 0 ? (
             <div className="text-center py-12">
-              <i className="fas fa-shopping-cart text-4xl text-muted-foreground mb-4"></i>
-              <p className="text-muted-foreground" data-testid="text-empty-cart">Your cart is empty</p>
-              <p className="text-sm text-muted-foreground mt-2">Add items from a restaurant to get started</p>
+              <i className="fas fa-shopping-cart text-4xl text-gray-400 dark:text-gray-500 mb-4"></i>
+              <p className="text-gray-500 dark:text-gray-400" data-testid="text-empty-cart">Your cart is empty</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Add items from a restaurant to get started</p>
             </div>
           ) : (
             <div className="space-y-4">
               {items.map((item) => (
-                <Card key={item.id} className="p-4">
+                <Card key={item.id} className="p-4 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-medium" data-testid={`text-item-name-${item.id}`}>
+                      <h4 className="font-medium text-gray-900 dark:text-white" data-testid={`text-item-name-${item.id}`}>
                         {item.name}
                       </h4>
                       {item.restaurantName && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {item.restaurantName}
                         </p>
                       )}
-                      <p className="text-sm font-medium mt-1" data-testid={`text-item-price-${item.id}`}>
+                      <p className="text-sm font-medium mt-1 text-orange-600 dark:text-orange-400" data-testid={`text-item-price-${item.id}`}>
                         {getCurrencySymbol(currency)}{item.price.toFixed(2)}
                       </p>
                     </div>
@@ -203,17 +203,19 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
                       <Button
                         variant="outline"
                         size="sm"
+                        className="border-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
                         onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
                         data-testid={`button-decrease-${item.id}`}
                       >
                         -
                       </Button>
-                      <span className="px-2" data-testid={`text-quantity-${item.id}`}>
+                      <span className="px-2 text-gray-900 dark:text-white" data-testid={`text-quantity-${item.id}`}>
                         {item.quantity}
                       </span>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="border-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
                         onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                         data-testid={`button-increase-${item.id}`}
                       >
@@ -228,21 +230,21 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
         </div>
         
         {items.length > 0 && (
-          <div className="border-t border-border p-6">
+          <div className="border-t border-border p-6 bg-white dark:bg-gray-900">
             <div className="space-y-2 mb-4">
-              <div className="flex justify-between">
+              <div className="flex justify-between text-gray-700 dark:text-gray-300">
                 <span>Subtotal</span>
                 <span data-testid="text-subtotal">
                   {getCurrencySymbol(currency)}{subtotal.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-gray-700 dark:text-gray-300">
                 <span>Delivery Fee</span>
                 <span data-testid="text-delivery-fee">
                   {getCurrencySymbol(currency)}{deliveryFee.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between font-semibold text-lg border-t pt-2">
+              <div className="flex justify-between font-semibold text-lg border-t border-gray-200 dark:border-gray-700 pt-2 text-gray-900 dark:text-white">
                 <span>Total</span>
                 <span data-testid="text-total">
                   {getCurrencySymbol(currency)}{total.toFixed(2)}

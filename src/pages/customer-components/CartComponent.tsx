@@ -142,33 +142,37 @@ export default function CartComponent({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
-      <div className="bg-white w-96 h-full p-6 overflow-y-auto relative shadow-xl">
-        <h2 className="text-xl font-bold mb-4">Your Cart</h2>
+      <div className="bg-white dark:bg-gray-900 w-96 h-full p-6 overflow-y-auto relative shadow-xl">
+        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Your Cart</h2>
 
         {items.length === 0 ? (
-          <p className="text-muted-foreground">Your cart is empty</p>
+          <p className="text-gray-500 dark:text-gray-400">Your cart is empty</p>
         ) : (
           <ul className="space-y-3">
             {items.map((item) => (
-              <li key={item.id} className="flex justify-between items-center">
+              <li key={item.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-gray-900 dark:text-white">{item.name}</p>
+                  <p className="text-sm text-orange-600 dark:text-orange-400">
                     {currency} {(item.price * item.quantity).toFixed(2)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
+                    variant="outline"
+                    className="border-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
                     onClick={() =>
                       handleQuantityChange(item.id, item.quantity - 1)
                     }
                   >
                     -
                   </Button>
-                  <span>{item.quantity}</span>
+                  <span className="text-gray-900 dark:text-white">{item.quantity}</span>
                   <Button
                     size="sm"
+                    variant="outline"
+                    className="border-gray-300 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
                     onClick={() =>
                       handleQuantityChange(item.id, item.quantity + 1)
                     }
@@ -183,23 +187,25 @@ export default function CartComponent({
 
         {/* Delivery / Collection Section */}
         <div className="mt-6">
-          <p className="font-medium mb-2">Choose Method:</p>
+          <p className="font-medium mb-2 text-gray-900 dark:text-white">Choose Method:</p>
           <div className="flex gap-4 mb-2">
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300 cursor-pointer">
               <input
                 type="radio"
                 value="delivery"
                 checked={method === "delivery"}
                 onChange={() => setMethod("delivery")}
+                className="accent-orange-500"
               />
               Delivery
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300 cursor-pointer">
               <input
                 type="radio"
                 value="collection"
                 checked={method === "collection"}
                 onChange={() => setMethod("collection")}
+                className="accent-orange-500"
               />
               Collection
             </label>
@@ -213,14 +219,14 @@ export default function CartComponent({
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 disabled={!ready}
-                className="w-full border p-2 rounded mb-2"
+                className="w-full border border-gray-300 dark:border-gray-600 p-2 rounded mb-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               />
               {status === "OK" && (
-                <ul className="border rounded max-h-40 overflow-y-auto">
+                <ul className="border border-gray-300 dark:border-gray-600 rounded max-h-40 overflow-y-auto bg-white dark:bg-gray-800">
                   {data.map(({ place_id, description }) => (
                     <li
                       key={place_id}
-                      className="p-2 hover:bg-gray-200 cursor-pointer"
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-900 dark:text-white"
                       onClick={() => handleSelectAddress(description)}
                     >
                       {description}
@@ -230,7 +236,7 @@ export default function CartComponent({
               )}
 
               {deliveryCoords && (
-                <div className="border h-40 w-full mt-2">
+                <div className="border border-gray-300 dark:border-gray-600 h-40 w-full mt-2 rounded overflow-hidden">
                   <iframe
                     width="100%"
                     height="100%"
@@ -242,7 +248,7 @@ export default function CartComponent({
               )}
 
               <div className="mt-3">
-                <label className="text-sm font-medium mb-1 block">Add a tip for your driver (optional)</label>
+                <label className="text-sm font-medium mb-1 block text-gray-700 dark:text-gray-300">Add a tip for your driver (optional)</label>
                 <input
                   type="number"
                   min="0"
@@ -250,7 +256,7 @@ export default function CartComponent({
                   placeholder="0.00"
                   value={tipAmount}
                   onChange={(e) => setTipAmount(e.target.value)}
-                  className="w-full border p-2 rounded"
+                  className="w-full border border-gray-300 dark:border-gray-600 p-2 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
             </div>
@@ -268,7 +274,7 @@ export default function CartComponent({
         <Button
           onClick={onClose}
           variant="ghost"
-          className="absolute top-4 right-4 text-lg"
+          className="absolute top-4 right-4 text-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
         >
           ✕
         </Button>
