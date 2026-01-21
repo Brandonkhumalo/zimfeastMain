@@ -68,15 +68,7 @@ public class RestaurantAdapter extends RecyclerView.Adapter<RestaurantAdapter.Vi
         holder.tvRating.setText(String.format("%.1f", restaurant.getRating() > 0 ? restaurant.getRating() : 4.5));
         holder.tvDeliveryTime.setText(restaurant.getDeliveryTimeRange());
 
-        double deliveryFee = DeliveryUtils.DEFAULT_DELIVERY_FEE;
-        if (userLat != 0 && userLng != 0 && restaurant.getCoordinates() != null) {
-            deliveryFee = DeliveryUtils.calculateDeliveryFee(
-                    userLat, userLng,
-                    restaurant.getCoordinates().getLat(),
-                    restaurant.getCoordinates().getLng()
-            );
-        }
-        holder.tvDeliveryFee.setText(DeliveryUtils.formatCurrency(deliveryFee, currency) + " delivery");
+        holder.tvDeliveryFee.setText("$0.35/km delivery");
 
         if (restaurant.getImageUrl() != null && !restaurant.getImageUrl().isEmpty()) {
             Glide.with(holder.itemView.getContext())

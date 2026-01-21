@@ -1,5 +1,6 @@
 package com.zimfeast.customer.util;
 
+
 public class DeliveryUtils {
     public static final double DEFAULT_DELIVERY_FEE = 3.0;
     public static final double BASE_FEE = 1.5;
@@ -26,6 +27,7 @@ public class DeliveryUtils {
                                                double restaurantLat, double restaurantLng) {
         double distance = calculateDistance(userLat, userLng, restaurantLat, restaurantLng);
         double fee = BASE_FEE + (distance * PER_KM_RATE);
+
         return Math.min(Math.max(fee, MIN_FEE), MAX_FEE);
     }
 

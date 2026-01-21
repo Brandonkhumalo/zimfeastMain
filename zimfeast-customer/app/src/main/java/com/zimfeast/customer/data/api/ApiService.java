@@ -53,7 +53,7 @@ public interface ApiService {
     @GET("api/restaurants/{id}/menu-data/")
     Call<List<MenuItem>> getRestaurantMenuData(@Path("id") String restaurantId);
 
-    @POST("api/orders/")
+    @POST("api/orders/create/")
     Call<Order> createOrder(@Body Map<String, Object> orderData);
 
     @GET("api/orders/order/{id}/")

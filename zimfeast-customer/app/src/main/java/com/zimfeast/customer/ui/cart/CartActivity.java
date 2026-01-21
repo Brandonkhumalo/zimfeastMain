@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -47,6 +48,8 @@ public class CartActivity extends AppCompatActivity
 
     private String currency = "USD";
     private double deliveryFee = 0.0;
+    private boolean isDelivery = true;
+    private double tipAmount = 0.0;
 
     private int locationAttempts = 0;
     private Double userLat = null;
@@ -64,6 +67,7 @@ public class CartActivity extends AppCompatActivity
 
         setupRecyclerView();
         setupClickListeners();
+        setupOrderTypeToggle();
         observeCart();
         requestUserLocation();
     }
@@ -168,32 +172,40 @@ public class CartActivity extends AppCompatActivity
     /* ===================== TOTALS ===================== */
 
     private void updateTotals() {
-        if (cartItems.isEmpty() || userLat == null || userLng == null) {
-            return;
-        }
+        if (cartItems.isEmpty()) return;
 
         double subtotal = 0;
         for (CartItem item : cartItems) {
             subtotal += item.getTotalPrice();
         }
 
+        double total = subtotal;
+
+        //Declare once, usable everywhere below
         CartItem firstItem = cartItems.get(0);
-        double restaurantLat = firstItem.getRestaurantLat();
-        double restaurantLng = firstItem.getRestaurantLng();
 
-        deliveryFee = DeliveryUtils.calculateDeliveryFee(
-                userLat,
-                userLng,
-                restaurantLat,
-                restaurantLng
-        );
+        if (isDelivery) {
+            if (userLat == null || userLng == null) return;
 
-        double total = subtotal + deliveryFee;
+            deliveryFee = DeliveryUtils.calculateDeliveryFee(
+                    userLat,
+                    userLng,
+                    firstItem.getRestaurantLat(),
+                    firstItem.getRestaurantLng()
+            );
+
+            total += deliveryFee + tipAmount;
+            binding.tvDeliveryFee.setText(
+                    DeliveryUtils.formatCurrency(deliveryFee, currency)
+            );
+        } else {
+            binding.tvDeliveryFee.setText(
+                    DeliveryUtils.formatCurrency(0, currency)
+            );
+        }
 
         binding.tvSubtotal.setText(
                 DeliveryUtils.formatCurrency(subtotal, currency));
-        binding.tvDeliveryFee.setText(
-                DeliveryUtils.formatCurrency(deliveryFee, currency));
         binding.tvTotal.setText(
                 DeliveryUtils.formatCurrency(total, currency));
     }
@@ -220,18 +232,59 @@ public class CartActivity extends AppCompatActivity
 
     /* ===================== ORDER ===================== */
 
+    private void setupOrderTypeToggle() {
+        binding.rgOrderType.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rb_delivery) {
+                isDelivery = true;
+                binding.layoutDeliveryOptions.setVisibility(View.VISIBLE);
+                requestUserLocation();
+            } else {
+                isDelivery = false;
+                binding.layoutDeliveryOptions.setVisibility(View.GONE);
+                userLat = null;
+                userLng = null;
+                deliveryFee = 0.0;
+                updateTotals();
+            }
+        });
+
+        binding.etTip.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // no-op
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    tipAmount = s.length() == 0 ? 0.0 : Double.parseDouble(s.toString());
+                } catch (NumberFormatException e) {
+                    tipAmount = 0.0;
+                }
+                updateTotals();
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                // no-op
+            }
+        });
+    }
+
     private void createOrder() {
         if (cartItems.isEmpty()) {
             Toast.makeText(this, "Your cart is empty", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (userLat == null || userLng == null) {
+        //Location required ONLY for delivery
+        if (isDelivery && (userLat == null || userLng == null)) {
             Toast.makeText(
                     this,
                     "Please allow location access to continue",
                     Toast.LENGTH_SHORT
             ).show();
+            requestUserLocation(); // 🔥 trigger permission popup
             return;
         }
 
@@ -246,22 +299,34 @@ public class CartActivity extends AppCompatActivity
             subtotal += item.getTotalPrice();
 
             Map<String, Object> itemMap = new HashMap<>();
-            itemMap.put("id", item.getId());
-            itemMap.put("name", item.getName());
+            itemMap.put("menu_item_id", item.getId());
+            itemMap.put("menu_item", item.getName());
             itemMap.put("price", item.getPrice());
             itemMap.put("quantity", item.getQuantity());
             itemsList.add(itemMap);
         }
 
         Map<String, Object> orderData = new HashMap<>();
-        orderData.put("restaurantId", restaurantId);
+        double total = isDelivery
+                ? subtotal + deliveryFee + tipAmount
+                : subtotal;
+
+        orderData.put("total", String.format("%.2f", total));
+        orderData.put("restaurant", restaurantId);
         orderData.put("items", itemsList);
         orderData.put("subtotal", String.format("%.2f", subtotal));
         orderData.put("deliveryFee", String.format("%.2f", deliveryFee));
-        orderData.put("total", String.format("%.2f", subtotal + deliveryFee));
         orderData.put("deliveryAddress", "Current Location");
         orderData.put("currency", currency);
         orderData.put("status", "pending");
+        orderData.put("method", isDelivery ? "delivery" : "collection");
+        orderData.put("tip", String.format("%.2f", tipAmount));
+        orderData.put("deliveryAddress",
+                isDelivery ? binding.etAddress.getText().toString() : "N/A");
+        if (isDelivery) {
+            orderData.put("delivery_lat", userLat);
+            orderData.put("delivery_lng", userLng);
+        }
 
         ApiClient.getInstance().getApiService()
                 .createOrder(orderData)
