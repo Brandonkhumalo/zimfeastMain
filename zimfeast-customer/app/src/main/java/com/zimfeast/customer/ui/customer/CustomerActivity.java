@@ -270,7 +270,7 @@ public class CustomerActivity extends AppCompatActivity implements
         kfc.setDescription("Finger Lickin' Good");
         kfc.setCuisineType("fast_food");
         kfc.setRating(4.6);
-        kfc.setEstimatedDeliveryTime(25);
+        kfc.setEstimatedDeliveryTime("25");
         demos.add(kfc);
 
         Restaurant sadza = new Restaurant();
@@ -279,7 +279,7 @@ public class CustomerActivity extends AppCompatActivity implements
         sadza.setDescription("Authentic Zimbabwean cuisine");
         sadza.setCuisineType("traditional");
         sadza.setRating(4.8);
-        sadza.setEstimatedDeliveryTime(35);
+        sadza.setEstimatedDeliveryTime("35");
         demos.add(sadza);
 
         Restaurant pizzaInn = new Restaurant();
@@ -288,7 +288,7 @@ public class CustomerActivity extends AppCompatActivity implements
         pizzaInn.setDescription("Hot and Fresh");
         pizzaInn.setCuisineType("pizza");
         pizzaInn.setRating(4.3);
-        pizzaInn.setEstimatedDeliveryTime(30);
+        pizzaInn.setEstimatedDeliveryTime("30");
         demos.add(pizzaInn);
 
         Restaurant nandos = new Restaurant();
@@ -297,7 +297,7 @@ public class CustomerActivity extends AppCompatActivity implements
         nandos.setDescription("Peri-Peri Chicken");
         nandos.setCuisineType("fast_food");
         nandos.setRating(4.5);
-        nandos.setEstimatedDeliveryTime(20);
+        nandos.setEstimatedDeliveryTime("20");
         demos.add(nandos);
 
         Restaurant wimpy = new Restaurant();
@@ -306,7 +306,7 @@ public class CustomerActivity extends AppCompatActivity implements
         wimpy.setDescription("Classic burgers and fries");
         wimpy.setCuisineType("fast_food");
         wimpy.setRating(4.2);
-        wimpy.setEstimatedDeliveryTime(25);
+        wimpy.setEstimatedDeliveryTime("25");
         demos.add(wimpy);
 
         Restaurant mugg = new Restaurant();
@@ -315,7 +315,7 @@ public class CustomerActivity extends AppCompatActivity implements
         mugg.setDescription("Coffee and breakfast");
         mugg.setCuisineType("breakfast");
         mugg.setRating(4.4);
-        mugg.setEstimatedDeliveryTime(30);
+        mugg.setEstimatedDeliveryTime("30");
         demos.add(mugg);
 
         return demos;
