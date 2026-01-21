@@ -21,16 +21,22 @@ public class Restaurant {
     @SerializedName("rating")
     private double rating;
 
-    @SerializedName("estimatedDeliveryTime")
-    private int estimatedDeliveryTime;
+    @SerializedName(value = "estimatedDeliveryTime", alternate = {"est_delivery_time"})
+    private String estimatedDeliveryTime;
 
     @SerializedName("coordinates")
     private Coordinates coordinates;
 
+    @SerializedName("lat")
+    private Double lat;
+
+    @SerializedName("lng")
+    private Double lng;
+
     @SerializedName("isOpen")
     private boolean isOpen;
 
-    @SerializedName("address")
+    @SerializedName(value = "address", alternate = {"full_address"})
     private String address;
 
     public String getId() { return id; }
@@ -51,11 +57,43 @@ public class Restaurant {
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
 
-    public int getEstimatedDeliveryTime() { return estimatedDeliveryTime; }
-    public void setEstimatedDeliveryTime(int estimatedDeliveryTime) { this.estimatedDeliveryTime = estimatedDeliveryTime; }
+    public int getEstimatedDeliveryTime() { 
+        if (estimatedDeliveryTime == null) return 30;
+        try {
+            return Integer.parseInt(estimatedDeliveryTime.replaceAll("[^0-9]", "").split("")[0] + 
+                   (estimatedDeliveryTime.replaceAll("[^0-9]", "").length() > 1 ? 
+                    estimatedDeliveryTime.replaceAll("[^0-9]", "").substring(0, 2) : "0"));
+        } catch (Exception e) {
+            return 30;
+        }
+    }
+    public void setEstimatedDeliveryTime(String estimatedDeliveryTime) { this.estimatedDeliveryTime = estimatedDeliveryTime; }
 
-    public Coordinates getCoordinates() { return coordinates; }
+    public Coordinates getCoordinates() { 
+        if (coordinates != null) return coordinates;
+        if (lat != null && lng != null) {
+            Coordinates coords = new Coordinates();
+            coords.setLat(lat);
+            coords.setLng(lng);
+            return coords;
+        }
+        return null;
+    }
     public void setCoordinates(Coordinates coordinates) { this.coordinates = coordinates; }
+
+    public Double getLat() { 
+        if (lat != null) return lat;
+        if (coordinates != null) return coordinates.getLat();
+        return null;
+    }
+    public void setLat(Double lat) { this.lat = lat; }
+
+    public Double getLng() { 
+        if (lng != null) return lng;
+        if (coordinates != null) return coordinates.getLng();
+        return null;
+    }
+    public void setLng(Double lng) { this.lng = lng; }
 
     public boolean isOpen() { return isOpen; }
     public void setOpen(boolean open) { isOpen = open; }

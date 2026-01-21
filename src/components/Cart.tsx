@@ -50,14 +50,16 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
     // For each restaurant in the cart, calculate delivery fee and use the highest one
     restaurantIds.forEach(restaurantId => {
       const restaurant = restaurants.find(r => r.id === restaurantId);
-      if (restaurant && restaurant.coordinates) {
-        const coords = restaurant.coordinates as {lat: number, lng: number};
-        if (coords.lat && coords.lng) {
+      if (restaurant) {
+        // Handle both flat lat/lng and nested coordinates format
+        const restaurantLat = (restaurant as any).lat ?? (restaurant.coordinates as any)?.lat;
+        const restaurantLng = (restaurant as any).lng ?? (restaurant.coordinates as any)?.lng;
+        if (restaurantLat && restaurantLng) {
           const fee = calculateDeliveryFeeFromCoordinates(
             userLocation.lat,
             userLocation.lng,
-            coords.lat,
-            coords.lng
+            restaurantLat,
+            restaurantLng
           );
           maxDeliveryFee = Math.max(maxDeliveryFee, fee);
         }

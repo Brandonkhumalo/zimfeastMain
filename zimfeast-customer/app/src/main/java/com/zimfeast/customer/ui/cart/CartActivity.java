@@ -187,12 +187,20 @@ public class CartActivity extends AppCompatActivity
         if (isDelivery) {
             if (userLat == null || userLng == null) return;
 
-            deliveryFee = DeliveryUtils.calculateDeliveryFee(
-                    userLat,
-                    userLng,
-                    firstItem.getRestaurantLat(),
-                    firstItem.getRestaurantLng()
-            );
+            Double restLat = firstItem.getRestaurantLat();
+            Double restLng = firstItem.getRestaurantLng();
+            
+            if (restLat != null && restLng != null && restLat != 0 && restLng != 0) {
+                deliveryFee = DeliveryUtils.calculateDeliveryFee(
+                        userLat,
+                        userLng,
+                        restLat,
+                        restLng
+                );
+            } else {
+                deliveryFee = DeliveryUtils.DEFAULT_DELIVERY_FEE;
+                android.util.Log.w("CartActivity", "Restaurant coordinates missing, using default fee");
+            }
 
             total += deliveryFee + tipAmount;
             binding.tvDeliveryFee.setText(

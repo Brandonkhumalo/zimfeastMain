@@ -427,9 +427,11 @@ public class CustomerActivity extends AppCompatActivity implements
         intent.putExtra("restaurantCuisine", restaurant.getFormattedCuisine());
         intent.putExtra("restaurantRating", restaurant.getRating());
         intent.putExtra("deliveryTime", restaurant.getEstimatedDeliveryTime());
-        if (restaurant.getCoordinates() != null) {
-            intent.putExtra("restaurantLat", restaurant.getCoordinates().getLat());
-            intent.putExtra("restaurantLng", restaurant.getCoordinates().getLng());
+        Double lat = restaurant.getLat();
+        Double lng = restaurant.getLng();
+        if (lat != null && lng != null) {
+            intent.putExtra("restaurantLat", lat);
+            intent.putExtra("restaurantLng", lng);
         }
         intent.putExtra("currency", currentCurrency);
         startActivity(intent);

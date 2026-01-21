@@ -37,8 +37,8 @@ public class MenuActivity extends AppCompatActivity implements MenuAdapter.OnMen
     private String restaurantCuisine;
     private double restaurantRating;
     private int deliveryTime;
-    private double restaurantLat;
-    private double restaurantLng;
+    private Double restaurantLat;
+    private Double restaurantLng;
     private String currency = "USD";
     private int cartItemCount = 0;
 
@@ -54,8 +54,14 @@ public class MenuActivity extends AppCompatActivity implements MenuAdapter.OnMen
         restaurantCuisine = getIntent().getStringExtra("restaurantCuisine");
         restaurantRating = getIntent().getDoubleExtra("restaurantRating", 4.5);
         deliveryTime = getIntent().getIntExtra("deliveryTime", 30);
-        restaurantLat = getIntent().getDoubleExtra("restaurantLat", 0);
-        restaurantLng = getIntent().getDoubleExtra("restaurantLng", 0);
+        
+        double lat = getIntent().getDoubleExtra("restaurantLat", 0);
+        double lng = getIntent().getDoubleExtra("restaurantLng", 0);
+        restaurantLat = (lat != 0) ? lat : null;
+        restaurantLng = (lng != 0) ? lng : null;
+        
+        android.util.Log.d("MenuActivity", "Restaurant coords: lat=" + restaurantLat + ", lng=" + restaurantLng);
+        
         currency = getIntent().getStringExtra("currency");
         if (currency == null) currency = "USD";
 
