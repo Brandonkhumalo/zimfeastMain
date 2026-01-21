@@ -75,6 +75,9 @@ dependencies {
     // Google Play Services - Location & Maps
     implementation 'com.google.android.gms:play-services-location:21.1.0'
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
+    
+    // Google Places API for address autocomplete
+    implementation 'com.google.android.libraries.places:places:3.3.0'
 
     // Image Loading
     implementation 'com.github.bumptech.glide:glide:4.16.0'

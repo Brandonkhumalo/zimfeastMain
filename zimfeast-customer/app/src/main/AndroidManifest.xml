@@ -79,6 +79,11 @@
             android:exported="false"
             android:theme="@style/Theme.ZimFeast.NoActionBar" />
 
+        <activity
+            android:name=".ui.address.AddressPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ZimFeast.NoActionBar" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyB6rSsWSWLJhcA2pzFtt-Y1I2wx6UAdyD4" />

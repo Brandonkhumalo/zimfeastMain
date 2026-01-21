@@ -23,6 +23,7 @@ import com.zimfeast.customer.data.local.AppDatabase;
 import com.zimfeast.customer.data.model.CartItem;
 import com.zimfeast.customer.data.model.Order;
 import com.zimfeast.customer.databinding.ActivityCartBinding;
+import com.zimfeast.customer.ui.address.AddressPickerActivity;
 import com.zimfeast.customer.ui.checkout.CheckoutActivity;
 import com.zimfeast.customer.util.DeliveryUtils;
 
@@ -40,6 +41,7 @@ public class CartActivity extends AppCompatActivity
         implements CartAdapter.OnCartItemListener {
 
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
+    private static final int ADDRESS_PICKER_REQUEST = 1002;
     private static final int MAX_LOCATION_ATTEMPTS = 3;
 
     private ActivityCartBinding binding;
@@ -54,6 +56,7 @@ public class CartActivity extends AppCompatActivity
     private int locationAttempts = 0;
     private Double userLat = null;
     private Double userLng = null;
+    private String selectedAddress = null;
 
     private FusedLocationProviderClient fusedLocationClient;
 
@@ -81,6 +84,37 @@ public class CartActivity extends AppCompatActivity
     private void setupClickListeners() {
         binding.btnBack.setOnClickListener(v -> finish());
         binding.btnCheckout.setOnClickListener(v -> createOrder());
+        
+        binding.layoutAddressPicker.setOnClickListener(v -> openAddressPicker());
+    }
+    
+    private void openAddressPicker() {
+        Intent intent = new Intent(this, AddressPickerActivity.class);
+        startActivityForResult(intent, ADDRESS_PICKER_REQUEST);
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == ADDRESS_PICKER_REQUEST && resultCode == RESULT_OK && data != null) {
+            double lat = data.getDoubleExtra(AddressPickerActivity.EXTRA_LATITUDE, 0);
+            double lng = data.getDoubleExtra(AddressPickerActivity.EXTRA_LONGITUDE, 0);
+            String address = data.getStringExtra(AddressPickerActivity.EXTRA_ADDRESS);
+            
+            if (lat != 0 && lng != 0) {
+                userLat = lat;
+                userLng = lng;
+                selectedAddress = address;
+                
+                binding.tvSelectedAddress.setText(address != null && !address.isEmpty() 
+                        ? address 
+                        : String.format("%.4f, %.4f", lat, lng));
+                binding.etAddress.setText(selectedAddress);
+                
+                updateTotals();
+            }
+        }
     }
 
     private void observeCart() {

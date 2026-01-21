@@ -45,4 +45,7 @@
     <color name="orange_gradient_start">#F97316</color>
     <color name="orange_gradient_end">#C2410C</color>
     <color name="link">#2563EB</color>
+    
+    <!-- Ripple Color -->
+    <color name="ripple_color">#20F97316</color>
 </resources>
