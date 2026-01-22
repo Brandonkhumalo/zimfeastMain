@@ -352,11 +352,11 @@ public class CartActivity extends AppCompatActivity
                 ? subtotal + deliveryFee + tipAmount
                 : subtotal;
 
-        orderData.put("total_fee", String.format("%.2f", total));
+        orderData.put("total_fee", String.format(java.util.Locale.US, "%.2f", total));
         orderData.put("restaurant", restaurantId);
         orderData.put("items", itemsList);
         orderData.put("method", isDelivery ? "delivery" : "collection");
-        orderData.put("tip", String.format("%.2f", tipAmount));
+        orderData.put("tip", String.format(java.util.Locale.US, "%.2f", tipAmount));
         
         if (isDelivery) {
             String address = selectedAddress != null && !selectedAddress.isEmpty() 
