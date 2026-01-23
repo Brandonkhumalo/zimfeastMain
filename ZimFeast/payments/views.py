@@ -98,10 +98,8 @@ def create_payment(request):
                 order.reference = payment_response.poll_url
                 order.save()
                 return Response({
-                    "success": True,
                     "status": "partial",
-                    "redirect_url": payment_response.redirect_url,
-                    "poll_url": payment_response.poll_url
+                    "paynow_url": payment_response.redirect_url
                 })
             return Response({"error": "Failed to initiate PayNow for remaining amount"}, status=400)
 
@@ -115,11 +113,7 @@ def create_payment(request):
             payment.save()
             order.reference = response.poll_url
             order.save()
-            return Response({
-                "success": True,
-                "redirect_url": response.redirect_url,
-                "poll_url": response.poll_url
-            })
+            return Response({"paynow_url": response.redirect_url})
         error_msg = getattr(response, 'error', '') or getattr(response, 'errors', '') or getattr(response, 'data', '') or "Unknown error"
         print(f"PayNow Web Error: {error_msg}")
         return Response({"error": f"PayNow failed: {error_msg}"}, status=400)
@@ -139,10 +133,9 @@ def create_payment(request):
             order.reference = response.poll_url
             order.save()
             return Response({
-                "success": True,
-                "redirect_url": response.redirect_url,
-                "poll_url": response.poll_url,
-                "instructions": "Please check your phone to approve the transaction."
+                "paynow_url": response.redirect_url,
+                "instructions": "Please check your phone to approve the transaction.",
+                "reference": response.poll_url
             })
         return Response({"success": False, "message": "Failed to initiate mobile payment."})
 
@@ -270,9 +263,8 @@ def deposit_voucher(request):
 
     if response.success:
         return Response({
-            "success": True,
-            "redirect_url": response.redirect_url,
-            "poll_url": response.pollurl
+            "paynow_url": response.redirect_url,
+            "reference": response.pollurl
         })
     return Response({"error": "Failed to initiate voucher top-up"}, status=400)
 

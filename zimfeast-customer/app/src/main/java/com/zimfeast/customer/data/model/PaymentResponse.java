@@ -6,7 +6,7 @@ public class PaymentResponse {
     @SerializedName("success")
     private boolean success;
 
-    @SerializedName("redirect_url")
+    @SerializedName("paynow_url")
     private String redirectUrl;
 
     @SerializedName("poll_url")
