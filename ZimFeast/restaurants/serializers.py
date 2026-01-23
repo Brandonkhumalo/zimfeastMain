@@ -29,6 +29,7 @@ class RestaurantExternalAPISerializer(serializers.ModelSerializer):
 
 class MenuItemSerializer(serializers.ModelSerializer):
     available = serializers.BooleanField()
+    item_image = serializers.SerializerMethodField()
 
     category = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field="name"
@@ -38,6 +39,19 @@ class MenuItemSerializer(serializers.ModelSerializer):
         model = MenuItem
         fields = ["id","restaurant","name","price","description","category","prep_time","available","item_image","created",]
         read_only_fields = ("restaurant", "created")
+    
+    def get_item_image(self, obj):
+        """Get full URL for item image"""
+        if obj.item_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.item_image.url)
+            from django.conf import settings
+            base_url = getattr(settings, 'SITE_URL', '')
+            if base_url:
+                return f"{base_url.rstrip('/')}{obj.item_image.url}"
+            return obj.item_image.url
+        return None
 
 
 class RestaurantCreateSerializer(serializers.ModelSerializer):
