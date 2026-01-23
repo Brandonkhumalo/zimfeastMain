@@ -85,10 +85,10 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ViewHolder> {
         }
 
         // IMAGE FIX
-        String imageUrl = item.getItemImage(); // relative path
-        if (imageUrl != null && !imageUrl.isEmpty()) {
+        String fullUrl = DeliveryUtils.normalizeImageUrl(item.getItemImage(), ApiClient.getBaseUrl());
+        if (fullUrl != null) {
             Glide.with(holder.itemView.getContext())
-                    .load(ApiClient.getBaseUrl() + imageUrl)
+                    .load(fullUrl)
                     .placeholder(R.drawable.placeholder_restaurant)
                     .error(R.drawable.placeholder_restaurant)
                     .centerCrop()

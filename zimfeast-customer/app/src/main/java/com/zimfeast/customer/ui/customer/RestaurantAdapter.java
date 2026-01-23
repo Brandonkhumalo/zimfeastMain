@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.zimfeast.customer.R;
+import com.zimfeast.customer.data.api.ApiClient;
 import com.zimfeast.customer.data.model.Restaurant;
 import com.zimfeast.customer.util.DeliveryUtils;
 
@@ -70,9 +71,10 @@ public class RestaurantAdapter extends RecyclerView.Adapter<RestaurantAdapter.Vi
 
         holder.tvDeliveryFee.setText("$0.35/km delivery");
 
-        if (restaurant.getImageUrl() != null && !restaurant.getImageUrl().isEmpty()) {
+        String fullUrl = DeliveryUtils.normalizeImageUrl(restaurant.getImageUrl(), ApiClient.getBaseUrl());
+        if (fullUrl != null) {
             Glide.with(holder.itemView.getContext())
-                    .load(restaurant.getImageUrl())
+                    .load(fullUrl)
                     .placeholder(R.drawable.placeholder_restaurant)
                     .error(R.drawable.placeholder_restaurant)
                     .centerCrop()

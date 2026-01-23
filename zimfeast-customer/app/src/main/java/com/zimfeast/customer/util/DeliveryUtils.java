@@ -99,4 +99,28 @@ public class DeliveryUtils {
         double fee = Math.max(MIN_FEE, totalDistance * PER_KM_RATE);
         return new MultiRestaurantResult(fee, totalDistance);
     }
+    
+    /**
+     * Normalizes image URLs from the backend to use the correct server address.
+     * Handles localhost URLs and relative paths.
+     */
+    public static String normalizeImageUrl(String imageUrl, String baseUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return null;
+        }
+        
+        String normalizedBaseUrl = baseUrl.endsWith("/") 
+                ? baseUrl.substring(0, baseUrl.length() - 1) 
+                : baseUrl;
+        
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+            // Replace localhost URLs with actual server URL
+            return imageUrl.replace("http://localhost:8000", normalizedBaseUrl)
+                          .replace("http://127.0.0.1:8000", normalizedBaseUrl);
+        } else {
+            // Relative path - prepend base URL
+            String path = imageUrl.startsWith("/") ? imageUrl : "/" + imageUrl;
+            return normalizedBaseUrl + path;
+        }
+    }
 }
