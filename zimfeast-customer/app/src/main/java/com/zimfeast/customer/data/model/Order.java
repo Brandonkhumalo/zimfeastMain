@@ -27,6 +27,9 @@ public class Order {
 
     @SerializedName("total_fee")
     private double total;
+    
+    @SerializedName("tip")
+    private double tip;
 
     @SerializedName("status")
     private String status;
@@ -65,7 +68,16 @@ public class Order {
     }
     public void setItems(List<OrderItem> items) { this.items = items; }
 
-    public double getSubtotal() { return subtotal; }
+    public double getSubtotal() { 
+        if (subtotal > 0) return subtotal;
+        double computed = 0;
+        if (getItems() != null) {
+            for (OrderItem item : getItems()) {
+                computed += item.getPrice() * item.getQuantity();
+            }
+        }
+        return computed;
+    }
     public void setSubtotal(double subtotal) { this.subtotal = subtotal; }
 
     public double getDeliveryFee() { return deliveryFee; }
@@ -73,6 +85,9 @@ public class Order {
 
     public double getTotal() { return total; }
     public void setTotal(double total) { this.total = total; }
+    
+    public double getTip() { return tip; }
+    public void setTip(double tip) { this.tip = tip; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -106,11 +121,37 @@ public class Order {
 
         @SerializedName("quantity")
         private int quantity;
+        
+        @SerializedName("menu_item")
+        private MenuItem menuItem;
 
+        public String getId() { return id; }
+        public String getName() { 
+            if (name != null && !name.isEmpty()) return name;
+            if (menuItem != null) return menuItem.getName();
+            return "Unknown Item";
+        }
+        public double getPrice() { 
+            if (price > 0) return price;
+            if (menuItem != null) return menuItem.getPrice();
+            return 0;
+        }
+        public int getQuantity() { return quantity > 0 ? quantity : 1; }
+    }
+    
+    public static class MenuItem {
+        @SerializedName("id")
+        private String id;
+        
+        @SerializedName("name")
+        private String name;
+        
+        @SerializedName("price")
+        private double price;
+        
         public String getId() { return id; }
         public String getName() { return name; }
         public double getPrice() { return price; }
-        public int getQuantity() { return quantity; }
     }
 
     public static class Driver {

@@ -105,6 +105,13 @@ public class CheckoutActivity extends AppCompatActivity {
         binding.tvSubtotal.setText(DeliveryUtils.formatCurrency(currentOrder.getSubtotal(), currency));
         binding.tvDeliveryFee.setText(DeliveryUtils.formatCurrency(currentOrder.getDeliveryFee(), currency));
         binding.tvTotal.setText(DeliveryUtils.formatCurrency(currentOrder.getTotal(), currency));
+        
+        if (currentOrder.getTip() > 0) {
+            binding.layoutTipRow.setVisibility(View.VISIBLE);
+            binding.tvTip.setText(DeliveryUtils.formatCurrency(currentOrder.getTip(), currency));
+        } else {
+            binding.layoutTipRow.setVisibility(View.GONE);
+        }
 
         if (currentOrder.getItems() != null) {
             StringBuilder itemsText = new StringBuilder();

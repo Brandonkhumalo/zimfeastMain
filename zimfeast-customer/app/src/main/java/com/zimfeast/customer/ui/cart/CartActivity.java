@@ -241,10 +241,20 @@ public class CartActivity extends AppCompatActivity
             binding.tvDeliveryFee.setText(
                     DeliveryUtils.formatCurrency(deliveryFee, currency)
             );
+            
+            if (tipAmount > 0) {
+                binding.layoutTipRow.setVisibility(View.VISIBLE);
+                binding.tvTipAmount.setText(
+                        DeliveryUtils.formatCurrency(tipAmount, currency)
+                );
+            } else {
+                binding.layoutTipRow.setVisibility(View.GONE);
+            }
         } else {
             binding.tvDeliveryFee.setText(
                     DeliveryUtils.formatCurrency(0, currency)
             );
+            binding.layoutTipRow.setVisibility(View.GONE);
         }
 
         binding.tvSubtotal.setText(
