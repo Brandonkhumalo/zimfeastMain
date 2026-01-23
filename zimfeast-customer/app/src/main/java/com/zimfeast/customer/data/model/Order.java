@@ -11,7 +11,7 @@ public class Order {
     private String restaurantId;
 
     @SerializedName("restaurant_names")
-    private String restaurantName;
+    private List<String> restaurantNames;
 
     @SerializedName("items")
     private List<OrderItem> items;
@@ -52,8 +52,12 @@ public class Order {
     public String getRestaurantId() { return restaurantId; }
     public void setRestaurantId(String restaurantId) { this.restaurantId = restaurantId; }
 
-    public String getRestaurantName() { return restaurantName; }
-    public void setRestaurantName(String restaurantName) { this.restaurantName = restaurantName; }
+    public String getRestaurantName() { 
+        if (restaurantNames == null || restaurantNames.isEmpty()) return "";
+        return String.join(", ", restaurantNames);
+    }
+    public List<String> getRestaurantNames() { return restaurantNames; }
+    public void setRestaurantNames(List<String> restaurantNames) { this.restaurantNames = restaurantNames; }
 
     public List<OrderItem> getItems() {
         if (items != null && !items.isEmpty()) return items;
