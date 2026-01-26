@@ -2,7 +2,6 @@ package com.zimfeast.driver.socket;
 
 import android.util.Log;
 
-import com.zimfeast.driver.BuildConfig;
 import com.zimfeast.driver.ZimFeastDriverApp;
 import com.zimfeast.driver.data.model.DeliveryOffer;
 
