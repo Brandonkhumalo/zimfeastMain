@@ -1,12 +1,14 @@
 package com.zimfeast.driver.ui;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,6 +18,7 @@ import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.zimfeast.driver.R;
 import com.zimfeast.driver.ZimFeastDriverApp;
@@ -39,6 +42,18 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     private Button btnAccept;
     private Button btnDecline;
     
+    private LinearLayout homeContent;
+    private ScrollView earningsContent;
+    private ScrollView settingsContent;
+    private BottomNavigationView bottomNav;
+    
+    private TextView tvSettingsName;
+    private TextView tvSettingsPhone;
+    private TextView tvSettingsVehicle;
+    private View viewConnectionIndicator;
+    private TextView tvConnectionStatus;
+    private Button btnLogout;
+    
     private SocketManager socketManager;
     private DeliveryOffer currentOffer;
     private android.os.CountDownTimer offerTimer;
@@ -56,11 +71,13 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         
         initViews();
         setupListeners();
+        setupBottomNavigation();
         
         socketManager = SocketManager.getInstance();
         socketManager.addListener(this);
         
         checkLocationPermission();
+        updateSettingsInfo();
     }
     
     private void initViews() {
@@ -76,8 +93,83 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         btnAccept = findViewById(R.id.btn_accept);
         btnDecline = findViewById(R.id.btn_decline);
         
+        homeContent = findViewById(R.id.home_content);
+        earningsContent = findViewById(R.id.earnings_content);
+        settingsContent = findViewById(R.id.settings_content);
+        bottomNav = findViewById(R.id.bottom_nav);
+        
+        tvSettingsName = findViewById(R.id.tv_settings_name);
+        tvSettingsPhone = findViewById(R.id.tv_settings_phone);
+        tvSettingsVehicle = findViewById(R.id.tv_settings_vehicle);
+        viewConnectionIndicator = findViewById(R.id.view_connection_indicator);
+        tvConnectionStatus = findViewById(R.id.tv_connection_status);
+        btnLogout = findViewById(R.id.btn_logout);
+        
         tvDriverName.setText(ZimFeastDriverApp.getInstance().getDriverName());
         cardDeliveryOffer.setVisibility(View.GONE);
+    }
+    
+    private void setupBottomNavigation() {
+        bottomNav.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                showHome();
+                return true;
+            } else if (itemId == R.id.nav_earnings) {
+                showEarnings();
+                return true;
+            } else if (itemId == R.id.nav_settings) {
+                showSettings();
+                return true;
+            }
+            return false;
+        });
+    }
+    
+    private void showHome() {
+        homeContent.setVisibility(View.VISIBLE);
+        earningsContent.setVisibility(View.GONE);
+        settingsContent.setVisibility(View.GONE);
+    }
+    
+    private void showEarnings() {
+        homeContent.setVisibility(View.GONE);
+        earningsContent.setVisibility(View.VISIBLE);
+        settingsContent.setVisibility(View.GONE);
+    }
+    
+    private void showSettings() {
+        homeContent.setVisibility(View.GONE);
+        earningsContent.setVisibility(View.GONE);
+        settingsContent.setVisibility(View.VISIBLE);
+        updateSettingsInfo();
+    }
+    
+    private void updateSettingsInfo() {
+        ZimFeastDriverApp app = ZimFeastDriverApp.getInstance();
+        if (tvSettingsName != null) {
+            tvSettingsName.setText(app.getDriverName());
+        }
+        if (tvSettingsPhone != null) {
+            String phone = app.getDriverPhone();
+            tvSettingsPhone.setText(phone.isEmpty() ? "Not set" : phone);
+        }
+        if (tvSettingsVehicle != null) {
+            tvSettingsVehicle.setText(app.getDriverVehicle());
+        }
+        updateConnectionStatus(socketManager != null && socketManager.isConnected());
+    }
+    
+    private void updateConnectionStatus(boolean connected) {
+        if (viewConnectionIndicator != null) {
+            GradientDrawable drawable = new GradientDrawable();
+            drawable.setShape(GradientDrawable.OVAL);
+            drawable.setColor(connected ? 0xFF4CAF50 : 0xFFF44336);
+            viewConnectionIndicator.setBackground(drawable);
+        }
+        if (tvConnectionStatus != null) {
+            tvConnectionStatus.setText(connected ? "Connected" : "Disconnected");
+        }
     }
     
     private void setupListeners() {
@@ -100,6 +192,21 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 declineDelivery();
             }
         });
+        
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> logout());
+        }
+    }
+    
+    private void logout() {
+        ZimFeastDriverApp.getInstance().logout();
+        if (socketManager != null) {
+            socketManager.disconnect();
+        }
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
     
     private void checkLocationPermission() {
@@ -149,6 +256,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         
         ZimFeastDriverApp.getInstance().setOnline(false);
         hideDeliveryOffer();
+        updateConnectionStatus(false);
     }
     
     private void showDeliveryOffer(DeliveryOffer offer) {
@@ -214,6 +322,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         runOnUiThread(() -> {
             tvStatus.setText("Online - Waiting for deliveries");
             socketManager.goOnline();
+            updateConnectionStatus(true);
         });
     }
     
@@ -222,6 +331,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         runOnUiThread(() -> {
             tvStatus.setText("Disconnected");
             switchOnline.setChecked(false);
+            updateConnectionStatus(false);
         });
     }
     
