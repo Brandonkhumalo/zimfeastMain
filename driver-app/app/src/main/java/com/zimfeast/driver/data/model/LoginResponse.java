@@ -9,6 +9,9 @@ public class LoginResponse {
     @SerializedName("access")
     private String token;
     
+    @SerializedName("refresh")
+    private String refreshToken;
+    
     @SerializedName("role")
     private String role;
     
@@ -23,6 +26,7 @@ public class LoginResponse {
     
     public String getUserId() { return userId; }
     public String getToken() { return token; }
+    public String getRefreshToken() { return refreshToken; }
     public String getRole() { return role; }
     public String getName() { return name; }
     public String getPhone() { return phone; }

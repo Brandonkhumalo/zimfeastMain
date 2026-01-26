@@ -26,7 +26,7 @@ public class SocketManager {
     private boolean isConnected = false;
     private List<SocketListener> listeners = new ArrayList<>();
     
-    private static final String SOCKET_URL = "https://your-app.replit.app:3001";
+    private static final String SOCKET_URL = "https://2d8d3232-66c2-43c2-9587-32dfd8fe00de-00-xr3sjktqw8gq.worf.replit.dev";
     
     public interface SocketListener {
         void onConnected();
@@ -148,13 +148,19 @@ public class SocketManager {
     private DeliveryOffer parseDeliveryOffer(JSONObject data) throws JSONException {
         DeliveryOffer offer = new DeliveryOffer();
         offer.setOrderId(data.getString("orderId"));
-        offer.setRestaurantName(data.getString("restaurantName"));
-        offer.setRestaurantLat(data.getDouble("restaurantLat"));
-        offer.setRestaurantLng(data.getDouble("restaurantLng"));
-        offer.setDropoffAddress(data.getString("dropoffAddress"));
-        offer.setDropoffLat(data.getDouble("dropoffLat"));
-        offer.setDropoffLng(data.getDouble("dropoffLng"));
-        offer.setDistance(data.optString("distance", "0"));
+        offer.setRestaurantName(data.optString("restaurantName", ""));
+        offer.setRestaurantAddress(data.optString("restaurantAddress", ""));
+        offer.setRestaurantLat(data.optDouble("restaurantLat", 0));
+        offer.setRestaurantLng(data.optDouble("restaurantLng", 0));
+        offer.setCustomerName(data.optString("customerName", "Customer"));
+        offer.setCustomerPhone(data.optString("customerPhone", ""));
+        offer.setDropoffAddress(data.optString("dropoffAddress", ""));
+        offer.setDropoffLat(data.optDouble("dropoffLat", 0));
+        offer.setDropoffLng(data.optDouble("dropoffLng", 0));
+        offer.setDistanceToRestaurant(data.optString("distanceToRestaurant", "0"));
+        offer.setDistanceToCustomer(data.optString("distanceToCustomer", "0"));
+        offer.setTotalDistance(data.optString("totalDistance", "0"));
+        offer.setDeliveryPrice(data.optString("deliveryPrice", "0"));
         offer.setTotal(data.optDouble("total", 0));
         offer.setTip(data.optDouble("tip", 0));
         offer.setExpiresIn(data.optInt("expiresIn", 30));

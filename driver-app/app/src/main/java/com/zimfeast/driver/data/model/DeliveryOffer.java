@@ -58,6 +58,8 @@ public class DeliveryOffer {
     public String getTotalDistance() { return totalDistance; }
     public void setTotalDistance(String totalDistance) { this.totalDistance = totalDistance; }
     
+    public void setDistance(String distance) { this.totalDistance = distance; }
+    
     public String getDeliveryPrice() { return deliveryPrice; }
     public void setDeliveryPrice(String deliveryPrice) { this.deliveryPrice = deliveryPrice; }
     
