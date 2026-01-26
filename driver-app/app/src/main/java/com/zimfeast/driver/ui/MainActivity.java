@@ -203,10 +203,17 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     }
     
     private void logout() {
-        ZimFeastDriverApp.getInstance().logout();
+        // Stop location service
+        Intent serviceIntent = new Intent(this, LocationService.class);
+        stopService(serviceIntent);
+        
+        // Disconnect socket
         if (socketManager != null) {
-            socketManager.disconnect();
+            socketManager.goOfflineAndDisconnect();
         }
+        
+        ZimFeastDriverApp.getInstance().logout();
+        
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
@@ -260,8 +267,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     private void goOffline() {
         tvStatus.setText("Offline");
         updateOfflineMessage(false);
-        socketManager.goOffline();
-        socketManager.disconnect();
+        socketManager.goOfflineAndDisconnect();
         
         Intent serviceIntent = new Intent(this, LocationService.class);
         stopService(serviceIntent);

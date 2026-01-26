@@ -22,7 +22,10 @@ public class SocketManager {
     
     private Socket socket;
     private boolean isConnected = false;
+    private boolean isRegistered = false;
     private List<SocketListener> listeners = new CopyOnWriteArrayList<>();
+    private double pendingLat = 0;
+    private double pendingLng = 0;
     
     private static final String SOCKET_URL = "https://2d8d3232-66c2-43c2-9587-32dfd8fe00de-00-xr3sjktqw8gq.worf.replit.dev";
     private static final String SOCKET_NAMESPACE = "/drivers";
@@ -77,13 +80,15 @@ public class SocketManager {
         socket.on(Socket.EVENT_CONNECT, args -> {
             Log.d(TAG, "Socket connected");
             isConnected = true;
-            registerDriver();
+            isRegistered = false;
+            // Don't register immediately - wait for location
             for (SocketListener l : listeners) l.onConnected();
         });
         
         socket.on(Socket.EVENT_DISCONNECT, args -> {
             Log.d(TAG, "Socket disconnected");
             isConnected = false;
+            isRegistered = false;
             for (SocketListener l : listeners) l.onDisconnected();
         });
         
@@ -179,12 +184,21 @@ public class SocketManager {
     
     public void disconnect() {
         if (socket != null) {
+            Log.d(TAG, "Disconnecting socket...");
             socket.disconnect();
             isConnected = false;
+            isRegistered = false;
         }
     }
     
-    private void registerDriver() {
+    public void registerDriverWithLocation(double lat, double lng) {
+        if (!isConnected || socket == null) {
+            // Save for later when connected
+            pendingLat = lat;
+            pendingLng = lng;
+            return;
+        }
+        
         ZimFeastDriverApp app = ZimFeastDriverApp.getInstance();
         JSONObject data = new JSONObject();
         try {
@@ -192,16 +206,28 @@ public class SocketManager {
             data.put("name", app.getDriverName());
             data.put("phone", app.getDriverPhone());
             data.put("vehicle", app.getDriverVehicle());
-            data.put("lat", 0);
-            data.put("lng", 0);
+            data.put("lat", lat);
+            data.put("lng", lng);
             socket.emit("driver:register", data);
+            isRegistered = true;
+            Log.d(TAG, "Driver registered at " + lat + ", " + lng);
         } catch (JSONException e) {
             Log.e(TAG, "Error registering driver: " + e.getMessage());
         }
     }
     
+    public boolean isRegistered() {
+        return isRegistered;
+    }
+    
     public void updateLocation(double lat, double lng) {
         if (isConnected && socket != null) {
+            // Register with location if not yet registered
+            if (!isRegistered) {
+                registerDriverWithLocation(lat, lng);
+                return;
+            }
+            
             JSONObject data = new JSONObject();
             try {
                 data.put("lat", lat);
@@ -259,7 +285,21 @@ public class SocketManager {
     
     public void goOffline() {
         if (isConnected && socket != null) {
+            Log.d(TAG, "Going offline...");
             socket.emit("driver:go_offline");
+        }
+    }
+    
+    public void goOfflineAndDisconnect() {
+        if (isConnected && socket != null) {
+            Log.d(TAG, "Going offline and disconnecting...");
+            socket.emit("driver:go_offline");
+            // Small delay to ensure the offline message is sent before disconnect
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                disconnect();
+            }, 200);
+        } else {
+            disconnect();
         }
     }
     
