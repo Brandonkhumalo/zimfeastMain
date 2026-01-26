@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        if (ZimFeastDriverApp.getInstance().getDriverId() == null) {
+        if (ZimFeastDriverApp.getInstance().getAuthToken() == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;

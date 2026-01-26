@@ -68,12 +68,13 @@ public class LoginActivity extends AppCompatActivity {
                     }
                     
                     ZimFeastDriverApp.getInstance().saveDriverInfo(
-                        data.getUserId(),
-                        data.getName(),
-                        data.getPhone(),
-                        data.getVehicle(),
+                        "",
+                        "Driver",
+                        "",
+                        "Car",
                         data.getToken()
                     );
+                    ZimFeastDriverApp.getInstance().saveRefreshToken(data.getRefreshToken());
                     
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                     finish();

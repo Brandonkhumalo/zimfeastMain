@@ -70,44 +70,21 @@ function DriverAppInner() {
 
   // Fetch active deliveries from backend
   const { data: activeDeliveries, isLoading: activeDeliveriesLoading } = useQuery<Order[]>({
-  queryKey: ["driver-active-orders", user?.id],
-  queryFn: async () => {
-    // Uncomment the next lines to fetch from backend
-    // const res = await getActiveDriverOrders(); // returns {id, status, fee, location}[]
-    // return res.map(o => ({
-    //   id: o.id,
-    //   status: o.status,
-    //   deliveryFee: o.fee,
-    //   deliveryAddress: o.location || "",
-    //   customerName: "Unknown",
-    //   customerPhone: "Unknown",
-    //   driverId: user?.id,
-    // }));
-
-    // DEMO DATA
-    return [
-      {
-        id: "11111111-1111-1111-1111-111111111111",
-        status: "accepted",
-        deliveryFee: 5.0,
-        deliveryAddress: "123 Main Street",
-        customerName: "John Doe",
-        customerPhone: "+263771234567",
+    queryKey: ["driver-active-orders", user?.id],
+    queryFn: async () => {
+      const res = await getActiveDriverOrders();
+      return res.map(o => ({
+        id: o.id,
+        status: o.status,
+        deliveryFee: o.fee,
+        deliveryAddress: o.location || "",
+        customerName: "Customer",
+        customerPhone: "",
         driverId: user?.id,
-      },
-      {
-        id: "22222222-2222-2222-2222-222222222222",
-        status: "delivering",
-        deliveryFee: 7.5,
-        deliveryAddress: "456 Second Ave",
-        customerName: "Jane Smith",
-        customerPhone: "+263778765432",
-        driverId: user?.id,
-      },
-    ];
-  },
-  enabled: isAuthenticated && !!user,
-});
+      }));
+    },
+    enabled: isAuthenticated && !!user,
+  });
 
   // Other queries
   const { data: driverProfile } = useQuery<Driver>({
@@ -121,24 +98,25 @@ function DriverAppInner() {
   });
 
   // Fetch driver daily finance (StatsSection data)
-const { data: statsData } = useQuery({
-  queryKey: ["driver-daily-finance", user?.id],
-  queryFn: async () => {
-    // Uncomment to fetch from backend
-    // const res = await fetch(`/api/drivers/daily/finance/`);
-    // const json = await res.json();
-    // return json;
-
-    // DEMO DATA
-    return {
-      today_deliveries: 4,
-      today_earnings: 42.75,
-      average_rating: 4.8,
-      hours_online: 5.5,
-    };
-  },
-  enabled: isAuthenticated && !!user,
-});
+  const { data: statsData } = useQuery({
+    queryKey: ["driver-daily-finance", user?.id],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/drivers/daily/finances/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        return { today_deliveries: 0, today_earnings: 0, average_rating: 0, hours_online: 0 };
+      } catch {
+        return { today_deliveries: 0, today_earnings: 0, average_rating: 0, hours_online: 0 };
+      }
+    },
+    enabled: isAuthenticated && !!user,
+  });
 
   if (isLoading || activeDeliveriesLoading) return (
     <div className="min-h-screen flex items-center justify-center">

@@ -14,6 +14,7 @@ public class ZimFeastDriverApp extends Application {
     public static final String KEY_DRIVER_PHONE = "driver_phone";
     public static final String KEY_DRIVER_VEHICLE = "driver_vehicle";
     public static final String KEY_AUTH_TOKEN = "auth_token";
+    public static final String KEY_REFRESH_TOKEN = "refresh_token";
     public static final String KEY_IS_ONLINE = "is_online";
     
     @Override
@@ -59,6 +60,14 @@ public class ZimFeastDriverApp extends Application {
     
     public String getAuthToken() {
         return preferences.getString(KEY_AUTH_TOKEN, null);
+    }
+    
+    public void saveRefreshToken(String token) {
+        preferences.edit().putString(KEY_REFRESH_TOKEN, token).apply();
+    }
+    
+    public String getRefreshToken() {
+        return preferences.getString(KEY_REFRESH_TOKEN, null);
     }
     
     public boolean isOnline() {
