@@ -269,7 +269,9 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        socketManager.removeListener(this);
+        if (socketManager != null) {
+            socketManager.removeListener(this);
+        }
         if (offerTimer != null) {
             offerTimer.cancel();
         }
