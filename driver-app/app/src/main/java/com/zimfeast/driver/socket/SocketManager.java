@@ -25,6 +25,7 @@ public class SocketManager {
     private List<SocketListener> listeners = new CopyOnWriteArrayList<>();
     
     private static final String SOCKET_URL = "https://2d8d3232-66c2-43c2-9587-32dfd8fe00de-00-xr3sjktqw8gq.worf.replit.dev";
+    private static final String SOCKET_NAMESPACE = "/drivers";
     
     public interface SocketListener {
         void onConnected();
