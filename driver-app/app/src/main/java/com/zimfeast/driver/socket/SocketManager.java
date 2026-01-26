@@ -9,12 +9,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
 
 public class SocketManager {
     
@@ -23,7 +22,7 @@ public class SocketManager {
     
     private Socket socket;
     private boolean isConnected = false;
-    private List<SocketListener> listeners = new ArrayList<>();
+    private List<SocketListener> listeners = new CopyOnWriteArrayList<>();
     
     private static final String SOCKET_URL = "https://2d8d3232-66c2-43c2-9587-32dfd8fe00de-00-xr3sjktqw8gq.worf.replit.dev";
     
@@ -46,9 +45,13 @@ public class SocketManager {
             options.timeout = 10000;
             
             socket = IO.socket(SOCKET_URL + "/drivers", options);
-            setupSocketListeners();
+            if (socket != null) {
+                setupSocketListeners();
+            }
         } catch (URISyntaxException e) {
             Log.e(TAG, "Socket URI error: " + e.getMessage());
+        } catch (Exception e) {
+            Log.e(TAG, "Socket init error: " + e.getMessage());
         }
     }
     
