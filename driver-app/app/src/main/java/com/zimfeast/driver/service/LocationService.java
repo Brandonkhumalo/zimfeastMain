@@ -25,10 +25,11 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.zimfeast.driver.R;
+import com.zimfeast.driver.data.model.DeliveryOffer;
 import com.zimfeast.driver.socket.SocketManager;
 import com.zimfeast.driver.ui.MainActivity;
 
-public class LocationService extends Service {
+public class LocationService extends Service implements SocketManager.SocketListener {
     
     private static final String TAG = "LocationService";
     private static final String CHANNEL_ID = "ZimFeastDriverLocation";
@@ -38,12 +39,15 @@ public class LocationService extends Service {
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
     private SocketManager socketManager;
+    private DeliveryNotificationService notificationService;
     
     @Override
     public void onCreate() {
         super.onCreate();
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         socketManager = SocketManager.getInstance();
+        socketManager.addListener(this);
+        notificationService = new DeliveryNotificationService(this);
         createNotificationChannel();
     }
     
@@ -123,6 +127,42 @@ public class LocationService extends Service {
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
+        if (socketManager != null) {
+            socketManager.removeListener(this);
+        }
+    }
+    
+    @Override
+    public void onConnected() {
+    }
+    
+    @Override
+    public void onDisconnected() {
+    }
+    
+    @Override
+    public void onDeliveryOffer(DeliveryOffer offer) {
+        if (notificationService != null) {
+            notificationService.showDeliveryOfferNotification(offer);
+        }
+    }
+    
+    @Override
+    public void onDeliveryAccepted(String orderId) {
+        if (notificationService != null) {
+            notificationService.cancelDeliveryNotification();
+        }
+    }
+    
+    @Override
+    public void onDeliveryRejected(String orderId) {
+        if (notificationService != null) {
+            notificationService.cancelDeliveryNotification();
+        }
+    }
+    
+    @Override
+    public void onError(String message) {
     }
     
     @Nullable

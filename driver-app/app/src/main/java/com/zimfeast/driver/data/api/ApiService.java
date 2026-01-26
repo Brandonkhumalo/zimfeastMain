@@ -3,6 +3,7 @@ package com.zimfeast.driver.data.api;
 import com.zimfeast.driver.data.model.DriverProfile;
 import com.zimfeast.driver.data.model.LoginRequest;
 import com.zimfeast.driver.data.model.LoginResponse;
+import com.zimfeast.driver.data.model.ProfileResponse;
 import com.zimfeast.driver.data.model.Order;
 import com.zimfeast.driver.data.model.StatusUpdateRequest;
 import com.zimfeast.driver.data.model.TokenRefreshRequest;
@@ -26,8 +27,8 @@ public interface ApiService {
     @POST("api/accounts/token/refresh/")
     Call<TokenRefreshResponse> refreshToken(@Body TokenRefreshRequest request);
     
-    @GET("api/accounts/user/me/")
-    Call<DriverProfile> getProfile();
+    @GET("api/accounts/profile/")
+    Call<ProfileResponse> getProfile();
     
     @GET("api/drivers/profile/")
     Call<DriverProfile> getDriverProfile();

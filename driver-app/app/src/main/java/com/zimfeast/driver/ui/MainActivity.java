@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     private SwitchMaterial switchOnline;
     private TextView tvStatus;
     private TextView tvDriverName;
+    private TextView tvOfflineMessage;
     private CardView cardDeliveryOffer;
     private TextView tvOfferRestaurant;
     private TextView tvOfferAddress;
@@ -105,8 +106,11 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         tvConnectionStatus = findViewById(R.id.tv_connection_status);
         btnLogout = findViewById(R.id.btn_logout);
         
+        tvOfflineMessage = findViewById(R.id.tv_offline_message);
+        
         tvDriverName.setText(ZimFeastDriverApp.getInstance().getDriverName());
         cardDeliveryOffer.setVisibility(View.GONE);
+        updateOfflineMessage(false);
     }
     
     private void setupBottomNavigation() {
@@ -238,6 +242,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     
     private void goOnline() {
         tvStatus.setText("Connecting...");
+        updateOfflineMessage(true);
         socketManager.connect();
         
         Intent serviceIntent = new Intent(this, LocationService.class);
@@ -246,8 +251,15 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         ZimFeastDriverApp.getInstance().setOnline(true);
     }
     
+    private void updateOfflineMessage(boolean isOnline) {
+        if (tvOfflineMessage != null) {
+            tvOfflineMessage.setText(isOnline ? "Waiting for deliveries..." : "Go online to receive delivery offers");
+        }
+    }
+    
     private void goOffline() {
         tvStatus.setText("Offline");
+        updateOfflineMessage(false);
         socketManager.goOffline();
         socketManager.disconnect();
         
@@ -321,6 +333,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     public void onConnected() {
         runOnUiThread(() -> {
             tvStatus.setText("Online - Waiting for deliveries");
+            updateOfflineMessage(true);
             socketManager.goOnline();
             updateConnectionStatus(true);
         });
@@ -330,6 +343,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     public void onDisconnected() {
         runOnUiThread(() -> {
             tvStatus.setText("Disconnected");
+            updateOfflineMessage(false);
             switchOnline.setChecked(false);
             updateConnectionStatus(false);
         });

@@ -32,14 +32,17 @@ public class ZimFeastDriverApp extends Application {
         return preferences;
     }
     
-    public void saveDriverInfo(String driverId, String name, String phone, String vehicle, String token) {
+    public void saveDriverInfo(String driverId, String name, String phone, String vehicle) {
         preferences.edit()
             .putString(KEY_DRIVER_ID, driverId)
             .putString(KEY_DRIVER_NAME, name)
             .putString(KEY_DRIVER_PHONE, phone)
             .putString(KEY_DRIVER_VEHICLE, vehicle)
-            .putString(KEY_AUTH_TOKEN, token)
             .apply();
+    }
+    
+    public void saveAuthToken(String token) {
+        preferences.edit().putString(KEY_AUTH_TOKEN, token).apply();
     }
     
     public String getDriverId() {

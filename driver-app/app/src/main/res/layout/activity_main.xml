@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="?android:attr/windowBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -131,6 +131,7 @@
                         android:text="Restaurant Name"
                         android:textSize="16sp"
                         android:textStyle="bold"
+                        android:textColor="?android:attr/textColorPrimary"
                         android:layout_marginBottom="8dp" />
 
                     <TextView
@@ -146,6 +147,7 @@
                         android:layout_height="wrap_content"
                         android:text="Delivery Address"
                         android:textSize="14sp"
+                        android:textColor="?android:attr/textColorPrimary"
                         android:layout_marginBottom="12dp" />
 
                     <LinearLayout
@@ -174,7 +176,8 @@
                                 android:layout_height="wrap_content"
                                 android:text="2.5 km"
                                 android:textSize="16sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                android:textColor="?android:attr/textColorPrimary" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -249,6 +252,7 @@
                     android:text="Today's Earnings"
                     android:textSize="20sp"
                     android:textStyle="bold"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginBottom="16dp" />
 
                 <androidx.cardview.widget.CardView
@@ -307,7 +311,8 @@
                                     android:layout_height="wrap_content"
                                     android:text="0"
                                     android:textSize="20sp"
-                                    android:textStyle="bold" />
+                                    android:textStyle="bold"
+                                    android:textColor="?android:attr/textColorPrimary" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -330,7 +335,8 @@
                                     android:layout_height="wrap_content"
                                     android:text="0 km"
                                     android:textSize="20sp"
-                                    android:textStyle="bold" />
+                                    android:textStyle="bold"
+                                    android:textColor="?android:attr/textColorPrimary" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -380,6 +386,7 @@
                     android:text="Settings"
                     android:textSize="20sp"
                     android:textStyle="bold"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginBottom="16dp" />
 
                 <androidx.cardview.widget.CardView
@@ -424,7 +431,8 @@
                                 android:layout_height="wrap_content"
                                 android:text="Driver"
                                 android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                android:textColor="?android:attr/textColorPrimary" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -447,7 +455,8 @@
                                 android:layout_height="wrap_content"
                                 android:text="Not set"
                                 android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                android:textColor="?android:attr/textColorPrimary" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -469,7 +478,8 @@
                                 android:layout_height="wrap_content"
                                 android:text="Car"
                                 android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                android:textColor="?android:attr/textColorPrimary" />
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
