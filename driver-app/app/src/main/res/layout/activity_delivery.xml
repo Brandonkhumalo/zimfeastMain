@@ -8,7 +8,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/orange_primary"
+        android:background="@color/primary"
         android:padding="16dp"
         android:orientation="vertical">
 
@@ -100,7 +100,7 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:text="Navigate"
-            android:textColor="@color/orange_primary"
+            android:textColor="@color/primary"
             android:backgroundTint="#FFF3E0"
             android:layout_marginBottom="12dp" />
 
@@ -110,7 +110,7 @@
             android:layout_height="56dp"
             android:text="Arrived at Restaurant"
             android:textColor="@android:color/white"
-            android:backgroundTint="@color/orange_primary" />
+            android:backgroundTint="@color/primary" />
     </LinearLayout>
 
 </LinearLayout>

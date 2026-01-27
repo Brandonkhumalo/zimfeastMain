@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:background="@color/orange_primary"
+        android:background="@color/primary"
         android:gravity="center_vertical">
 
         <LinearLayout
@@ -99,7 +99,7 @@
                             android:text="New Delivery"
                             android:textSize="20sp"
                             android:textStyle="bold"
-                            android:textColor="@color/orange_primary" />
+                            android:textColor="@color/primary" />
 
                         <TextView
                             android:id="@+id/tv_offer_timer"
@@ -228,7 +228,7 @@
                             android:layout_marginStart="8dp"
                             android:text="Accept"
                             android:textColor="@android:color/white"
-                            android:backgroundTint="@color/orange_primary" />
+                            android:backgroundTint="@color/primary" />
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -408,7 +408,7 @@
                             android:text="Profile"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="@color/orange_primary"
+                            android:textColor="@color/primary"
                             android:layout_marginBottom="16dp" />
 
                         <LinearLayout
@@ -503,7 +503,7 @@
                             android:text="Connection Status"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="@color/orange_primary"
+                            android:textColor="@color/primary"
                             android:layout_marginBottom="16dp" />
 
                         <LinearLayout
@@ -545,8 +545,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/white"
-        app:itemIconTint="@color/orange_primary"
-        app:itemTextColor="@color/orange_primary"
+        app:itemIconTint="@color/primary"
+        app:itemTextColor="@color/primary"
         app:menu="@menu/bottom_nav_menu" />
 
 </LinearLayout>
