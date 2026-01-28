@@ -8,6 +8,9 @@ import StatsCards from "./restaurant-components/StatsCards";
 import LiveOrders from "./restaurant-components/LiveOrders";
 import MenuManagement from "./restaurant-components/MenuManagement";
 import ExternalAPIDialog from "./restaurant-components/ExternalAPIDialog";
+import RestaurantSettings from "./restaurant-components/RestaurantSettings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LayoutDashboard, Settings, UtensilsCrossed } from "lucide-react";
 
 // -------------------
 // Types
@@ -302,71 +305,96 @@ export default function RestaurantDashboard() {
     <DashboardLayout>
       <DashboardHeader restaurantName={dashboardData.restaurantName} />
 
-      <main className="max-w-7xl mx-auto p-4 space-y-8">
-        {/* External API Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={() => setIsExternalAPIDialogOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 hover:shadow-xl transform hover:-translate-y-0.5"
-          >
-            <i className="fas fa-plug"></i>
-            <span className="font-semibold">External APIs</span>
-          </button>
-        </div>
+      <main className="max-w-7xl mx-auto p-4 space-y-6">
+        <Tabs defaultValue="dashboard" className="w-full">
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="dashboard" data-testid="tab-dashboard">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="menu" data-testid="tab-menu">
+                <UtensilsCrossed className="h-4 w-4 mr-2" />
+                Menu
+              </TabsTrigger>
+              <TabsTrigger value="settings" data-testid="tab-settings">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
 
-        <StatsCards
-          todayOrders={dashboardData.todayOrders}
-          todayRevenue={dashboardData.todayRevenue}
-          avgRating={dashboardData.avgRating}
-          menuItemsCount={menuItems.length}
-        />
-
-        <section>
-          <h2 className="text-xl font-bold mb-4">Live Orders</h2>
-          <LiveOrders
-            orders={ordersData.results}
-            selectedStatus={selectedStatus}
-            setSelectedStatus={setSelectedStatus}
-            updateOrder={(orderId: string, status: string) => {
-              // map status changes to REST calls
-              if (status === "preparing") handleUpdateOrder(orderId, "preparing");
-              else if (status === "ready") handleUpdateOrder(orderId, "ready");
-              else if (status === "collected") handleUpdateOrder(orderId, "collected");
-              else {
-                handleUpdateOrder(orderId, status as any);
-              }
-            }}
-          />
-
-          <div className="flex justify-between mt-4">
             <button
-              onClick={handlePrevious}
-              disabled={!ordersData.previous}
-              className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+              onClick={() => setIsExternalAPIDialogOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg shadow-md hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+              data-testid="button-external-apis"
             >
-              Previous 10
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={!ordersData.next}
-              className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-            >
-              Next 10
+              <i className="fas fa-plug"></i>
+              <span className="font-medium">External APIs</span>
             </button>
           </div>
-        </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-4">Menu Management</h2>
-          <MenuManagement
-            handleAddItem={() => setIsAddDialogOpen(true)}
-            isAddDialogOpen={isAddDialogOpen}
-            setIsAddDialogOpen={setIsAddDialogOpen}
-          />
-        </section>
+          <TabsContent value="dashboard" className="space-y-6">
+            <StatsCards
+              todayOrders={dashboardData.todayOrders}
+              todayRevenue={dashboardData.todayRevenue}
+              avgRating={dashboardData.avgRating}
+              menuItemsCount={menuItems.length}
+            />
+
+            <section>
+              <h2 className="text-xl font-bold mb-4">Live Orders</h2>
+              <LiveOrders
+                orders={ordersData.results}
+                selectedStatus={selectedStatus}
+                setSelectedStatus={setSelectedStatus}
+                updateOrder={(orderId: string, status: string) => {
+                  if (status === "preparing") handleUpdateOrder(orderId, "preparing");
+                  else if (status === "ready") handleUpdateOrder(orderId, "ready");
+                  else if (status === "collected") handleUpdateOrder(orderId, "collected");
+                  else {
+                    handleUpdateOrder(orderId, status as any);
+                  }
+                }}
+              />
+
+              <div className="flex justify-between mt-4">
+                <button
+                  onClick={handlePrevious}
+                  disabled={!ordersData.previous}
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+                  data-testid="button-previous-orders"
+                >
+                  Previous 10
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={!ordersData.next}
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded disabled:opacity-50"
+                  data-testid="button-next-orders"
+                >
+                  Next 10
+                </button>
+              </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value="menu">
+            <section>
+              <h2 className="text-xl font-bold mb-4">Menu Management</h2>
+              <MenuManagement
+                handleAddItem={() => setIsAddDialogOpen(true)}
+                isAddDialogOpen={isAddDialogOpen}
+                setIsAddDialogOpen={setIsAddDialogOpen}
+              />
+            </section>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <RestaurantSettings />
+          </TabsContent>
+        </Tabs>
       </main>
 
-      {/* External API Dialog */}
       <ExternalAPIDialog
         isOpen={isExternalAPIDialogOpen}
         onClose={() => setIsExternalAPIDialogOpen(false)}

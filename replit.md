@@ -45,3 +45,26 @@ ZimFeast employs a three-tier architecture consisting of a React/Vite frontend, 
 - **SendGrid**: Used for email services.
 - **Redis**: Essential for inter-service communication and real-time features, facilitating Pub/Sub messaging between Django and the Node.js Realtime Server.
 - **Socket.IO**: Powers real-time, bi-directional communication between clients (frontend, driver app) and the Realtime Server.
+
+## Recent Changes
+
+### January 28, 2026
+- **Driver App REST API Integration**: Updated MainActivity and DeliveryActivity to use REST API calls alongside WebSocket for reliability
+- **30-Second Auto-Decline**: Implemented delivery offer timeout with visual countdown and automatic rejection via REST API
+- **Enhanced Delivery Offer Display**: Added customer details, earnings breakdown, and distance information to offer cards
+- **Google Maps Location Picker Component**: Created reusable LocationPicker component (`src/components/ui/location-picker.tsx`) with draggable marker support
+- **Restaurant Registration with Map**: Updated RestaurantForm to use the location picker for precise address selection
+- **Restaurant Settings Tab**: Added settings section to RestaurantDashboard with tabs for General, Location, and Branch management
+- **Multi-Branch Support**: Added UI for restaurants to manage multiple branch locations
+
+## Key Components
+
+### Frontend Components
+- **LocationPicker** (`src/components/ui/location-picker.tsx`): Reusable Google Maps component with search, draggable marker, and current location detection
+- **RestaurantSettings** (`src/pages/restaurant-components/RestaurantSettings.tsx`): Settings panel with location update and branch management
+- **RestaurantForm** (`src/pages/business-components/RestaurantForm.tsx`): Registration form with integrated map picker
+
+### Driver App (Android)
+- **MainActivity.java**: Main driver interface with delivery offers, 30-sec timeout, REST API integration
+- **DeliveryActivity.java**: Active delivery management with status updates via REST API
+- **ApiService.java**: Retrofit interface for REST API calls to Django backend
