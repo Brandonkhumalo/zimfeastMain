@@ -23,27 +23,10 @@ public interface ApiService {
     
     @POST("api/accounts/login/")
     Call<LoginResponse> login(@Body LoginRequest request);
-    
-    @POST("api/accounts/token/refresh/")
-    Call<TokenRefreshResponse> refreshToken(@Body TokenRefreshRequest request);
-    
+
+
     @GET("api/accounts/profile/")
     Call<ProfileResponse> getProfile();
-    
-    @GET("api/drivers/profile/")
-    Call<DriverProfile> getDriverProfile();
-    
-    @PATCH("api/drivers/profile/")
-    Call<DriverProfile> updateDriverProfile(@Body Map<String, Object> updates);
-    
-    @POST("api/drivers/status/")
-    Call<Map<String, Object>> updateDriverStatus(@Body StatusUpdateRequest status);
-    
-    @GET("api/drivers/orders/")
-    Call<List<Order>> getDriverOrders();
-    
-    @GET("api/orders/order/{id}/")
-    Call<Order> getOrder(@Path("id") String orderId);
     
     @POST("api/orders/order/{id}/accept/")
     Call<Map<String, Object>> acceptOrder(@Path("id") String orderId);
@@ -53,7 +36,24 @@ public interface ApiService {
     
     @PATCH("api/orders/order/{id}/status/")
     Call<Map<String, Object>> updateOrderStatus(@Path("id") String orderId, @Body StatusUpdateRequest status);
+
+    @POST("api/accounts/token/refresh/")
+    Call<TokenRefreshResponse> refreshToken(@Body TokenRefreshRequest request);
     
     @POST("api/drivers/location/")
     Call<Map<String, Object>> updateLocation(@Body Map<String, Double> location);
+    @GET("api/drivers/profile/")
+    Call<DriverProfile> getDriverProfile();
+
+    @PATCH("api/drivers/profile/")
+    Call<DriverProfile> updateDriverProfile(@Body Map<String, Object> updates);
+
+    @POST("api/drivers/status/")
+    Call<Map<String, Object>> updateDriverStatus(@Body StatusUpdateRequest status);
+
+    @GET("api/drivers/orders/")
+    Call<List<Order>> getDriverOrders();
+
+    @GET("api/orders/order/{id}/")
+    Call<Order> getOrder(@Path("id") String orderId);
 }
