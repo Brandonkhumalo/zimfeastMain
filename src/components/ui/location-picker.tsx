@@ -107,12 +107,22 @@ export default function LocationPicker({
     }
 
     setIsLoading(false);
+
+    // Return cleanup function to remove listeners and markers
+    return () => {
+      if (window.google && window.google.maps) {
+        window.google.maps.event.clearInstanceListeners(marker);
+        window.google.maps.event.clearInstanceListeners(map);
+        marker.setMap(null);
+      }
+    };
   }, [defaultLat, defaultLng, initialLat, initialLng, reverseGeocode]);
 
   useEffect(() => {
+    let cleanup: (() => void) | undefined;
     const loadGoogleMaps = () => {
       if (window.google && window.google.maps) {
-        initializeMap();
+        cleanup = initializeMap();
         return;
       }
 
@@ -120,10 +130,11 @@ export default function LocationPicker({
         'script[src*="maps.googleapis.com"]'
       );
       if (existingScript) {
-        existingScript.addEventListener("load", () => {
-          initializeMap();
-        });
-        return;
+        const onLoad = () => {
+          cleanup = initializeMap();
+        };
+        existingScript.addEventListener("load", onLoad);
+        return () => existingScript.removeEventListener("load", onLoad);
       }
 
       const script = document.createElement("script");
@@ -131,7 +142,7 @@ export default function LocationPicker({
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        initializeMap();
+        cleanup = initializeMap();
       };
       script.onerror = () => {
         setError("Failed to load Google Maps");
@@ -140,7 +151,11 @@ export default function LocationPicker({
       document.head.appendChild(script);
     };
 
-    loadGoogleMaps();
+    const scriptCleanup = loadGoogleMaps();
+    return () => {
+      if (cleanup) cleanup();
+      if (typeof scriptCleanup === "function") scriptCleanup();
+    };
   }, [apiKey, initializeMap]);
 
   useEffect(() => {
@@ -159,7 +174,7 @@ export default function LocationPicker({
 
     autocompleteRef.current = autocomplete;
 
-    autocomplete.addListener("place_changed", () => {
+    const listener = autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (!place.geometry || !place.geometry.location) return;
 
@@ -174,6 +189,13 @@ export default function LocationPicker({
       setAddress(formattedAddress);
       onLocationChange({ lat, lng, address: formattedAddress });
     });
+
+    return () => {
+      if (window.google && window.google.maps && listener) {
+        window.google.maps.event.removeListener(listener);
+      }
+      autocompleteRef.current = null;
+    };
   }, [isLoading, onLocationChange]);
 
   const getCurrentLocation = () => {
@@ -241,12 +263,12 @@ export default function LocationPicker({
 
       <div
         ref={mapRef}
-        className="rounded-md border overflow-hidden"
+        className="rounded-md border overflow-hidden relative"
         style={{ height }}
         data-testid="map-container"
       >
         {isLoading && (
-          <div className="flex items-center justify-center h-full bg-muted">
+          <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
             <p className="text-muted-foreground">Loading map...</p>
           </div>
         )}
