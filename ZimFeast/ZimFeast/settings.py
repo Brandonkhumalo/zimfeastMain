@@ -56,18 +56,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-GOOGLE_MAPS_API_KEY = config("GOOGLE_API_KEY")
+GOOGLE_MAPS_API_KEY = config("GOOGLE_API_KEY", default="")
 
 OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 
-SENDGRID_API_KEY = config("SENDGRID_API_KEY")
+SENDGRID_API_KEY = config("SENDGRID_API_KEY", default="")
 
-PAYNOW_SANDBOX_URL = config("PAYNOW_SANDBOX_URL")  # change to live URL in production
-PAYNOW_RETURN_URL = config("PAYNOW_RETURN_URL")
-PAYNOW_RESULT_URL = config("PAYNOW_RESULT_URL")
+PAYNOW_SANDBOX_URL = config("PAYNOW_SANDBOX_URL", default="")  # change to live URL in production
+PAYNOW_RETURN_URL = config("PAYNOW_RETURN_URL", default="")
+PAYNOW_RESULT_URL = config("PAYNOW_RESULT_URL", default="")
 
-PAYNOW_INTEGRATION_ID = config("PAYNOW_Integration_ID")
-PAYNOW_INTEGRATION_KEY = config("PAYNOW_Integration_Key")
+PAYNOW_INTEGRATION_ID = config("PAYNOW_Integration_ID", default="")
+PAYNOW_INTEGRATION_KEY = config("PAYNOW_Integration_Key", default="")
 
 ROOT_URLCONF = 'ZimFeast.urls'
 

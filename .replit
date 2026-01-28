@@ -43,13 +43,13 @@ waitForPort = 8000
 name = "Dev Server"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow]]
 name = "Realtime Server"
@@ -72,10 +72,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 5001
-externalPort = 3000
-
-[[ports]]
 localPort = 5002
 externalPort = 3003
 
@@ -88,8 +84,8 @@ localPort = 8000
 externalPort = 8000
 
 [deployment]
-deploymentTarget = "vm"
-run = ["bash", "start_production.sh"]
+deploymentTarget = "autoscale"
+run = ["node", "./dist/index.cjs"]
 build = ["npm", "run", "build"]
 
 [userenv]
@@ -97,3 +93,4 @@ build = ["npm", "run", "build"]
 [userenv.shared]
 GOOGLE_API_KEY = "AIzaSyB6rSsWSWLJhcA2pzFtt-Y1I2wx6UAdyD4"
 VITE_GOOGLE_MAPS_API_KEY = "AIzaSyB6rSsWSWLJhcA2pzFtt-Y1I2wx6UAdyD4"
+SECRET_KEY = "k@qmpyi6$!@0@!)1wt#wfri3n)r3l*$er2k=!f=5n$h(7bv2b-"
