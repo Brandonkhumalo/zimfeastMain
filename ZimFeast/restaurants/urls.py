@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     # Restaurant creation & update
     path('create/', views.create_restaurant, name='create_restaurant'),
+    path('my-restaurant/', views.get_my_restaurant, name='get_my_restaurant'),
     
     # Restaurant detail & nearby (PUT SPECIFIC PATHS BEFORE DYNAMIC PATHS)
     path('nearby/', views.list_nearby_restaurants, name='nearby_restaurants'),

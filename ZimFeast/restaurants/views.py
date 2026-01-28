@@ -37,6 +37,15 @@ from .pagination import NearbyRestaurantCursorPagination
 logger = logging.getLogger(__name__)
 channel_layer = get_channel_layer()
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_my_restaurant(request):
+    """
+    Returns the restaurant belonging to the logged-in user.
+    """
+    restaurant = get_object_or_404(Restaurant, owner=request.user)
+    return Response(RestaurantSerializer(restaurant).data)
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_restaurant(request):

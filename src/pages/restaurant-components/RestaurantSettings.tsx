@@ -47,15 +47,15 @@ export default function RestaurantSettings() {
     minimum_order_price: 0,
     est_delivery_time: 30,
     full_address: "",
-    lat: 0,
-    lng: 0,
+    lat: -17.8252,
+    lng: 31.0335,
   });
 
   const [newBranch, setNewBranch] = useState({
     name: "",
     address: "",
-    lat: 0,
-    lng: 0,
+    lat: -17.8252,
+    lng: 31.0335,
   });
 
   useEffect(() => {
