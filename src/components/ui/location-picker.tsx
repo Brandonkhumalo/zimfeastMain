@@ -119,19 +119,22 @@ export default function LocationPicker({
   }, [defaultLat, defaultLng, initialLat, initialLng, reverseGeocode]);
 
   useEffect(() => {
+    let isMounted = true;
     let cleanup: (() => void) | undefined;
+    
     const loadGoogleMaps = () => {
       if (window.google && window.google.maps) {
-        cleanup = initializeMap();
+        if (isMounted) cleanup = initializeMap();
         return;
       }
 
       const existingScript = document.querySelector(
         'script[src*="maps.googleapis.com"]'
       );
+      
       if (existingScript) {
         const onLoad = () => {
-          cleanup = initializeMap();
+          if (isMounted) cleanup = initializeMap();
         };
         existingScript.addEventListener("load", onLoad);
         return () => existingScript.removeEventListener("load", onLoad);
@@ -142,17 +145,24 @@ export default function LocationPicker({
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        cleanup = initializeMap();
+        if (isMounted) cleanup = initializeMap();
       };
       script.onerror = () => {
-        setError("Failed to load Google Maps");
-        setIsLoading(false);
+        if (isMounted) {
+          setError("Failed to load Google Maps");
+          setIsLoading(false);
+        }
       };
       document.head.appendChild(script);
+      
+      return () => {
+        // We don't remove the script itself as it might be needed by other components
+      };
     };
 
     const scriptCleanup = loadGoogleMaps();
     return () => {
+      isMounted = false;
       if (cleanup) cleanup();
       if (typeof scriptCleanup === "function") scriptCleanup();
     };

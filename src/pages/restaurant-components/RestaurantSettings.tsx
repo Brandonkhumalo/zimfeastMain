@@ -335,7 +335,7 @@ export default function RestaurantSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="location" className="space-y-4 mt-4">
+        <TabsContent value="location" className="space-y-4 mt-4" key="location-content">
           <Card>
             <CardHeader>
               <CardTitle>Main Location</CardTitle>
@@ -344,14 +344,17 @@ export default function RestaurantSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <LocationPicker
-                initialLat={formData.lat}
-                initialLng={formData.lng}
-                initialAddress={formData.full_address}
-                onLocationChange={handleLocationChange}
-                apiKey={GOOGLE_MAPS_API_KEY}
-                height="400px"
-              />
+              {restaurant && (
+                <LocationPicker
+                  key={`main-location-${restaurant.id}`}
+                  initialLat={formData.lat}
+                  initialLng={formData.lng}
+                  initialAddress={formData.full_address}
+                  onLocationChange={handleLocationChange}
+                  apiKey={GOOGLE_MAPS_API_KEY}
+                  height="400px"
+                />
+              )}
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -424,6 +427,7 @@ export default function RestaurantSettings() {
                   </div>
 
                   <LocationPicker
+                    key={showAddBranch ? "new-branch-picker" : "no-branch-picker"}
                     onLocationChange={handleBranchLocationChange}
                     apiKey={GOOGLE_MAPS_API_KEY}
                     height="300px"
