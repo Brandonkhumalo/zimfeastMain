@@ -52,7 +52,17 @@ def login_user(request):
 @permission_classes([IsAuthenticated])
 def get_profile(request):
     serializer = UserSerializer(request.user)
-    return Response(serializer.data)
+    data = serializer.data
+
+    # Include restaurant info for restaurant users
+    if request.user.role == 'restaurant':
+        from restaurants.models import Restaurant
+        restaurant = Restaurant.objects.filter(owner=request.user).first()
+        if restaurant:
+            data['restaurant_id'] = str(restaurant.id)
+            data['restaurant_name'] = restaurant.name
+
+    return Response(data)
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
