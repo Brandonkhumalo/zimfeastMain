@@ -1,14 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from "@react-google-maps/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin, Search, LocateFixed } from "lucide-react";
-
-declare global {
-  interface Window {
-    google: any;
-    initGoogleMaps?: () => void;
-  }
-}
 
 interface LocationPickerProps {
   initialLat?: number;
@@ -23,6 +17,8 @@ interface LocationPickerProps {
   apiKey: string;
 }
 
+const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
+
 export default function LocationPicker({
   initialLat,
   initialLng,
@@ -31,27 +27,27 @@ export default function LocationPicker({
   height = "300px",
   apiKey,
 }: LocationPickerProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const geocoderRef = useRef<any>(null);
-  const autocompleteRef = useRef<any>(null);
-
   const [address, setAddress] = useState(initialAddress);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [markerPosition, setMarkerPosition] = useState({
+    lat: initialLat || -17.8292,
+    lng: initialLng || 31.0522,
+  });
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
 
-  const defaultLat = initialLat || -17.8292;
-  const defaultLng = initialLng || 31.0522;
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: apiKey,
+    libraries,
+  });
 
   const reverseGeocode = useCallback(
     (lat: number, lng: number) => {
-      if (!geocoderRef.current) return;
-
-      geocoderRef.current.geocode(
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode(
         { location: { lat, lng } },
-        (results: any[], status: string) => {
-          if (status === "OK" && results[0]) {
+        (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+          if (status === "OK" && results && results[0]) {
             const formattedAddress = results[0].formatted_address;
             setAddress(formattedAddress);
             onLocationChange({ lat, lng, address: formattedAddress });
@@ -64,185 +60,70 @@ export default function LocationPicker({
     [onLocationChange]
   );
 
-  const initializeMap = useCallback(() => {
-    if (!mapRef.current || !window.google) return;
-
-    const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat: defaultLat, lng: defaultLng },
-      zoom: 15,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: true,
-    });
-
-    mapInstanceRef.current = map;
-    geocoderRef.current = new window.google.maps.Geocoder();
-
-    const marker = new window.google.maps.Marker({
-      position: { lat: defaultLat, lng: defaultLng },
-      map: map,
-      draggable: true,
-      animation: window.google.maps.Animation.DROP,
-      title: "Drag to set location",
-    });
-
-    markerRef.current = marker;
-
-    marker.addListener("dragend", () => {
-      const position = marker.getPosition();
-      if (position) {
-        reverseGeocode(position.lat(), position.lng());
-      }
-    });
-
-    map.addListener("click", (e: any) => {
+  const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-      marker.setPosition({ lat, lng });
+      setMarkerPosition({ lat, lng });
       reverseGeocode(lat, lng);
-    });
-
-    if (initialLat && initialLng) {
-      reverseGeocode(initialLat, initialLng);
     }
+  }, [reverseGeocode]);
 
-    setIsLoading(false);
+  const onMarkerDragEnd = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      setMarkerPosition({ lat, lng });
+      reverseGeocode(lat, lng);
+    }
+  }, [reverseGeocode]);
 
-    // Return cleanup function to remove listeners and markers
-    return () => {
-      if (window.google && window.google.maps) {
-        window.google.maps.event.clearInstanceListeners(marker);
-        window.google.maps.event.clearInstanceListeners(map);
-        marker.setMap(null);
-      }
-    };
-  }, [defaultLat, defaultLng, initialLat, initialLng, reverseGeocode]);
-
-  useEffect(() => {
-    let isMounted = true;
-    let cleanup: (() => void) | undefined;
-    
-    const loadGoogleMaps = () => {
-      if (window.google && window.google.maps) {
-        if (isMounted) cleanup = initializeMap();
-        return;
-      }
-
-      const existingScript = document.querySelector(
-        'script[src*="maps.googleapis.com"]'
-      );
-      
-      if (existingScript) {
-        const onLoad = () => {
-          if (isMounted) cleanup = initializeMap();
-        };
-        existingScript.addEventListener("load", onLoad);
-        return () => existingScript.removeEventListener("load", onLoad);
-      }
-
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        if (isMounted) cleanup = initializeMap();
-      };
-      script.onerror = () => {
-        if (isMounted) {
-          setError("Failed to load Google Maps");
-          setIsLoading(false);
-        }
-      };
-      document.head.appendChild(script);
-      
-      return () => {
-        // We don't remove the script itself as it might be needed by other components
-      };
-    };
-
-    const scriptCleanup = loadGoogleMaps();
-    return () => {
-      isMounted = false;
-      if (cleanup) cleanup();
-      if (typeof scriptCleanup === "function") scriptCleanup();
-    };
-  }, [apiKey, initializeMap]);
-
-  useEffect(() => {
-    if (!window.google || !window.google.maps || !mapInstanceRef.current)
-      return;
-
-    const input = document.getElementById(
-      "location-search-input"
-    ) as HTMLInputElement;
-    if (!input || autocompleteRef.current) return;
-
-    const autocomplete = new window.google.maps.places.Autocomplete(input, {
-      componentRestrictions: { country: "zw" },
-      fields: ["geometry", "formatted_address", "name"],
-    });
-
-    autocompleteRef.current = autocomplete;
-
-    const listener = autocomplete.addListener("place_changed", () => {
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
       const place = autocomplete.getPlace();
-      if (!place.geometry || !place.geometry.location) return;
-
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-      const formattedAddress = place.formatted_address || place.name || "";
-
-      mapInstanceRef.current.setCenter({ lat, lng });
-      mapInstanceRef.current.setZoom(17);
-      markerRef.current.setPosition({ lat, lng });
-
-      setAddress(formattedAddress);
-      onLocationChange({ lat, lng, address: formattedAddress });
-    });
-
-    return () => {
-      if (window.google && window.google.maps && listener) {
-        window.google.maps.event.removeListener(listener);
+      if (place.geometry && place.geometry.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const formattedAddress = place.formatted_address || place.name || "";
+        
+        setMarkerPosition({ lat, lng });
+        setAddress(formattedAddress);
+        map?.panTo({ lat, lng });
+        map?.setZoom(17);
+        onLocationChange({ lat, lng, address: formattedAddress });
       }
-      autocompleteRef.current = null;
-    };
-  }, [isLoading, onLocationChange]);
+    }
+  };
 
   const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
-      return;
-    }
+    if (!navigator.geolocation) return;
 
-    setIsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-
-        if (mapInstanceRef.current && markerRef.current) {
-          mapInstanceRef.current.setCenter({ lat, lng });
-          mapInstanceRef.current.setZoom(17);
-          markerRef.current.setPosition({ lat, lng });
-          reverseGeocode(lat, lng);
-        }
-        setIsLoading(false);
+        setMarkerPosition({ lat, lng });
+        map?.panTo({ lat, lng });
+        map?.setZoom(17);
+        reverseGeocode(lat, lng);
       },
-      (err) => {
-        setError("Unable to get your location: " + err.message);
-        setIsLoading(false);
-      },
+      undefined,
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  if (error) {
+  if (loadError) {
     return (
-      <div
-        className="flex items-center justify-center bg-muted rounded-md"
-        style={{ height }}
-      >
-        <p className="text-destructive">{error}</p>
+      <div className="flex items-center justify-center bg-muted rounded-md" style={{ height }}>
+        <p className="text-destructive">Failed to load Google Maps</p>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center bg-muted rounded-md" style={{ height }}>
+        <p className="text-muted-foreground">Loading map...</p>
       </div>
     );
   }
@@ -252,36 +133,49 @@ export default function LocationPicker({
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="location-search-input"
-            type="text"
-            placeholder="Search for an address..."
-            className="pl-10"
-            data-testid="input-location-search"
-          />
+          <Autocomplete
+            onLoad={(ac) => setAutocomplete(ac)}
+            onPlaceChanged={onPlaceChanged}
+            options={{ componentRestrictions: { country: "zw" } }}
+          >
+            <Input
+              type="text"
+              placeholder="Search for an address..."
+              className="pl-10"
+              data-testid="input-location-search"
+            />
+          </Autocomplete>
         </div>
         <Button
           type="button"
           variant="outline"
           onClick={getCurrentLocation}
-          disabled={isLoading}
           data-testid="button-current-location"
         >
           <LocateFixed className="h-4 w-4" />
         </Button>
       </div>
 
-      <div
-        ref={mapRef}
-        className="rounded-md border overflow-hidden relative"
-        style={{ height }}
-        data-testid="map-container"
-      >
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
-            <p className="text-muted-foreground">Loading map...</p>
-          </div>
-        )}
+      <div className="rounded-md border overflow-hidden relative" style={{ height }}>
+        <GoogleMap
+          mapContainerStyle={{ width: '100%', height: '100%' }}
+          center={markerPosition}
+          zoom={15}
+          onClick={onMapClick}
+          onLoad={(map) => setMap(map)}
+          options={{
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: true,
+          }}
+        >
+          <Marker
+            position={markerPosition}
+            draggable={true}
+            onDragEnd={onMarkerDragEnd}
+            animation={google.maps.Animation.DROP}
+          />
+        </GoogleMap>
       </div>
 
       {address && (

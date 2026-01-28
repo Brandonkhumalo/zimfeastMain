@@ -335,7 +335,7 @@ export default function RestaurantSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="location" className="space-y-4 mt-4" key="location-content">
+        <TabsContent value="location" className="space-y-4 mt-4" key="location-tab-content">
           <Card>
             <CardHeader>
               <CardTitle>Main Location</CardTitle>
@@ -345,15 +345,17 @@ export default function RestaurantSettings() {
             </CardHeader>
             <CardContent className="space-y-4">
               {restaurant && (
-                <LocationPicker
-                  key={`main-location-${restaurant.id}`}
-                  initialLat={formData.lat}
-                  initialLng={formData.lng}
-                  initialAddress={formData.full_address}
-                  onLocationChange={handleLocationChange}
-                  apiKey={GOOGLE_MAPS_API_KEY}
-                  height="400px"
-                />
+                <div key={`location-container-${restaurant.id}`}>
+                  <LocationPicker
+                    key={`main-location-picker-${restaurant.id}`}
+                    initialLat={formData.lat}
+                    initialLng={formData.lng}
+                    initialAddress={formData.full_address}
+                    onLocationChange={handleLocationChange}
+                    apiKey={GOOGLE_MAPS_API_KEY}
+                    height="400px"
+                  />
+                </div>
               )}
 
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -374,7 +376,7 @@ export default function RestaurantSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="branches" className="space-y-4 mt-4">
+        <TabsContent value="branches" className="space-y-4 mt-4" key="branches-tab-content">
           <Card>
             <CardHeader>
               <CardTitle>Branch Locations</CardTitle>
@@ -426,12 +428,14 @@ export default function RestaurantSettings() {
                     />
                   </div>
 
-                  <LocationPicker
-                    key={showAddBranch ? "new-branch-picker" : "no-branch-picker"}
-                    onLocationChange={handleBranchLocationChange}
-                    apiKey={GOOGLE_MAPS_API_KEY}
-                    height="300px"
-                  />
+                  <div key="new-branch-picker-container">
+                    <LocationPicker
+                      key={showAddBranch ? "new-branch-picker-active" : "new-branch-picker-inactive"}
+                      onLocationChange={handleBranchLocationChange}
+                      apiKey={GOOGLE_MAPS_API_KEY}
+                      height="300px"
+                    />
+                  </div>
 
                   <div className="flex gap-2">
                     <Button onClick={handleAddBranch} disabled={saving} data-testid="button-confirm-add-branch">
