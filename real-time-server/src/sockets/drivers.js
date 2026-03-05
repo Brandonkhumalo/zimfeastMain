@@ -27,12 +27,16 @@ function setupDriverSocket(namespace, driverService, orderService, redisClient) 
     
     socket.on('driver:location_update', async (data) => {
       const { lat, lng } = data;
-      
+
       if (socket.driverId) {
         socket.driverLat = lat;
         socket.driverLng = lng;
-        
-        if (socket.currentOrderId) {
+
+        // Always update location in service (Redis GEO + in-memory)
+        await driverService.updateLocation(socket.driverId, lat, lng);
+
+        // Rate-limit broadcasts to customers (every 3s max)
+        if (socket.currentOrderId && driverService.shouldBroadcastLocation(socket.driverId)) {
           namespace.server.of('/customers')
             .to(`order:${socket.currentOrderId}`)
             .emit('driver:location', {
@@ -42,14 +46,6 @@ function setupDriverSocket(namespace, driverService, orderService, redisClient) 
               lng,
               timestamp: Date.now()
             });
-        }
-        
-        if (redisClient && redisClient.isOpen) {
-          await redisClient.hSet(`driver:${socket.driverId}:location`, {
-            lat: lat.toString(),
-            lng: lng.toString(),
-            timestamp: Date.now().toString()
-          });
         }
       }
     });

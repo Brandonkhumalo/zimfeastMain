@@ -13,7 +13,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
-    private static final String BASE_URL = "https://2d8d3232-66c2-43c2-9587-32dfd8fe00de-00-xr3sjktqw8gq.worf.replit.dev/";
+    private static final String BASE_URL = com.zimfeast.customer.BuildConfig.BASE_URL;
     
     public static String getBaseUrl() {
         return BASE_URL;

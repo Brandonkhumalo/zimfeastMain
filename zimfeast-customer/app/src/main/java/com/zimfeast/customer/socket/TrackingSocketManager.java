@@ -6,8 +6,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -18,10 +18,10 @@ public class TrackingSocketManager {
     private static TrackingSocketManager instance;
 
     private Socket socket;
-    private boolean isConnected = false;
-    private final List<TrackingListener> listeners = new ArrayList<>();
+    private volatile boolean isConnected = false;
+    private final List<TrackingListener> listeners = new CopyOnWriteArrayList<>();
 
-    private static final String SOCKET_URL = "https://your-app.replit.app:3001";
+    private static final String SOCKET_URL = com.zimfeast.customer.BuildConfig.SOCKET_URL;
 
     public interface TrackingListener {
         void onDriverAssigned(String driverId, String name, String phone, String vehicle, double lat, double lng);
@@ -37,7 +37,10 @@ public class TrackingSocketManager {
             IO.Options options = new IO.Options();
             options.forceNew = true;
             options.reconnection = true;
-            options.reconnectionAttempts = 10;
+            options.reconnectionAttempts = Integer.MAX_VALUE; // Keep trying indefinitely
+            options.reconnectionDelay = 1000;       // Start at 1s
+            options.reconnectionDelayMax = 30000;   // Cap at 30s (exponential backoff)
+            options.randomizationFactor = 0.5;      // Add jitter to prevent thundering herd
             options.timeout = 10000;
 
             socket = IO.socket(SOCKET_URL + "/customers", options);

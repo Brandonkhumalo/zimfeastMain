@@ -112,6 +112,7 @@ public class MenuActivity extends AppCompatActivity implements MenuAdapter.OnMen
         ApiClient.getInstance().getApiService().getRestaurantMenuData(restaurantId).enqueue(new Callback<List<MenuItem>>() {
             @Override
             public void onResponse(Call<List<MenuItem>> call, Response<List<MenuItem>> response) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
 
                 if (response.isSuccessful() && response.body() != null) {
@@ -132,6 +133,7 @@ public class MenuActivity extends AppCompatActivity implements MenuAdapter.OnMen
 
             @Override
             public void onFailure(Call<List<MenuItem>> call, Throwable t) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
                 Toast.makeText(MenuActivity.this, getString(R.string.error_network), Toast.LENGTH_SHORT).show();
                 binding.tvEmpty.setVisibility(View.VISIBLE);

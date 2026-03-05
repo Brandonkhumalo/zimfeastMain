@@ -1,108 +1,381 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="@color/background">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/primary"
-        android:padding="16dp"
+        android:background="@drawable/bg_gradient_header"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="24dp"
         android:orientation="vertical">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Active Delivery"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:text="ACTIVE DELIVERY"
+            android:textSize="11sp"
+            android:textColor="#CCFFFFFF"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="4dp" />
 
         <TextView
             android:id="@+id/tv_delivery_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Navigate to Restaurant"
-            android:textColor="#FFFFFFCC"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp" />
+            android:textColor="@color/on_primary"
+            android:textSize="22sp"
+            android:fontFamily="sans-serif-black" />
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView
+    <!-- Content -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="12dp"
-        xmlns:app="http://schemas.android.com/apk/res-auto">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingTop="16dp"
+        android:paddingHorizontal="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PICKUP"
-                android:textSize="12sp"
-                android:textColor="#888888"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_restaurant"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Restaurant Name"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginTop="4dp" />
-
-            <View
+            <!-- Delivery progress steps -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#E0E0E0"
-                android:layout_marginVertical="16dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="DROPOFF"
-                android:textSize="12sp"
-                android:textColor="#888888"
-                android:textStyle="bold" />
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="12dp">
 
-            <TextView
-                android:id="@+id/tv_dropoff"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Pickup section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="top">
+
+                        <!-- Step indicator -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center_horizontal"
+                            android:layout_marginEnd="16dp">
+
+                            <FrameLayout
+                                android:id="@+id/step_pickup"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp">
+
+                                <View
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:background="@drawable/bg_delivery_step_active" />
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_pickup"
+                                    android:tint="@android:color/white"
+                                    android:importantForAccessibility="no" />
+                            </FrameLayout>
+
+                            <View
+                                android:id="@+id/line_pickup_dropoff"
+                                android:layout_width="2dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_step_line"
+                                android:layout_marginVertical="4dp" />
+                        </LinearLayout>
+
+                        <!-- Pickup details -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginTop="6dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="PICKUP FROM"
+                                android:textSize="10sp"
+                                android:textColor="@color/text_tertiary"
+                                android:fontFamily="sans-serif-black"
+                                android:letterSpacing="0.08" />
+
+                            <TextView
+                                android:id="@+id/tv_restaurant"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Restaurant Name"
+                                android:textSize="17sp"
+                                android:textColor="@color/text_primary"
+                                android:fontFamily="sans-serif-bold"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Dropoff section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="top">
+
+                        <!-- Step indicator -->
+                        <FrameLayout
+                            android:id="@+id/step_dropoff"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="16dp">
+
+                            <View
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_delivery_step_inactive" />
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_dropoff"
+                                android:tint="@color/text_tertiary"
+                                android:importantForAccessibility="no" />
+                        </FrameLayout>
+
+                        <!-- Dropoff details -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginTop="6dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="DELIVER TO"
+                                android:textSize="10sp"
+                                android:textColor="@color/text_tertiary"
+                                android:fontFamily="sans-serif-black"
+                                android:letterSpacing="0.08" />
+
+                            <TextView
+                                android:id="@+id/tv_dropoff"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Delivery Address"
+                                android:textSize="17sp"
+                                android:textColor="@color/text_primary"
+                                android:fontFamily="sans-serif-bold"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Customer info card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_customer_info"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Delivery Address"
-                android:textSize="16sp"
-                android:layout_marginTop="4dp" />
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:gravity="center_vertical">
+
+                    <!-- Customer avatar -->
+                    <FrameLayout
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginEnd="14dp">
+
+                        <View
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_avatar_circle" />
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@android:drawable/ic_menu_myplaces"
+                            android:tint="@color/primary"
+                            android:importantForAccessibility="no" />
+                    </FrameLayout>
+
+                    <!-- Customer name -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="CUSTOMER"
+                            android:textSize="10sp"
+                            android:textColor="@color/text_tertiary"
+                            android:fontFamily="sans-serif-bold"
+                            android:letterSpacing="0.05" />
+
+                        <TextView
+                            android:id="@+id/tv_customer_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Customer"
+                            android:textSize="15sp"
+                            android:textColor="@color/text_primary"
+                            android:fontFamily="sans-serif-bold" />
+                    </LinearLayout>
+
+                    <!-- Call button -->
+                    <ImageView
+                        android:id="@+id/btn_call_customer"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_phone_call"
+                        android:background="@drawable/bg_icon_circle_small"
+                        android:contentDescription="Call customer" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Earnings card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#F0FDF4"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="DELIVERY FEE"
+                            android:textSize="10sp"
+                            android:textColor="@color/text_tertiary"
+                            android:fontFamily="sans-serif-bold"
+                            android:letterSpacing="0.05" />
+
+                        <TextView
+                            android:id="@+id/tv_delivery_fee"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$0.00"
+                            android:textSize="20sp"
+                            android:textColor="@color/success"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="#D1FAE5" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="TIP"
+                            android:textSize="10sp"
+                            android:textColor="@color/text_tertiary"
+                            android:fontFamily="sans-serif-bold"
+                            android:letterSpacing="0.05" />
+
+                        <TextView
+                            android:id="@+id/tv_tip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$0.00"
+                            android:textSize="20sp"
+                            android:textColor="@color/success"
+                            android:fontFamily="sans-serif-black" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </ScrollView>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
+    <!-- Bottom action buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp"
+        android:background="@color/surface"
+        android:elevation="8dp">
 
         <Button
             android:id="@+id/btn_navigate"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:text="Navigate"
             android:textColor="@color/primary"
-            android:backgroundTint="#FFF3E0"
-            android:layout_marginBottom="12dp" />
+            android:textSize="15sp"
+            android:fontFamily="sans-serif-bold"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_navigate_button"
+            android:stateListAnimator="@null"
+            android:drawableStart="@drawable/ic_navigate"
+            android:drawablePadding="8dp"
+            android:layout_marginBottom="10dp" />
 
         <Button
             android:id="@+id/btn_update_status"
@@ -110,7 +383,11 @@
             android:layout_height="56dp"
             android:text="Arrived at Restaurant"
             android:textColor="@android:color/white"
-            android:backgroundTint="@color/primary" />
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-black"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_accept_button"
+            android:stateListAnimator="@null" />
     </LinearLayout>
 
 </LinearLayout>

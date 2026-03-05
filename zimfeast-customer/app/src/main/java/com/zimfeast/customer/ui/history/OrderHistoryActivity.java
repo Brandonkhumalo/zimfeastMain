@@ -50,6 +50,7 @@ public class OrderHistoryActivity extends AppCompatActivity implements OrderHist
         ApiClient.getInstance().getApiService().getMyOrders().enqueue(new Callback<List<Order>>() {
             @Override
             public void onResponse(Call<List<Order>> call, Response<List<Order>> response) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
 
                 if (response.isSuccessful() && response.body() != null) {
@@ -67,6 +68,7 @@ public class OrderHistoryActivity extends AppCompatActivity implements OrderHist
 
             @Override
             public void onFailure(Call<List<Order>> call, Throwable t) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
                 showEmpty(true);
                 Toast.makeText(OrderHistoryActivity.this, getString(R.string.error_network), Toast.LENGTH_SHORT).show();

@@ -13,6 +13,7 @@ import com.zimfeast.driver.R;
 import com.zimfeast.driver.data.api.ApiClient;
 import com.zimfeast.driver.data.api.ApiService;
 import com.zimfeast.driver.data.model.StatusUpdateRequest;
+import com.zimfeast.driver.service.LocationService;
 import com.zimfeast.driver.socket.SocketManager;
 
 import java.util.Map;
@@ -116,6 +117,11 @@ public class DeliveryActivity extends AppCompatActivity {
                 btnUpdateStatus.setEnabled(false);
                 btnUpdateStatus.setText("Done");
 
+                // Switch location tracking to idle interval
+                Intent idleIntent = new Intent(this, LocationService.class);
+                idleIntent.setAction(LocationService.ACTION_DELIVERY_IDLE);
+                startService(idleIntent);
+
                 Toast.makeText(this, "Delivery completed!", Toast.LENGTH_LONG).show();
 
                 new android.os.Handler().postDelayed(() -> {
@@ -157,6 +163,7 @@ public class DeliveryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
                     if (response.isSuccessful()) {
                         currentStatus = statusToSet;
                         updateUI();
@@ -173,6 +180,7 @@ public class DeliveryActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                 runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
                     currentStatus = statusToSet;
                     updateUI();
                     Toast.makeText(DeliveryActivity.this, "Status updated locally", Toast.LENGTH_SHORT).show();

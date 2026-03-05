@@ -27,7 +27,7 @@ public class SocketManager {
     private double pendingLat = 0;
     private double pendingLng = 0;
     
-    private static final String SOCKET_URL = "https://2d8d3232-66c2-43c2-9587-32dfd8fe00de-00-xr3sjktqw8gq.worf.replit.dev";
+    private static final String SOCKET_URL = com.zimfeast.driver.BuildConfig.SOCKET_URL;
     private static final String SOCKET_NAMESPACE = "/drivers";
     
     public interface SocketListener {
@@ -44,8 +44,10 @@ public class SocketManager {
             IO.Options options = new IO.Options();
             options.forceNew = true;
             options.reconnection = true;
-            options.reconnectionAttempts = 10;
-            options.reconnectionDelay = 1000;
+            options.reconnectionAttempts = Integer.MAX_VALUE; // Keep trying indefinitely
+            options.reconnectionDelay = 1000;       // Start at 1s
+            options.reconnectionDelayMax = 30000;   // Cap at 30s (exponential backoff)
+            options.randomizationFactor = 0.5;      // Add jitter to prevent thundering herd
             options.timeout = 10000;
             
             socket = IO.socket(SOCKET_URL + "/drivers", options);

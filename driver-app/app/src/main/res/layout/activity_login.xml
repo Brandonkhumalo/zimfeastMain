@@ -23,7 +23,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="32dp"
                 app:cardBackgroundColor="@color/glass"
-                app:cardElevation="16dp"
+                app:cardElevation="8dp"
                 app:strokeColor="@color/glass_border"
                 app:strokeWidth="1dp">
 
@@ -38,10 +38,33 @@
                         android:layout_width="100dp"
                         android:layout_height="100dp"
                         android:layout_gravity="center"
-                        android:layout_marginBottom="16dp"
+                        android:layout_marginBottom="8dp"
                         android:src="@drawable/logo"
                         android:scaleType="fitCenter"
                         android:contentDescription="App Logo" />
+
+                    <!-- Brand -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="ZIMFEAST"
+                        android:textSize="16sp"
+                        android:textColor="@color/primary"
+                        android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.15"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="DRIVER"
+                        android:textSize="10sp"
+                        android:textColor="@color/text_tertiary"
+                        android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.2"
+                        android:layout_marginBottom="24dp" />
 
                     <!-- Title -->
                     <TextView
@@ -49,7 +72,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:text="Welcome Back"
-                        android:textColor="@color/primary"
+                        android:textColor="@color/text_primary"
                         android:textSize="28sp"
                         android:fontFamily="sans-serif-black" />
 
@@ -57,18 +80,21 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:layout_marginTop="8dp"
-                        android:text="Login to continue"
+                        android:layout_marginTop="6dp"
+                        android:text="Sign in to start delivering"
                         android:textColor="@color/text_secondary"
-                        android:textSize="14sp" />
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif-medium" />
 
                     <!-- Email -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.ZimFeastDriver.TextInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp"
-                        android:hint="Email">
+                        android:layout_marginTop="28dp"
+                        android:hint="Email"
+                        app:startIconDrawable="@android:drawable/ic_dialog_email"
+                        app:startIconTint="@color/text_tertiary">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_email"
@@ -83,10 +109,12 @@
                         style="@style/Widget.ZimFeastDriver.TextInputLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="14dp"
                         android:hint="Password"
                         app:endIconMode="password_toggle"
-                        app:endIconTint="@color/text_secondary">
+                        app:endIconTint="@color/text_secondary"
+                        app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
+                        app:startIconTint="@color/text_tertiary">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_password"
@@ -101,14 +129,15 @@
                         android:id="@+id/btn_login"
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
-                        android:layout_marginTop="24dp"
-                        android:text="Login"
+                        android:layout_marginTop="28dp"
+                        android:text="Sign In"
                         android:textColor="@color/on_primary"
                         android:textSize="16sp"
                         android:fontFamily="sans-serif-black"
                         android:textAllCaps="false"
                         android:background="@drawable/bg_button_orange_gradient"
-                        app:backgroundTint="@null" />
+                        app:backgroundTint="@null"
+                        app:cornerRadius="16dp" />
 
                 </LinearLayout>
 

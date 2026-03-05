@@ -27,7 +27,10 @@ public class OrderTrackingActivity extends AppCompatActivity {
     private Order currentOrder;
     private Handler handler;
     private Runnable pollRunnable;
-    private static final long POLL_INTERVAL = 15000;
+    private static final long POLL_INTERVAL_BASE = 15000;
+    private static final long POLL_INTERVAL_MAX = 120000; // Cap at 2 minutes
+    private long currentPollInterval = POLL_INTERVAL_BASE;
+    private int consecutiveFailures = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,14 +70,32 @@ public class OrderTrackingActivity extends AppCompatActivity {
         ApiClient.getInstance().getApiService().getOrderStatus(orderId).enqueue(new Callback<Order>() {
             @Override
             public void onResponse(Call<Order> call, Response<Order> response) {
+                if (isFinishing() || isDestroyed()) return;
                 if (response.isSuccessful() && response.body() != null) {
                     currentOrder = response.body();
                     updateUI();
+                    // Reset backoff on success
+                    consecutiveFailures = 0;
+                    currentPollInterval = POLL_INTERVAL_BASE;
+                    // Stop polling if order is in terminal state
+                    String status = currentOrder.getStatus();
+                    if ("delivered".equals(status) || "cancelled".equals(status) || "collected".equals(status)) {
+                        stopPolling();
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<Order> call, Throwable t) {
+                if (isFinishing() || isDestroyed()) return;
+                // Exponential backoff with jitter on failure
+                consecutiveFailures++;
+                long backoff = Math.min(
+                    POLL_INTERVAL_BASE * (1L << Math.min(consecutiveFailures, 6)),
+                    POLL_INTERVAL_MAX
+                );
+                // Add random jitter (0-25% of interval)
+                currentPollInterval = backoff + (long)(Math.random() * backoff * 0.25);
                 displayMockStatus();
             }
         });
@@ -107,20 +128,36 @@ public class OrderTrackingActivity extends AppCompatActivity {
     }
 
     private void updateStatusTimeline(String status) {
+        int activeColor = getResources().getColor(R.color.primary, getTheme());
+        int doneColor = getResources().getColor(R.color.success, getTheme());
+        int inactiveColor = getResources().getColor(R.color.text_tertiary, getTheme());
+        int lineInactive = getResources().getColor(R.color.divider, getTheme());
+
+        // Step 1: Confirmed - always done
         binding.ivConfirmed.setImageResource(R.drawable.ic_check_circle);
+        binding.ivConfirmed.setColorFilter(doneColor);
         binding.tvConfirmedTime.setText("2:30 PM");
 
+        // Step 2: Preparing
         boolean preparingComplete = !"pending".equals(status) && !"confirmed".equals(status);
         binding.ivPreparing.setImageResource(preparingComplete ? R.drawable.ic_check_circle : R.drawable.ic_circle_outline);
+        binding.ivPreparing.setColorFilter(preparingComplete ? doneColor : inactiveColor);
         binding.tvPreparingTime.setText(preparingComplete ? "2:35 PM" : "");
+        binding.line1.setBackgroundColor(preparingComplete ? doneColor : lineInactive);
 
+        // Step 3: Out for delivery
         boolean outForDeliveryComplete = "out_for_delivery".equals(status) || "delivered".equals(status);
         binding.ivOutForDelivery.setImageResource(outForDeliveryComplete ? R.drawable.ic_check_circle : R.drawable.ic_circle_outline);
+        binding.ivOutForDelivery.setColorFilter(outForDeliveryComplete ? doneColor : inactiveColor);
         binding.tvOutForDeliveryTime.setText(outForDeliveryComplete ? "3:15 PM" : "");
+        binding.line2.setBackgroundColor(outForDeliveryComplete ? doneColor : lineInactive);
 
+        // Step 4: Delivered
         boolean deliveredComplete = "delivered".equals(status);
         binding.ivDelivered.setImageResource(deliveredComplete ? R.drawable.ic_check_circle : R.drawable.ic_circle_outline);
+        binding.ivDelivered.setColorFilter(deliveredComplete ? doneColor : inactiveColor);
         binding.tvDeliveredTime.setText(deliveredComplete ? "3:30 PM" : getString(R.string.estimated) + " 3:30 PM");
+        binding.line3.setBackgroundColor(deliveredComplete ? doneColor : lineInactive);
     }
 
     private void startPolling() {
@@ -128,17 +165,22 @@ public class OrderTrackingActivity extends AppCompatActivity {
             @Override
             public void run() {
                 loadOrderStatus();
-                handler.postDelayed(this, POLL_INTERVAL);
+                // Use adaptive interval (backs off on failure, resets on success)
+                handler.postDelayed(this, currentPollInterval);
             }
         };
-        handler.postDelayed(pollRunnable, POLL_INTERVAL);
+        handler.postDelayed(pollRunnable, currentPollInterval);
+    }
+
+    private void stopPolling() {
+        if (handler != null && pollRunnable != null) {
+            handler.removeCallbacks(pollRunnable);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (handler != null && pollRunnable != null) {
-            handler.removeCallbacks(pollRunnable);
-        }
+        stopPolling();
     }
 }

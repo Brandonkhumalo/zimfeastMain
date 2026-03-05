@@ -199,10 +199,11 @@ public class CustomerActivity extends AppCompatActivity implements
         ApiClient.getInstance().getApiService().getNearbyRestaurants(null, null, 100).enqueue(new Callback<RestaurantResponse>() {
             @Override
             public void onResponse(Call<RestaurantResponse> call, Response<RestaurantResponse> response) {
+                if (isFinishing() || isDestroyed()) return;
                 binding.swipeRefresh.setRefreshing(false);
 
                 if (response.isSuccessful() && response.body() != null) {
-                    allRestaurants = response.body().getResults();
+                    allRestaurants = new ArrayList<>(response.body().getResults());
                     updateAllSections();
                 } else {
                     loadDemoRestaurants();
@@ -211,6 +212,7 @@ public class CustomerActivity extends AppCompatActivity implements
 
             @Override
             public void onFailure(Call<RestaurantResponse> call, Throwable t) {
+                if (isFinishing() || isDestroyed()) return;
                 binding.swipeRefresh.setRefreshing(false);
                 loadDemoRestaurants();
             }

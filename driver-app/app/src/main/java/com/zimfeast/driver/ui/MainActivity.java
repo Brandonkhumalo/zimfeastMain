@@ -349,6 +349,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 @Override
                 public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                     runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
                         hideDeliveryOffer();
                         Toast.makeText(MainActivity.this, "Offer expired - auto declined", Toast.LENGTH_SHORT).show();
                     });
@@ -357,6 +358,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                     runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
                         hideDeliveryOffer();
                         Toast.makeText(MainActivity.this, "Offer expired", Toast.LENGTH_SHORT).show();
                     });
@@ -383,12 +385,14 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                     if (response.isSuccessful()) {
                         runOnUiThread(() -> {
+                            if (isFinishing() || isDestroyed()) return;
                             if (offerTimer != null) {
                                 offerTimer.cancel();
                             }
                         });
                     } else {
                         runOnUiThread(() -> {
+                            if (isFinishing() || isDestroyed()) return;
                             Toast.makeText(MainActivity.this, "Failed to accept order", Toast.LENGTH_SHORT).show();
                             btnAccept.setEnabled(true);
                             btnAccept.setText("Accept");
@@ -400,6 +404,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                     runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
                         Toast.makeText(MainActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                         btnAccept.setEnabled(true);
                         btnAccept.setText("Accept");
@@ -423,6 +428,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 @Override
                 public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                     runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
                         hideDeliveryOffer();
                         Toast.makeText(MainActivity.this, "Delivery declined", Toast.LENGTH_SHORT).show();
                     });
@@ -431,6 +437,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
                     runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
                         hideDeliveryOffer();
                     });
                 }

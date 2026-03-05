@@ -34,7 +34,10 @@ public class LocationService extends Service implements SocketManager.SocketList
     private static final String TAG = "LocationService";
     private static final String CHANNEL_ID = "ZimFeastDriverLocation";
     private static final int NOTIFICATION_ID = 1001;
-    private static final long LOCATION_INTERVAL = 5000;
+    // Adaptive intervals: active delivery = 10s, idle = 60s
+    private static final long LOCATION_INTERVAL_ACTIVE = 10000;
+    private static final long LOCATION_INTERVAL_IDLE = 60000;
+    private long currentInterval = LOCATION_INTERVAL_IDLE;
     
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
@@ -51,8 +54,19 @@ public class LocationService extends Service implements SocketManager.SocketList
         createNotificationChannel();
     }
     
+    public static final String ACTION_DELIVERY_ACTIVE = "com.zimfeast.driver.DELIVERY_ACTIVE";
+    public static final String ACTION_DELIVERY_IDLE = "com.zimfeast.driver.DELIVERY_IDLE";
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && ACTION_DELIVERY_ACTIVE.equals(intent.getAction())) {
+            setLocationInterval(LOCATION_INTERVAL_ACTIVE);
+            return START_STICKY;
+        }
+        if (intent != null && ACTION_DELIVERY_IDLE.equals(intent.getAction())) {
+            setLocationInterval(LOCATION_INTERVAL_IDLE);
+            return START_STICKY;
+        }
         startForeground(NOTIFICATION_ID, createNotification());
         startLocationUpdates();
         return START_STICKY;
@@ -93,9 +107,9 @@ public class LocationService extends Service implements SocketManager.SocketList
     private void startLocationUpdates() {
         LocationRequest locationRequest = new LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
-            LOCATION_INTERVAL
+            currentInterval
         )
-        .setMinUpdateIntervalMillis(LOCATION_INTERVAL)
+        .setMinUpdateIntervalMillis(currentInterval)
         .build();
         
         locationCallback = new LocationCallback() {
@@ -146,19 +160,34 @@ public class LocationService extends Service implements SocketManager.SocketList
             notificationService.showDeliveryOfferNotification(offer);
         }
     }
-    
+
     @Override
     public void onDeliveryAccepted(String orderId) {
         if (notificationService != null) {
             notificationService.cancelDeliveryNotification();
         }
+        setLocationInterval(LOCATION_INTERVAL_ACTIVE);
     }
-    
+
     @Override
     public void onDeliveryRejected(String orderId) {
         if (notificationService != null) {
             notificationService.cancelDeliveryNotification();
         }
+    }
+
+    public void setLocationInterval(long intervalMs) {
+        if (intervalMs != currentInterval) {
+            currentInterval = intervalMs;
+            if (fusedLocationClient != null && locationCallback != null) {
+                fusedLocationClient.removeLocationUpdates(locationCallback);
+                startLocationUpdates();
+            }
+        }
+    }
+
+    public void setIdleInterval() {
+        setLocationInterval(LOCATION_INTERVAL_IDLE);
     }
     
     @Override

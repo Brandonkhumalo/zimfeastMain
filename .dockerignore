@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Node modules
+node_modules
+**/node_modules
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+*.egg-info
+
+# Database
+*.sqlite3
+*.db
+
+# Environment (will be passed via docker-compose)
+# .env is needed by docker-compose, don't ignore
+
+# Android apps (not needed in Docker)
+driver-app/
+zimfeast-customer/
+
+# Gradle cache
+.gradle
+*.gradle
+
+# Logs
+*.log
+
+# Claude config
+.claude/

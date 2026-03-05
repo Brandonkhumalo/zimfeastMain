@@ -80,6 +80,7 @@ public class CheckoutActivity extends AppCompatActivity {
         ApiClient.getInstance().getApiService().getOrder(orderId).enqueue(new Callback<Order>() {
             @Override
             public void onResponse(Call<Order> call, Response<Order> response) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
 
                 if (response.isSuccessful() && response.body() != null) {
@@ -92,6 +93,7 @@ public class CheckoutActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Order> call, Throwable t) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
                 Toast.makeText(CheckoutActivity.this, getString(R.string.error_network), Toast.LENGTH_SHORT).show();
             }
@@ -168,6 +170,7 @@ public class CheckoutActivity extends AppCompatActivity {
         ApiClient.getInstance().getApiService().createPayment(request).enqueue(new Callback<PaymentResponse>() {
             @Override
             public void onResponse(Call<PaymentResponse> call, Response<PaymentResponse> response) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
 
                 if (response.isSuccessful() && response.body() != null) {
@@ -192,6 +195,7 @@ public class CheckoutActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<PaymentResponse> call, Throwable t) {
+                if (isFinishing() || isDestroyed()) return;
                 setLoading(false);
                 Toast.makeText(CheckoutActivity.this, getString(R.string.error_network), Toast.LENGTH_SHORT).show();
             }

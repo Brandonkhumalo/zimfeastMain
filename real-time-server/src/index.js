@@ -5,6 +5,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { createClient } = require('redis');
+const { createAdapter } = require('@socket.io/redis-adapter');
 const DriverService = require('./services/DriverService');
 const OrderService = require('./services/OrderService');
 const setupDriverSocket = require('./sockets/drivers');
@@ -34,19 +35,32 @@ async function initializeRedis() {
     await redisClient.connect();
     await redisSub.connect();
     console.log('Connected to Redis');
-    
-    await redisSub.subscribe('orders.delivery.created', async (message) => {
+
+    // Enable Socket.IO Redis adapter for multi-process scaling
+    // This allows running multiple Node.js processes behind a load balancer
+    const pubClient = redisClient.duplicate();
+    const subClient = redisClient.duplicate();
+    await pubClient.connect();
+    await subClient.connect();
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log('Socket.IO Redis adapter enabled');
+
+    // Subscribe to order events from Django (separate subscriber connection)
+    const orderSub = redisClient.duplicate();
+    await orderSub.connect();
+
+    await orderSub.subscribe('orders.delivery.created', async (message) => {
       const orderData = JSON.parse(message);
       console.log('New delivery order received:', orderData.orderId);
       await OrderService.handleNewDeliveryOrder(io, redisClient, orderData);
     });
-    
-    await redisSub.subscribe('orders.status.changed', async (message) => {
+
+    await orderSub.subscribe('orders.status.changed', async (message) => {
       const data = JSON.parse(message);
       console.log('Order status changed:', data);
       io.to(`order:${data.orderId}`).emit('order:status', data);
     });
-    
+
   } catch (err) {
     console.error('Redis connection error:', err);
     console.log('Running without Redis - using in-memory storage');
