@@ -43,10 +43,10 @@ export function useOrderSocket(orderId: string | null, orderMethod?: 'delivery' 
   const connect = useCallback(() => {
     if (!orderId || socketRef.current?.connected) return;
 
-    const realtimeUrl = import.meta.env.VITE_REALTIME_URL || 
-      (window.location.protocol === 'https:' 
-        ? `https://${window.location.hostname}:3001` 
-        : 'http://localhost:3001');
+    const realtimeUrl = import.meta.env.VITE_REALTIME_URL ||
+      (window.location.hostname === 'localhost'
+        ? 'http://localhost:3001'
+        : window.location.origin);
 
     const socket = io(`${realtimeUrl}/customers`, {
       transports: ['websocket', 'polling'],

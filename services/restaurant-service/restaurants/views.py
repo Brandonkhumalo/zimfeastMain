@@ -13,10 +13,15 @@ from geopy.distance import geodesic
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from .models import Restaurant, MenuItem, RestaurantDashboard, CuisineType, CategoryType
+from .models import (
+    Restaurant, MenuItem, RestaurantDashboard, CuisineType, CategoryType,
+    Branch, RestaurantEarning, RestaurantFinanceSummary, RestaurantDebt,
+)
 from .serializers import (
     RestaurantSerializer, RestaurantCreateSerializer,
-    RestaurantExternalAPISerializer, MenuItemSerializer,
+    RestaurantExternalAPISerializer, MenuItemSerializer, MenuItemWriteSerializer,
+    BranchSerializer, RestaurantEarningSerializer, RestaurantFinanceSummarySerializer,
+    RestaurantDebtSerializer,
 )
 
 from shared.redis_publisher import publisher
@@ -115,10 +120,25 @@ def add_external_api(request, restaurant_id):
 @parser_classes([MultiPartParser, FormParser])
 def add_menu_item(request):
     restaurant = get_object_or_404(Restaurant, owner_id=request.user.id)
-    serializer = MenuItemSerializer(data=request.data)
+    serializer = MenuItemWriteSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(restaurant=restaurant)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        item = serializer.save(restaurant=restaurant)
+        return Response(MenuItemSerializer(item, context={"request": request}).data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["PUT", "PATCH"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def update_menu_item(request, menu_id):
+    menu_item = get_object_or_404(MenuItem, id=menu_id)
+    if str(menu_item.restaurant.owner_id) != str(request.user.id):
+        return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+    partial = request.method == "PATCH"
+    serializer = MenuItemWriteSerializer(menu_item, data=request.data, partial=partial)
+    if serializer.is_valid():
+        item = serializer.save()
+        return Response(MenuItemSerializer(item, context={"request": request}).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -369,4 +389,136 @@ def internal_get_restaurant(request, restaurant_id):
     if not service_key:
         return Response({"detail": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
-    return Response(RestaurantSerializer(restaurant).data)
+    data = RestaurantSerializer(restaurant).data
+    # Include payment config from chain
+    chain = restaurant.chain
+    data['payment_config'] = {
+        'accepts_direct_payment': chain.accepts_direct_payment if chain else False,
+        'paynow_integration_id': chain.paynow_integration_id if chain else '',
+        'paynow_integration_key': chain.paynow_integration_key if chain else '',
+        'platform_commission_pct': str(chain.platform_commission_pct) if chain else '15.00',
+    }
+    return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_restaurant_payment_info(request, restaurant_id):
+    """Return whether a restaurant accepts direct payment (for checkout UI)."""
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    chain = restaurant.chain
+    accepts_direct = chain.accepts_direct_payment if chain else False
+    return Response({
+        'accepts_direct_payment': accepts_direct,
+        'restaurant_id': str(restaurant.id),
+        'restaurant_name': restaurant.name,
+    })
+
+
+# --- Branch management ---
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def manage_branches(request, restaurant_id):
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id, owner_id=request.user.id)
+
+    if request.method == "GET":
+        branches = Branch.objects.filter(restaurant=restaurant).order_by("created")
+        return Response(BranchSerializer(branches, many=True).data)
+
+    serializer = BranchSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(restaurant=restaurant)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def branch_detail(request, branch_id):
+    branch = get_object_or_404(Branch, id=branch_id)
+    if str(branch.restaurant.owner_id) != str(request.user.id):
+        return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == "DELETE":
+        branch.delete()
+        return Response({"detail": "Branch deleted."}, status=status.HTTP_204_NO_CONTENT)
+
+    serializer = BranchSerializer(branch, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# --- Restaurant Finance ---
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def restaurant_finance(request):
+    restaurant = get_object_or_404(Restaurant, owner_id=request.user.id)
+    summary, _ = RestaurantFinanceSummary.objects.get_or_create(restaurant=restaurant)
+    earnings = RestaurantEarning.objects.filter(restaurant=restaurant).order_by("-created")[:50]
+    unsettled_debts = RestaurantDebt.objects.filter(restaurant=restaurant, settled=False).order_by("-created")[:50]
+    return Response({
+        "summary": RestaurantFinanceSummarySerializer(summary).data,
+        "recent_earnings": RestaurantEarningSerializer(earnings, many=True).data,
+        "unsettled_debts": RestaurantDebtSerializer(unsettled_debts, many=True).data,
+    })
+
+
+def record_order_earning(restaurant, order_id, order_total, delivery_fee, paid_direct=False):
+    """Record an earning entry for a completed order and update the finance summary."""
+    from decimal import Decimal
+    commission_pct = restaurant.chain.platform_commission_pct if restaurant.chain else Decimal('15.00')
+    food_total = order_total - delivery_fee
+    platform_fee = round(food_total * commission_pct / 100, 2)
+    restaurant_earning = food_total - platform_fee
+
+    RestaurantEarning.objects.create(
+        restaurant=restaurant,
+        order_id=order_id,
+        order_total=order_total,
+        delivery_fee=delivery_fee,
+        platform_commission_pct=commission_pct,
+        platform_fee=platform_fee,
+        restaurant_earning=restaurant_earning,
+        paid_direct=paid_direct,
+    )
+
+    summary, _ = RestaurantFinanceSummary.objects.get_or_create(restaurant=restaurant)
+    summary.total_revenue += order_total
+    summary.total_platform_fees += platform_fee
+    summary.total_earnings += restaurant_earning
+    summary.total_orders += 1
+
+    if paid_direct:
+        # Restaurant collected the full payment directly, so they owe us:
+        # platform commission fee + delivery fee (since customer paid everything to restaurant)
+        summary.unsettled_platform_fees += platform_fee
+        summary.unsettled_delivery_fees += delivery_fee
+        total_owed = platform_fee + delivery_fee
+        summary.total_debt += total_owed
+
+        # Create individual debt record for this order
+        RestaurantDebt.objects.create(
+            restaurant=restaurant,
+            order_id=order_id,
+            platform_fee=platform_fee,
+            delivery_fee=delivery_fee,
+            total_owed=total_owed,
+        )
+
+    summary.save()
+
+    # Update dashboard today_revenue
+    dashboard, _ = RestaurantDashboard.objects.get_or_create(restaurant=restaurant)
+    dashboard.today_revenue += restaurant_earning
+    dashboard.today_orders += 1
+    dashboard.save()
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    return Response({"status": "ok"})

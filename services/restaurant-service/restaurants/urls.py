@@ -2,18 +2,26 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('health/', views.health_check, name='health_check'),
     path('create/', views.create_restaurant, name='create_restaurant'),
     path('my-restaurant/', views.get_my_restaurant, name='get_my_restaurant'),
     path('nearby/', views.list_nearby_restaurants, name='nearby_restaurants'),
     path('get/all/', views.list_restaurants),
     path('search/', views.list_restaurants, name='search'),  # TODO: implement AI search
     path('add/menu-items/', views.add_menu_item, name='add_menu_item'),
+    path("menu/<str:menu_id>/update/", views.update_menu_item, name="update_menu_item"),
     path("menu/<str:menu_id>/delete/", views.delete_menu_item, name="delete_menu_item"),
     path('menu/', views.get_menu_items, name='restaurant_menu'),
     path('create/cuisine/', views.create_cuisine, name='create_cuisine'),
     path('get/cuisine/types/', views.list_cuisines, name='list_cuisines'),
     path('create/category/', views.create_category, name='create_category'),
     path('get/category/types/', views.list_categories, name='list_categories'),
+
+    # Finance
+    path('finance/', views.restaurant_finance, name='restaurant_finance'),
+
+    # Branch management (by branch ID - must come before restaurant_id patterns)
+    path('branches/<str:branch_id>/', views.branch_detail, name='branch_detail'),
 
     # Dynamic restaurant ID patterns
     path('<str:restaurant_id>/', views.update_restaurant, name='update_restaurant'),
@@ -22,6 +30,7 @@ urlpatterns = [
     path('<str:restaurant_id>/categories/', views.get_categories, name='get_categories'),
     path('<str:restaurant_id>/menu/', views.get_menu_data, name='get_menu_data'),
     path('<str:restaurant_id>/menu-data/', views.get_menu_data, name='get_menu_data_alias'),
+    path('<str:restaurant_id>/branches/', views.manage_branches, name='manage_branches'),
 
     # Order status updates (restaurant-side)
     path('orders/<str:order_id>/preparing/', views.mark_order_preparing, name='mark_order_preparing'),
@@ -30,4 +39,7 @@ urlpatterns = [
 
     # Internal
     path('internal/restaurant/<str:restaurant_id>/', views.internal_get_restaurant, name='internal_get_restaurant'),
+
+    # Public payment info for checkout
+    path('<str:restaurant_id>/payment-info/', views.public_restaurant_payment_info, name='restaurant_payment_info'),
 ]

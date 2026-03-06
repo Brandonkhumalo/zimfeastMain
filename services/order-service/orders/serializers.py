@@ -19,6 +19,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     delivery_fee = serializers.FloatField(read_only=True)
+    restaurant_names = serializers.CharField(required=False, default="")
 
     class Meta:
         model = Order

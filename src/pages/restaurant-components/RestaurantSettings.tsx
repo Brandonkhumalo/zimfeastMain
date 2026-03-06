@@ -122,7 +122,7 @@ export default function RestaurantSettings() {
     setSaving(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`/api/restaurants/${restaurant.id}/update/`, {
+      const res = await fetch(`/api/restaurants/${restaurant.id}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

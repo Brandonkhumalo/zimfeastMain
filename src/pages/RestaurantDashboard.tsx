@@ -9,8 +9,9 @@ import LiveOrders from "./restaurant-components/LiveOrders";
 import MenuManagement from "./restaurant-components/MenuManagement";
 import ExternalAPIDialog from "./restaurant-components/ExternalAPIDialog";
 import RestaurantSettings from "./restaurant-components/RestaurantSettings";
+import RestaurantFinance from "./restaurant-components/RestaurantFinance";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Settings, UtensilsCrossed } from "lucide-react";
+import { LayoutDashboard, Settings, UtensilsCrossed, DollarSign } from "lucide-react";
 
 // -------------------
 // Types
@@ -317,6 +318,10 @@ export default function RestaurantDashboard() {
                 <UtensilsCrossed className="h-4 w-4 mr-2" />
                 Menu
               </TabsTrigger>
+              <TabsTrigger value="finance" data-testid="tab-finance">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Finance
+              </TabsTrigger>
               <TabsTrigger value="settings" data-testid="tab-settings">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
@@ -386,6 +391,13 @@ export default function RestaurantDashboard() {
                 isAddDialogOpen={isAddDialogOpen}
                 setIsAddDialogOpen={setIsAddDialogOpen}
               />
+            </section>
+          </TabsContent>
+
+          <TabsContent value="finance">
+            <section>
+              <h2 className="text-xl font-bold mb-4">Finance & Earnings</h2>
+              <RestaurantFinance />
             </section>
           </TabsContent>
 

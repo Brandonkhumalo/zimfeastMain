@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { MobilePaymentFields } from "./MobilePaymentFields";
@@ -31,6 +32,7 @@ interface Order {
   items: OrderItem[];
   each_item_price: OrderItem[];
   restaurant_names: string[];
+  restaurant_id?: string;
   delivery_fee: number;
   status: string;
   currency?: string;
@@ -49,6 +51,9 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   const [mobileProvider, setMobileProvider] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [voucherBalance, setVoucherBalance] = useState<number | null>(null);
+  const [paymentReference, setPaymentReference] = useState<string | null>(null);
+  const [useVoucher, setUseVoucher] = useState(false);
+  const [isDirectPayment, setIsDirectPayment] = useState(false);
 
   // --- Fetch order details ---
   const { data: currentOrder, isLoading } = useQuery<Order>({
@@ -63,9 +68,31 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
     },
   });
 
+  // --- Check if restaurant accepts direct payment ---
+  useEffect(() => {
+    if (!currentOrder?.restaurant_id) return;
+    const fetchPaymentInfo = async () => {
+      try {
+        const res = await fetch(`/api/restaurants/${currentOrder.restaurant_id}/payment-info/`);
+        if (res.ok) {
+          const data = await res.json();
+          setIsDirectPayment(data.accepts_direct_payment === true);
+          if (data.accepts_direct_payment) {
+            setPaymentMethod("web");
+            setUseVoucher(false);
+          }
+        }
+      } catch {
+        // Default to non-direct
+      }
+    };
+    fetchPaymentInfo();
+  }, [currentOrder?.restaurant_id]);
+
   // --- Fetch Feast Voucher Balance ---
   useEffect(() => {
-    if (paymentMethod === "voucher") {
+    if (isDirectPayment) return;
+    if (paymentMethod === "voucher" || useVoucher) {
       const fetchBalance = async () => {
         const token = localStorage.getItem("token");
         const res = await fetch("/api/payments/feast/voucher/balance/", {
@@ -77,7 +104,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
       };
       fetchBalance();
     }
-  }, [paymentMethod]);
+  }, [paymentMethod, useVoucher, isDirectPayment]);
 
   // --- Normalize mobile phone ---
   const normalizePhone = (phone: string) => {
@@ -93,13 +120,12 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
     mutationFn: async () => {
       const token = localStorage.getItem("token");
 
-      // Always include order_id in request body
       const body: any = {
         order_id: orderId,
         method: paymentMethod === "voucher" ? "voucher" : "paynow",
+        use_voucher: useVoucher && paymentMethod !== "voucher",
       };
 
-      // Add mobile payment details
       if (paymentMethod === "mobile") {
         body.phone = normalizePhone(phoneNumber);
         body.provider = mobileProvider;
@@ -111,20 +137,42 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Payment failed");
+      }
       return res.json();
     },
 
     onSuccess: (data) => {
-      if (paymentMethod === "voucher" && data.status === "paid_with_voucher") {
-        toast({ title: "Paid with Voucher", description: "Your voucher covered the order." });
+      if (data.reference) {
+        setPaymentReference(data.reference);
+      }
+
+      if (data.status === "paid_with_voucher") {
+        const msg = data.voucher_used
+          ? `Voucher covered the order ($${data.voucher_used} used).`
+          : "Your voucher covered the order.";
+        toast({ title: "Paid with Voucher", description: msg });
         queryClient.invalidateQueries({ queryKey: [`/api/orders/order/${orderId}`] });
         setTimeout(() => setLocation("/home"), 1000);
         return;
       }
 
+      if (data.status === "partial_voucher" && data.paynow_url) {
+        toast({
+          title: "Voucher Applied",
+          description: `$${data.voucher_used} from voucher. Pay $${data.paynow_amount} via PayNow.`,
+        });
+        window.open(data.paynow_url, "_blank");
+        return;
+      }
+
       if (data.paynow_url) {
-        toast({ title: "Opening PayNow...", description: "Complete payment in the new tab." });
+        const desc = data.direct_payment
+          ? "Payment goes directly to the restaurant."
+          : "Complete payment in the new tab.";
+        toast({ title: "Opening PayNow...", description: desc });
         window.open(data.paynow_url, "_blank");
         return;
       }
@@ -147,7 +195,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   const voucherDepositMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch("/api/payments/deposit-voucher/", {
+      const res = await fetch("/api/payments/deposit/", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ amount: depositAmount }),
@@ -166,7 +214,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
     let interval: any;
     let attempts = 0;
 
-    if (paymentMethod === "mobile" && paymentMutation.isSuccess) {
+    if (paymentMethod === "mobile" && paymentMutation.isSuccess && paymentReference) {
       interval = setInterval(async () => {
         attempts++;
         if (attempts > 24) {
@@ -176,8 +224,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
         }
 
         const token = localStorage.getItem("token");
-        // ✅ Ensure this endpoint matches backend: /api/payments/paynow/status/<reference>/
-        const res = await fetch(`/api/payments/paynow/status/${orderId}/`, {
+        const res = await fetch(`/api/payments/status/${encodeURIComponent(paymentReference)}/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -192,7 +239,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [paymentMutation.isSuccess, paymentMethod, orderId, toast, setLocation]);
+  }, [paymentMutation.isSuccess, paymentMethod, paymentReference, toast, setLocation]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,8 +260,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   if (!currentOrder) return <div>Order not found</div>;
 
   const isProcessing = paymentMutation.isPending || voucherDepositMutation.isPending;
-  
-  // Calculate subtotal from each_item_price if available, otherwise from items
+
   const itemsSubtotal = (currentOrder.each_item_price && currentOrder.each_item_price.length > 0)
     ? currentOrder.each_item_price.reduce((sum: number, item: any) => {
         return sum + (parseFloat(item.price || '0') * (item.quantity || 1));
@@ -226,13 +272,17 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   const tip = parseFloat(currentOrder.tip) || 0;
   const totalAmount = itemsSubtotal + deliveryFee + tip;
 
+  const voucherApplied = useVoucher && voucherBalance !== null && voucherBalance > 0;
+  const voucherDeduction = voucherApplied ? Math.min(voucherBalance!, totalAmount) : 0;
+  const paynowAmount = totalAmount - voucherDeduction;
+
   return (
     <Card className="max-w-md mx-auto">
       <CardHeader>
         <div className="flex items-center gap-2 mb-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setLocation("/customer")}
             className="p-1"
           >
@@ -240,7 +290,12 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
           </Button>
           <CardTitle>Complete Your Payment</CardTitle>
         </div>
-        <Badge variant="outline">Order #{currentOrder.id.slice(-8)}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">Order #{currentOrder.id.slice(-8)}</Badge>
+          {isDirectPayment && (
+            <Badge variant="secondary">Direct Restaurant Payment</Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="mb-4">
@@ -266,17 +321,26 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
           )}
           <p className="mt-2 text-sm text-muted-foreground">Subtotal: ${itemsSubtotal.toFixed(2)}</p>
           <p className="text-sm text-muted-foreground">
-            Delivery Fee: ${deliveryFee.toFixed(2)} 
+            Delivery Fee: ${deliveryFee.toFixed(2)}
             <span className="text-xs text-gray-400 ml-1">(${DELIVERY_RATE_PER_KM.toFixed(2)}/km)</span>
           </p>
           {tip > 0 && <p className="text-sm text-muted-foreground">Tip: ${tip.toFixed(2)}</p>}
           <p className="mt-1 font-semibold text-lg">Total: ${totalAmount.toFixed(2)}</p>
         </div>
 
+        {isDirectPayment && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+            This restaurant collects payments directly. Only PayNow (card) payment is accepted. Voucher payment is not available.
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <Select
             value={paymentMethod}
-            onValueChange={(value) => setPaymentMethod(value as "web" | "mobile" | "voucher")}
+            onValueChange={(value) => {
+              setPaymentMethod(value as "web" | "mobile" | "voucher");
+              if (value === "voucher") setUseVoucher(false);
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select payment method" />
@@ -284,7 +348,9 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
             <SelectContent>
               <SelectItem value="web">PayNow Web</SelectItem>
               <SelectItem value="mobile">PayNow Mobile</SelectItem>
-              <SelectItem value="voucher">Feast Voucher</SelectItem>
+              {!isDirectPayment && (
+                <SelectItem value="voucher">Feast Voucher</SelectItem>
+              )}
             </SelectContent>
           </Select>
 
@@ -297,14 +363,51 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
             />
           )}
 
-          {paymentMethod === "voucher" && (
+          {!isDirectPayment && paymentMethod !== "voucher" && (
+            <div className="flex items-center gap-2 border rounded-md p-3">
+              <Checkbox
+                id="use-voucher"
+                checked={useVoucher}
+                onCheckedChange={(checked) => setUseVoucher(checked === true)}
+              />
+              <label htmlFor="use-voucher" className="text-sm cursor-pointer">
+                Apply Feast Voucher balance to reduce PayNow amount
+              </label>
+            </div>
+          )}
+
+          {useVoucher && paymentMethod !== "voucher" && !isDirectPayment && (
+            <div className="border-t pt-3 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                Voucher Balance: ${voucherBalance !== null ? voucherBalance.toFixed(2) : "Loading..."}
+              </p>
+              {voucherBalance !== null && voucherBalance > 0 && (
+                <>
+                  <p className="text-sm text-green-600">
+                    Voucher deduction: -${voucherDeduction.toFixed(2)}
+                  </p>
+                  <p className="text-sm font-semibold">
+                    PayNow amount: ${paynowAmount.toFixed(2)}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {paymentMethod === "voucher" && !isDirectPayment && (
             <div className="border-t pt-3">
               <p className="text-sm text-muted-foreground mb-2">
                 Your Feast Voucher Balance: $
                 {voucherBalance !== null ? voucherBalance.toFixed(2) : "Loading..."}
               </p>
+              {voucherBalance !== null && voucherBalance < totalAmount && (
+                <p className="text-sm text-amber-600 mb-2">
+                  Insufficient balance. You need ${(totalAmount - voucherBalance).toFixed(2)} more.
+                  Select PayNow Web/Mobile and check "Apply Feast Voucher" to combine both.
+                </p>
+              )}
               <p className="text-sm text-muted-foreground mb-2">
-                Use your voucher balance to pay. To deposit funds, enter an amount:
+                To deposit funds, enter an amount:
               </p>
               <Input
                 type="number"
@@ -325,7 +428,11 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
           )}
 
           <Button type="submit" disabled={isProcessing} className="w-full">
-            {isProcessing ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
+            {isProcessing
+              ? "Processing..."
+              : useVoucher && paynowAmount > 0 && paynowAmount < totalAmount
+                ? `Pay $${paynowAmount.toFixed(2)} via PayNow`
+                : `Pay $${totalAmount.toFixed(2)}`}
           </Button>
         </form>
       </CardContent>

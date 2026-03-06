@@ -69,46 +69,69 @@ export default function CartComponent({
         return;
       }
 
-      const firstItem = items[0];
-      if (!firstItem.restaurantId || !firstItem.restaurantLat || !firstItem.restaurantLng) {
+      // Group items by restaurant
+      const restaurantGroups: Record<string, CartItem[]> = {};
+      for (const item of items) {
+        const rid = item.restaurantId || "unknown";
+        if (!restaurantGroups[rid]) restaurantGroups[rid] = [];
+        restaurantGroups[rid].push(item);
+      }
+
+      const restaurantIds = Object.keys(restaurantGroups);
+      if (restaurantIds.length === 0 || restaurantIds.includes("unknown")) {
         alert("Invalid restaurant data in cart. Please try again.");
         return;
       }
 
-      const payload = {
-        restaurant: firstItem.restaurantId,
-        method,
-        restaurant_lat: firstItem.restaurantLat,
-        restaurant_lng: firstItem.restaurantLng,
-        total_fee: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
-        tip: method === "delivery" ? (parseFloat(tipAmount) || 0) : 0,
-        items: items.map((item) => ({
-          menu_item_id: item.id,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        delivery_lat: method === "delivery" ? deliveryCoords?.lat : null,
-        delivery_lng: method === "delivery" ? deliveryCoords?.lng : null,
-      };
+      // Create one order per restaurant
+      const orderIds: string[] = [];
+      const tipPerRestaurant = method === "delivery"
+        ? (parseFloat(tipAmount) || 0) / restaurantIds.length
+        : 0;
 
-      const res = await fetch("/api/orders/create/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      for (const rid of restaurantIds) {
+        const group = restaurantGroups[rid];
+        const firstItem = group[0];
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText);
+        const payload = {
+          restaurant: rid,
+          method,
+          restaurant_lat: firstItem.restaurantLat,
+          restaurant_lng: firstItem.restaurantLng,
+          total_fee: group.reduce((acc, item) => acc + item.price * item.quantity, 0),
+          tip: Math.round(tipPerRestaurant * 100) / 100,
+          items: group.map((item) => ({
+            menu_item_id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          delivery_lat: method === "delivery" ? deliveryCoords?.lat : null,
+          delivery_lng: method === "delivery" ? deliveryCoords?.lng : null,
+          delivery_address: method === "delivery" ? value : null,
+        };
+
+        const res = await fetch("/api/orders/create/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText);
+        }
+
+        const data = await res.json();
+        orderIds.push(data.order.id);
       }
 
-      const data = await res.json();
       setItems([]);
       localStorage.removeItem("zimfeast_cart");
-      setLocation(`/checkout?orderId=${data.order.id}`);
+      // Navigate to checkout for the first order (multi-order checkout can be expanded later)
+      setLocation(`/checkout?orderId=${orderIds[0]}`);
       onClose();
     } catch (err: any) {
       console.error("Checkout failed:", err.message);

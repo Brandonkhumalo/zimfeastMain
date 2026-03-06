@@ -9,7 +9,7 @@ from .models import Order
 from .serializers import OrderSerializer
 
 from shared.redis_publisher import publisher
-from shared.geo_utils import calculate_delivery_fee
+from shared.geo_utils import calculate_delivery_fee, is_within_zimbabwe
 
 import logging
 
@@ -21,6 +21,17 @@ logger = logging.getLogger(__name__)
 def create_order(request):
     serializer = OrderSerializer(data=request.data, context={"request": request})
     if serializer.is_valid():
+        # Validate delivery address is within Zimbabwe
+        delivery_lat = serializer.validated_data.get('delivery_lat')
+        delivery_lng = serializer.validated_data.get('delivery_lng')
+        method = serializer.validated_data.get('method')
+        if method == 'delivery' and delivery_lat and delivery_lng:
+            if not is_within_zimbabwe(delivery_lat, delivery_lng):
+                return Response(
+                    {"error": "Delivery address must be within Zimbabwe."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         with transaction.atomic():
             order = serializer.save(customer_id=request.user.id)
             if order.method == "delivery" and order.delivery_lat and order.delivery_lng:
@@ -147,3 +158,9 @@ def update_order_status(request, pk):
 
     publisher.publish_order_status(order.id, new_status)
     return Response({"detail": f"Status updated to {new_status}.", "status": new_status})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    return Response({"status": "ok"})

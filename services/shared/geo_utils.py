@@ -26,3 +26,17 @@ def calculate_delivery_fee(restaurant_lat, restaurant_lng, delivery_lat, deliver
     distance = haversine_distance(restaurant_lat, restaurant_lng, delivery_lat, delivery_lng)
     fee = distance * DELIVERY_RATE_PER_KM
     return round(max(MIN_DELIVERY_FEE, fee), 2)
+
+
+# Zimbabwe approximate bounding box
+ZW_LAT_MIN = -22.5
+ZW_LAT_MAX = -15.3
+ZW_LNG_MIN = 25.2
+ZW_LNG_MAX = 33.1
+
+
+def is_within_zimbabwe(lat, lng):
+    """Check if coordinates fall within Zimbabwe's approximate bounding box."""
+    if lat is None or lng is None:
+        return False
+    return ZW_LAT_MIN <= lat <= ZW_LAT_MAX and ZW_LNG_MIN <= lng <= ZW_LNG_MAX

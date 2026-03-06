@@ -30,8 +30,21 @@ interface MenuItemFormValues {
   image: FileList;
 }
 
+interface MenuItemData {
+  id: string;
+  name: string;
+  price: string;
+  description: string;
+  category: string[];
+  prep_time: number;
+  available: boolean;
+  item_image: string | null;
+}
+
 interface MenuItemFormProps {
   isEdit?: boolean;
+  editItem?: MenuItemData | null;
+  onSuccess?: () => void;
 }
 
 interface Category {
@@ -39,97 +52,99 @@ interface Category {
   name: string;
 }
 
-export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
+export default function MenuItemForm({ isEdit = false, editItem = null, onSuccess }: MenuItemFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    isEdit && editItem?.item_image ? editItem.item_image : null
+  );
 
   const form = useForm<MenuItemFormValues>({
     defaultValues: {
-      name: "",
-      price: "0.00",
-      description: "",
+      name: editItem?.name || "",
+      price: editItem?.price || "0.00",
+      description: editItem?.description || "",
       category: "",
-      preparationTime: 15,
-      available: true,
+      preparationTime: editItem?.prep_time || 15,
+      available: editItem?.available ?? true,
     },
   });
 
-  // Fetch categories from backend
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          "/api/restaurants/get/category/types/",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
+        const res = await fetch("/api/restaurants/get/category/types/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!res.ok) throw new Error("Failed to fetch categories");
-
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setCategories(data);
+          if (isEdit && editItem?.category && editItem.category.length > 0) {
+            const match = data.find((c: Category) => c.name === editItem.category[0]);
+            if (match) {
+              form.setValue("category", match.id.toString());
+            }
+          }
         } else {
-          setCategories([]); // no categories
+          setCategories([]);
         }
       } catch (err) {
         console.error("Error fetching categories:", err);
-        setCategories([]); // fallback
+        setCategories([]);
       } finally {
         setLoadingCategories(false);
       }
     };
-
     fetchCategories();
   }, []);
 
-  const handleAddMenuItem: SubmitHandler<MenuItemFormValues> = async (data) => {
+  const handleSubmit: SubmitHandler<MenuItemFormValues> = async (data) => {
     try {
-      // Validate that an image is selected
-      if (!data.image || data.image.length === 0) {
+      if (!isEdit && (!data.image || data.image.length === 0)) {
         alert("Please select an image for the menu item.");
         return;
       }
 
       const token = localStorage.getItem("token");
-
       const formData = new FormData();
       formData.append("name", data.name);
       formData.append("price", data.price);
       formData.append("description", data.description);
-      formData.append("category", data.category);
+      if (data.category) {
+        formData.append("category", data.category);
+      }
       formData.append("prep_time", data.preparationTime.toString());
       formData.append("available", data.available ? "true" : "false");
-      formData.append("item_image", data.image[0]); // Add the image file
+      if (data.image && data.image.length > 0) {
+        formData.append("item_image", data.image[0]);
+      }
 
-      const response = await fetch(
-        "/api/restaurants/add/menu-items/",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const url = isEdit && editItem
+        ? `/api/restaurants/menu/${editItem.id}/update/`
+        : "/api/restaurants/add/menu-items/";
+      const method = isEdit ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        console.error("Error adding menu item:", error);
-        alert("Failed to add menu item. Check console for details.");
+        console.error("Error saving menu item:", error);
+        alert(`Failed to ${isEdit ? "update" : "add"} menu item. Check console for details.`);
         return;
       }
 
-      const result = await response.json();
-      console.log("Menu item added successfully:", result);
-      alert("Menu item added successfully!");
-      form.reset();
-      setImagePreview(null); // Clear image preview
+      alert(`Menu item ${isEdit ? "updated" : "added"} successfully!`);
+      if (!isEdit) {
+        form.reset();
+        setImagePreview(null);
+      }
+      onSuccess?.();
     } catch (err) {
       console.error(err);
       alert("An unexpected error occurred.");
@@ -138,56 +153,43 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleAddMenuItem)}
-        className="space-y-4"
-      >
-        {/* Name */}
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Item Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
+              <FormControl><Input {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Price */}
         <FormField
           control={form.control}
           name="price"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Price</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
+              <FormControl><Input {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Description */}
         <FormField
           control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea {...field} />
-              </FormControl>
+              <FormControl><Textarea {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Category */}
         <FormField
           control={form.control}
           name="category"
@@ -210,13 +212,11 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
                     } />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.length > 0
-                      ? categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id.toString()}>
-                            {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
-                          </SelectItem>
-                        ))
-                      : null}
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id.toString()}>
+                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -225,22 +225,18 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
           )}
         />
 
-        {/* Preparation Time */}
         <FormField
           control={form.control}
           name="preparationTime"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Preparation Time (min)</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} />
-              </FormControl>
+              <FormControl><Input type="number" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Available Switch */}
         <FormField
           control={form.control}
           name="available"
@@ -248,24 +244,20 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
             <FormItem className="flex flex-row items-center justify-between">
               <FormLabel>Available</FormLabel>
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Image Upload - MANDATORY */}
         <FormField
           control={form.control}
           name="image"
           render={({ field: { onChange, value, ...field } }) => (
             <FormItem>
-              <FormLabel className="text-red-600">
-                Item Image <span className="text-sm">(Required)</span>
+              <FormLabel className={isEdit ? "" : "text-red-600"}>
+                Item Image {!isEdit && <span className="text-sm">(Required)</span>}
               </FormLabel>
               <FormControl>
                 <div className="space-y-2">
@@ -275,7 +267,6 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
                     {...field}
                     onChange={(e) => {
                       onChange(e.target.files);
-                      // Preview the image
                       if (e.target.files && e.target.files[0]) {
                         const reader = new FileReader();
                         reader.onload = (event) => {
@@ -284,7 +275,7 @@ export default function MenuItemForm({ isEdit = false }: MenuItemFormProps) {
                         reader.readAsDataURL(e.target.files[0]);
                       }
                     }}
-                    required
+                    required={!isEdit}
                     className="cursor-pointer"
                   />
                   {imagePreview && (

@@ -12,6 +12,9 @@ import RestaurantDashboard from "@/pages/RestaurantDashboard";
 import DriverApp from "@/pages/DriverApp";
 import BusinessHub from "@/pages/BusinessHub";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminRegister from "@/pages/AdminRegister";
+import AdminAnalytics from "@/pages/AdminAnalytics";
 import Checkout from "@/pages/Checkout";
 import PaymentReturn from "@/pages/PaymentReturn";
 import Login from '@/pages/Login';
@@ -60,6 +63,11 @@ function AppRouter() {
       <Route path="/admin" component={() => <PrivateRoute component={AdminDashboard} allowedRoles={["admin"]} />} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment-return" component={PaymentReturn} />
+
+      {/* Admin analytics portal (separate auth) */}
+      <Route path="/zimfeast/admin/login" component={AdminLogin} />
+      <Route path="/zimfeast/admin/register_user" component={AdminRegister} />
+      <Route path="/zimfeast/admin/dashboard" component={AdminAnalytics} />
 
       {/* Fallback 404 */}
       <Route component={NotFound} />

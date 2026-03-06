@@ -12,4 +12,5 @@ urlpatterns = [
     path("orders/history/", views.driver_completed_cancelled_orders, name="driver_orders_history"),
     path("daily/finances/", views.driver_finance_view, name="driver_finances"),
     path("rate/driver/", views.submit_driver_rating, name="rate_driver"),
+    path("health/", views.health_check, name="health_check"),
 ]

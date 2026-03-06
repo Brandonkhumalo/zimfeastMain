@@ -42,8 +42,8 @@ SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
 PAYNOW_SANDBOX_URL = os.environ.get('PAYNOW_SANDBOX_URL', '')
 PAYNOW_RETURN_URL = os.environ.get('PAYNOW_RETURN_URL', '')
 PAYNOW_RESULT_URL = os.environ.get('PAYNOW_RESULT_URL', '')
-PAYNOW_INTEGRATION_ID = os.environ.get('PAYNOW_Integration_ID', '')
-PAYNOW_INTEGRATION_KEY = os.environ.get('PAYNOW_Integration_Key', '')
+PAYNOW_INTEGRATION_ID = os.environ.get('PAYNOW_INTEGRATION_ID', '')
+PAYNOW_INTEGRATION_KEY = os.environ.get('PAYNOW_INTEGRATION_KEY', '')
 
 # Redis
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
@@ -97,8 +97,19 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-MEDIA_URL = '/media/'
 STATIC_URL = '/static/'
+
+# Media storage: S3 in production, local filesystem in dev
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
+if AWS_STORAGE_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'af-south-1')
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('MEDIA_URL', '').strip('/').replace('https://', '').replace('http://', '')
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = False
+    MEDIA_URL = os.environ.get('MEDIA_URL', f'https://{AWS_S3_CUSTOM_DOMAIN}/')
+else:
+    MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

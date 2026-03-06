@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, Address
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -15,3 +15,10 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ["id", "label", "address_text", "lat", "lng", "created"]
+        read_only_fields = ("created",)
