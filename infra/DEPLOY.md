@@ -112,13 +112,13 @@ aws ecr get-login-password --region af-south-1 | docker login --username AWS --p
 # Build and push each service (from project root)
 for svc in auth restaurant order driver payment; do
   docker build -t YOUR_ACCOUNT_ID.dkr.ecr.af-south-1.amazonaws.com/zimfeast/$svc:latest \
-    -f services/$svc-service/Dockerfile .
+    -f backend/$svc-service/Dockerfile .
   docker push YOUR_ACCOUNT_ID.dkr.ecr.af-south-1.amazonaws.com/zimfeast/$svc:latest
 done
 
 # Realtime service
 docker build -t YOUR_ACCOUNT_ID.dkr.ecr.af-south-1.amazonaws.com/zimfeast/realtime:latest \
-  -f services/realtime-service/Dockerfile .
+  -f backend/realtime-service/Dockerfile .
 docker push YOUR_ACCOUNT_ID.dkr.ecr.af-south-1.amazonaws.com/zimfeast/realtime:latest
 ```
 

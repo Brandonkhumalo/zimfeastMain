@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(du -sh ./*)",
+      "Bash(chmod +x \"d:/Tishanyq Digital/zimfeastMain/scripts/docker-start.sh\" \"d:/Tishanyq Digital/zimfeastMain/scripts/docker-scale.sh\")",
+      "Bash(rm -f start_backend.sh start_production.sh view_db.py deploy/nginx.conf)",
+      "Bash(rmdir deploy)",
+      "Bash(xargs grep -l \"class.*Branch\\\\|branches\")",
+      "Bash(xargs grep -l \"address\")",
+      "Bash(npx tsc --noEmit --pretty)",
+      "Bash(npx --package=typescript tsc --noEmit --pretty)",
+      "Bash(npm run check)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(python -c \"import secrets; print\\(''db_password:'', secrets.token_urlsafe\\(24\\)\\); print\\(''service_api_key:'', secrets.token_urlsafe\\(32\\)\\)\")",
+      "Bash(grep -E \"\\\\.py$|\\\\.txt$|Dockerfile\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(go mod tidy)",
+      "Bash(ls -d \"d:/Tishanyq Digital/zimfeastMain\"/src/*/)",
+      "Bash(cp -r zimfeast-customer customer-app)",
+      "Bash(rm -rf zimfeast-customer)",
+      "Bash(ls -d */ .*)",
+      "Bash(grep -v '^\\\\.\\\\.$')",
+      "Bash(grep -v '^\\\\.$')",
+      "Bash(ls -d webapp/*/)",
+      "Bash(ls -la *.json *.js *.ts *.html *.css *.md)",
+      "Read(//d/Tishanyq Digital/zimfeastMain/**)",
+      "Bash(mv index.html webapp/)",
+      "Bash(mv package.json webapp/)",
+      "Bash(mv package-lock.json webapp/)",
+      "Bash(mv vite.config.ts webapp/)",
+      "Bash(mv tsconfig.json webapp/)",
+      "Bash(mv tailwind.config.ts webapp/)",
+      "Bash(mv postcss.config.js webapp/)",
+      "Bash(mv components.json webapp/)",
+      "Bash(mv public webapp/public)",
+      "Bash(mv shared webapp/shared)",
+      "Bash(mkdir -p infra/scripts)",
+      "Bash(mv scripts/* infra/scripts/)",
+      "Bash(rmdir scripts)",
+      "Bash(cp .env backend/.env)",
+      "Bash(cp .env.example backend/.env.example)",
+      "Bash(cp docker-compose.yml backend/docker-compose.yml)"
+    ],
+    "additionalDirectories": [
+      "d:\\Tishanyq Digital\\zimfeastMain\\.claude",
+      "d:\\Tishanyq Digital\\zimfeastMain\\services\\go-shared"
+    ]
+  }
+}

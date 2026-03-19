@@ -63,6 +63,17 @@ variable "paynow_integration_key" {
   sensitive = true
 }
 
+# ─── Database sizing ─────────────────────────────────────────────────
+variable "db_instance_class" {
+  description = "RDS instance class — Phase 1: db.t4g.micro, Phase 2: db.t4g.small, Phase 3: db.t4g.medium"
+  default     = "db.t4g.micro" # Free tier eligible for 12 months
+}
+
+variable "db_multi_az" {
+  description = "Enable Multi-AZ for RDS high availability (Phase 2+)"
+  default     = false
+}
+
 # ─── Service sizing ──────────────────────────────────────────────────
 variable "services" {
   description = "Fargate service definitions"
@@ -96,8 +107,8 @@ variable "services" {
     }
     order = {
       port       = 8003
-      cpu        = 512
-      memory     = 1024
+      cpu        = 256       # Go: reduced from 512 (Django)
+      memory     = 512       # Fargate minimum for 256 CPU
       min_count  = 1
       max_count  = 20
       db_name    = "zimfeast_orders"
@@ -106,7 +117,7 @@ variable "services" {
     driver = {
       port       = 8004
       cpu        = 256
-      memory     = 512
+      memory     = 512       # Fargate minimum for 256 CPU
       min_count  = 1
       max_count  = 10
       db_name    = "zimfeast_drivers"
@@ -129,7 +140,7 @@ variable "realtime_cpu" {
 }
 
 variable "realtime_memory" {
-  default = 512
+  default = 512  # Fargate minimum for 256 CPU
 }
 
 variable "realtime_min_count" {

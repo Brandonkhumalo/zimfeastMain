@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"TODO\\\\|FIXME\\\\|BUG\\\\|HACK\" 'd:/Tishanyq Digital/zimfeastMain/webapp' --include=*.tsx --include=*.ts)",
+      "Bash(npx update-browserslist-db@latest --update-db)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

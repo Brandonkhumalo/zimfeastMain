@@ -48,7 +48,7 @@ resource "aws_vpc" "main" {
   tags = { Name = "${var.project}-vpc" }
 }
 
-# Public subnets (ALB, NAT Gateway)
+# Public subnets (ALB, ECS Fargate tasks)
 resource "aws_subnet" "public" {
   count                   = 2
   vpc_id                  = aws_vpc.main.id
@@ -59,7 +59,7 @@ resource "aws_subnet" "public" {
   tags = { Name = "${var.project}-public-${count.index}" }
 }
 
-# Private subnets (Fargate tasks, RDS, ElastiCache)
+# Private subnets (RDS, ElastiCache — no internet access needed)
 resource "aws_subnet" "private" {
   count             = 2
   vpc_id            = aws_vpc.main.id
@@ -73,21 +73,6 @@ resource "aws_subnet" "private" {
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "${var.project}-igw" }
-}
-
-# Elastic IP for NAT Gateway
-resource "aws_eip" "nat" {
-  domain = "vpc"
-  tags   = { Name = "${var.project}-nat-eip" }
-}
-
-# NAT Gateway (for private subnets to reach internet)
-resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
-  tags          = { Name = "${var.project}-nat" }
-
-  depends_on = [aws_internet_gateway.main]
 }
 
 # Public route table
@@ -111,17 +96,24 @@ resource "aws_route_table_association" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "${var.project}-private-rt" }
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
 }
 
 resource "aws_route_table_association" "private" {
   count          = 2
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
+}
+
+# ─── VPC Endpoints (reduce data transfer costs) ───────────────────
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.${var.aws_region}.s3"
+  route_table_ids = concat(
+    [aws_route_table.public.id],
+    [aws_route_table.private.id]
+  )
+
+  tags = { Name = "${var.project}-s3-endpoint" }
 }
 
 # ─── Security Groups ────────────────────────────────────────────────

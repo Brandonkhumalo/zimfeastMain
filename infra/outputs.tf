@@ -12,8 +12,8 @@ output "alb_dns" {
   value = aws_lb.main.dns_name
 }
 
-output "aurora_endpoint" {
-  value = aws_rds_cluster.main.endpoint
+output "rds_endpoint" {
+  value = aws_db_instance.main.address
 }
 
 output "redis_endpoint" {

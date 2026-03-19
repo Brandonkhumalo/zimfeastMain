@@ -1,0 +1,116 @@
+-- Go Services Database Schema
+-- Run this ONLY if you're deploying Go services without first running Django migrations.
+-- If Django migrations have already been run, these tables already exist.
+-- All statements use IF NOT EXISTS for safety.
+
+-- ============================================================
+-- Order Service Database (zimfeast_orders)
+-- ============================================================
+\connect zimfeast_orders;
+
+CREATE TABLE IF NOT EXISTS orders_order (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending_payment',
+    method VARCHAR(20) NOT NULL DEFAULT 'delivery',
+    customer_id UUID NOT NULL,
+    driver_id UUID,
+    restaurant_id UUID NOT NULL,
+    total_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+    tip DECIMAL(10,2) NOT NULL DEFAULT 0,
+    delivery_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+    each_item_price TEXT,
+    restaurant_lat DOUBLE PRECISION,
+    restaurant_lng DOUBLE PRECISION,
+    delivery_lat DOUBLE PRECISION,
+    delivery_lng DOUBLE PRECISION,
+    delivery_address TEXT,
+    driver_name VARCHAR(255),
+    driver_phone VARCHAR(50),
+    driver_vehicle TEXT,
+    restaurant_names TEXT,
+    external_order_numbers TEXT,
+    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    delivery_out_time TIMESTAMP WITH TIME ZONE,
+    delivery_complete_time TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_status_driver ON orders_order(status, driver_id);
+CREATE INDEX IF NOT EXISTS idx_order_created ON orders_order(created DESC);
+CREATE INDEX IF NOT EXISTS idx_order_customer ON orders_order(customer_id, created DESC);
+CREATE INDEX IF NOT EXISTS idx_order_restaurant ON orders_order(restaurant_id, status);
+
+CREATE TABLE IF NOT EXISTS orders_orderitem (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders_order(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+    menu_item_id UUID NOT NULL,
+    menu_item_name VARCHAR(255) NOT NULL,
+    menu_item_price DECIMAL(10,2) NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    added TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_orderitem_order ON orders_orderitem(order_id);
+
+-- ============================================================
+-- Driver Service Database (zimfeast_drivers)
+-- ============================================================
+\connect zimfeast_drivers;
+
+CREATE TABLE IF NOT EXISTS drivers_driver (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE NOT NULL,
+    license_number VARCHAR(100),
+    license_photo VARCHAR(255),
+    vehicle_details TEXT,
+    vehicle_photo VARCHAR(255),
+    is_online BOOLEAN NOT NULL DEFAULT false,
+    lat DOUBLE PRECISION,
+    lng DOUBLE PRECISION,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_driver_user ON drivers_driver(user_id);
+CREATE INDEX IF NOT EXISTS idx_driver_online ON drivers_driver(is_online);
+
+CREATE TABLE IF NOT EXISTS drivers_driverorderstatus (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
+    order_id UUID NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    assigned_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX IF NOT EXISTS idx_driveros_driver_status ON drivers_driverorderstatus(driver_id, status);
+CREATE INDEX IF NOT EXISTS idx_driveros_completed ON drivers_driverorderstatus(completed_at DESC);
+
+CREATE TABLE IF NOT EXISTS drivers_driverfinance (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    today_deliveries INTEGER NOT NULL DEFAULT 0,
+    today_earnings DECIMAL(10,2) NOT NULL DEFAULT 0,
+    hours_online DECIMAL(10,2) NOT NULL DEFAULT 0,
+    rating_sum DECIMAL(10,2) NOT NULL DEFAULT 0,
+    rating_count INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(driver_id, date)
+);
+
+CREATE TABLE IF NOT EXISTS drivers_driverrating (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+    rating DECIMAL(3,2) NOT NULL,
+    comment TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS drivers_driverreject (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
+    order_id VARCHAR(255) NOT NULL,
+    reason TEXT,
+    rejected_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);

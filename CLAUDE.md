@@ -6,7 +6,7 @@ ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It co
 
 ## Architecture
 
-**Microservices** - The backend is split into 5 independent Django services + 1 Node.js real-time service, orchestrated with Docker Compose behind an Nginx API gateway.
+**Microservices** - The backend is split into 3 Django services + 3 Go services, orchestrated with Docker Compose behind an Nginx API gateway.
 
 ## Tech Stack
 
@@ -14,8 +14,8 @@ ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It co
 |-------|-----------|
 | Frontend | React 18 + TypeScript, Vite, Tailwind CSS, Radix UI / shadcn |
 | Data fetching | TanStack Query (React Query) |
-| Backend | 5 Django 4.2 microservices (DRF, Gunicorn/Daphne) |
-| Real-time | Node.js + Socket.IO + Redis Pub/Sub |
+| Backend (Django) | 3 Django 4.2 microservices: auth, restaurant, payment (DRF, Gunicorn/Daphne) |
+| Backend (Go) | 3 Go microservices: order, driver, realtime |
 | Database | PostgreSQL (1 database per service) |
 | Cache/PubSub | Redis 7 |
 | Auth | Stateless JWT (shared secret across services) |
@@ -23,77 +23,79 @@ ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It co
 | Maps | Google Maps API (frontend + backend) |
 | Payments | Paynow (Zimbabwe payment gateway) |
 | Containers | Docker + Docker Compose (auto-scaling) |
-| Mobile | Android apps (Kotlin/Java) in `driver-app/` and `zimfeast-customer/` |
+| Mobile | Android apps (Kotlin/Java) in `driver-app/` and `customer-app/` |
 
 ## Project Structure
 
 ```
-services/                    # Microservices (Docker)
-  shared/                    #   Shared utilities (JWT auth, Redis pub, geo, service client)
-  auth-service/              #   User auth, registration, profiles (port 8001)
-  restaurant-service/        #   Restaurant profiles, menus, dashboard (port 8002)
-  order-service/             #   Order lifecycle (port 8003)
-  driver-service/            #   Driver management, location, ratings (port 8004)
-  payment-service/           #   Paynow + voucher payments (port 8005)
-  realtime-service/          #   Socket.IO Dockerfile (port 3001)
+backend/                     # Microservices (Docker)
+  shared/                    #   Shared Python utilities (JWT auth, Redis pub, geo, service client)
+  go-shared/                 #   Shared Go module (for Go services)
+  auth-service/              #   User auth, registration, profiles - Django (port 8001)
+  restaurant-service/        #   Restaurant profiles, menus, dashboard - Django (port 8002)
+  order-service/             #   Order lifecycle - Go (port 8003)
+  driver-service/            #   Driver management, location, ratings - Go (port 8004)
+  payment-service/           #   Paynow + voucher payments - Django (port 8005)
+  realtime-service/          #   WebSocket/real-time - Go (port 3001)
   api-gateway/               #   Nginx reverse proxy config (port 80)
   frontend/                  #   Frontend build Dockerfile
   init-db.sql                #   Creates per-service databases
+  docker-compose.yml         #   Full stack orchestration
+  .env                       #   All environment variables
 
-src/                         # React frontend (SPA)
+webapp/                      # React frontend (self-contained SPA)
   components/                #   Reusable UI components (Cart, Navbar, ui/)
   hooks/                     #   Custom hooks (useAuth, useOrderSocket, useWebSocket)
   lib/                       #   Utilities (queryClient, authUtils, withRoleGuard)
   pages/                     #   Pages organized by role
+  shared/                    #   Shared TypeScript utilities
+  public/                    #   Static assets
+  package.json               #   npm dependencies
+  vite.config.ts             #   Vite build config
+  tsconfig.json              #   TypeScript config
+  index.html                 #   Entry point
 
-real-time-server/            # Node.js Socket.IO server source
-shared/                      # Shared TypeScript utilities
 driver-app/                  # Android driver app (Kotlin)
-zimfeast-customer/           # Android customer app (Kotlin)
-
-docker-compose.yml           # Full stack orchestration
-.env                         # All environment variables
-scripts/                     # Docker start/scale scripts
+customer-app/                # Android customer app (Kotlin)
+infra/                       # Terraform AWS infrastructure + scripts
 ```
 
 ## Essential Commands
 
 ### Docker (Production - Recommended)
 ```bash
-bash scripts/docker-start.sh           # Build & start everything
-docker compose up -d                    # Start all services
-docker compose logs -f order-service    # Tail logs for a service
-bash scripts/docker-scale.sh order-service 5  # Scale order service to 5 replicas
-docker compose down                     # Stop everything
+bash infra/scripts/docker-start.sh                   # Build & start everything
+cd backend && docker compose up -d                    # Start all services
+cd backend && docker compose logs -f order-service    # Tail logs for a service
+bash infra/scripts/docker-scale.sh order-service 5    # Scale order service to 5 replicas
+cd backend && docker compose down                     # Stop everything
 ```
 
 ### Local Development (Individual Services)
 ```bash
-# Each service can run independently for development
-cd services/auth-service && python manage.py runserver 8001
-cd services/restaurant-service && python manage.py runserver 8002
-cd services/order-service && python manage.py runserver 8003
-cd services/driver-service && python manage.py runserver 8004
-cd services/payment-service && python manage.py runserver 8005
+# Django services can run independently for development
+cd backend/auth-service && python manage.py runserver 8001
+cd backend/restaurant-service && python manage.py runserver 8002
+cd backend/payment-service && python manage.py runserver 8005
+
+# Go services
+cd backend/order-service && go run .        # Port 8003
+cd backend/driver-service && go run .       # Port 8004
+cd backend/realtime-service && go run .     # Port 3001
 ```
 
 ### Frontend
 ```bash
+cd webapp
+npm install              # Install dependencies (first time)
 npm run dev              # Start Vite dev server (port 5000)
 npm run build            # Production build -> dist/public
 npm run check            # TypeScript type checking
 ```
 
-### Real-Time Server
-```bash
-cd real-time-server
-npm install
-npm start                # Port 3001
-```
-
 ## Environment Variables
 
-All variables are in [.env](.env). Key sections:
+All variables are in [backend/.env](backend/.env). Key sections:
 - **Database**: `POSTGRES_*`, per-service `*_DB_NAME`
 - **Redis**: `REDIS_URL`
 - **APIs**: `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SENDGRID_API_KEY`
@@ -103,30 +105,32 @@ All variables are in [.env](.env). Key sections:
 
 ## Microservices Architecture
 
-| Service | Port | Owns | Communicates via |
-|---------|------|------|-----------------|
-| auth-service | 8001 | Users, Addresses, Tokens | JWT tokens (stateless) |
-| restaurant-service | 8002 | Restaurants, Menus, Dashboard | Redis pub/sub, WebSocket |
-| order-service | 8003 | Orders, OrderItems | Redis pub/sub, REST |
-| driver-service | 8004 | Drivers, Finance, Ratings | Redis pub/sub, WebSocket |
-| payment-service | 8005 | Payments, Vouchers | REST to order-service |
-| realtime-service | 3001 | None (stateless) | Redis sub, Socket.IO |
-| api-gateway | 80 | None | Reverse proxy |
+| Service | Port | Language | Owns | Communicates via |
+|---------|------|----------|------|-----------------|
+| auth-service | 8001 | Django | Users, Addresses, Tokens | JWT tokens (stateless) |
+| restaurant-service | 8002 | Django | Restaurants, Menus, Dashboard | Redis pub/sub, WebSocket |
+| order-service | 8003 | Go | Orders, OrderItems | Redis pub/sub, REST |
+| driver-service | 8004 | Go | Drivers, Finance, Ratings | Redis pub/sub, WebSocket |
+| payment-service | 8005 | Django | Payments, Vouchers | REST to order-service |
+| realtime-service | 3001 | Go | None (stateless) | Redis sub, WebSocket |
+| api-gateway | 80 | Nginx | None | Reverse proxy |
 
 ### Inter-Service Communication
-- **Sync**: REST calls via `shared/service_client.py` with `X-Service-Key` header
-- **Async**: Redis pub/sub via `shared/redis_publisher.py`
-- **Auth**: Stateless JWT - each service validates tokens independently using `shared/jwt_auth.py`
+- **Sync (Django)**: REST calls via `backend/shared/service_client.py` with `X-Service-Key` header
+- **Sync (Go)**: REST calls via `backend/go-shared/` with `X-Service-Key` header
+- **Async**: Redis pub/sub (Django via `backend/shared/redis_publisher.py`, Go via `backend/go-shared/`)
+- **Auth**: Stateless JWT - each service validates tokens independently (Django: `backend/shared/jwt_auth.py`, Go: `backend/go-shared/`)
 - **Data refs**: Services reference entities in other services by UUID (no cross-service FKs)
 
 ## Key Entry Points
 
-- Frontend routing: [src/App.tsx](src/App.tsx)
-- API Gateway config: [services/api-gateway/nginx.conf](services/api-gateway/nginx.conf)
-- Docker orchestration: [docker-compose.yml](docker-compose.yml)
-- Shared JWT auth: [services/shared/jwt_auth.py](services/shared/jwt_auth.py)
-- Shared settings: [services/shared/base_settings.py](services/shared/base_settings.py)
-- Real-time server: [real-time-server/src/index.js](real-time-server/src/index.js)
+- Frontend routing: [webapp/App.tsx](webapp/App.tsx)
+- API Gateway config: [backend/api-gateway/nginx.conf](backend/api-gateway/nginx.conf)
+- Docker orchestration: [backend/docker-compose.yml](backend/docker-compose.yml)
+- Shared JWT auth (Django): [backend/shared/jwt_auth.py](backend/shared/jwt_auth.py)
+- Shared settings (Django): [backend/shared/base_settings.py](backend/shared/base_settings.py)
+- Go shared module: [backend/go-shared/](backend/go-shared/)
+- Real-time service: [backend/realtime-service/](backend/realtime-service/)
 
 ## Additional Documentation
 
@@ -134,7 +138,7 @@ All variables are in [.env](.env). Key sections:
 |----------|----------------|
 | [.claude/docs/architectural_patterns.md](.claude/docs/architectural_patterns.md) | Architecture, auth flow, API conventions, real-time patterns |
 | [DOCUMENTATION.md](DOCUMENTATION.md) | Full project documentation and feature specs |
-| [LOCAL_SETUP.md](LOCAL_SETUP.md) | Detailed local development setup instructions |
+| [deployment.md](deployment.md) | AWS deployment guide (phased scaling, Terraform, CI/CD) |
 
 ## Quick Reference
 
@@ -142,7 +146,7 @@ All variables are in [.env](.env). Key sections:
 - **Order flow**: pending_payment -> paid -> preparing -> ready -> collected -> assigned -> out_for_delivery -> delivered
 - **API pattern**: `/api/{service}/{action}/` with trailing slash, JWT Bearer token auth
 - **API Gateway**: Nginx on port 80 routes to the correct microservice
-- **Scaling**: `docker compose up --scale order-service=5` to scale any service
+- **Scaling**: `cd backend && docker compose up --scale order-service=5` to scale any service
 - **Frontend data**: TanStack Query with query keys matching API paths
-- **UI components**: shadcn/ui in `src/components/ui/`
-- **Path aliases**: `@/` -> `src/`, `@shared/` -> `shared/`
+- **UI components**: shadcn/ui in `webapp/components/ui/`
+- **Path aliases**: `@/` -> `webapp/`, `@shared/` -> `shared/`

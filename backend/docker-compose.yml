@@ -1,0 +1,285 @@
+version: "3.8"
+
+x-common-env: &common-env
+  SECRET_KEY: ${SECRET_KEY}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+  DEBUG: ${DEBUG}
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+  REDIS_URL: redis://redis:6379
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+  PAYNOW_SANDBOX_URL: ${PAYNOW_SANDBOX_URL}
+  PAYNOW_RETURN_URL: ${PAYNOW_RETURN_URL}
+  PAYNOW_RESULT_URL: ${PAYNOW_RESULT_URL}
+  PAYNOW_Integration_ID: ${PAYNOW_Integration_ID}
+  PAYNOW_Integration_Key: ${PAYNOW_Integration_Key}
+  SERVICE_API_KEY: ${SERVICE_API_KEY}
+  AUTH_SERVICE_URL: http://auth-service:8001
+  RESTAURANT_SERVICE_URL: http://restaurant-service:8002
+  ORDER_SERVICE_URL: http://order-service:8003
+  DRIVER_SERVICE_URL: http://driver-service:8004
+  PAYMENT_SERVICE_URL: http://payment-service:8005
+
+services:
+  # ============================================================
+  # Infrastructure
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================
+  # Auth Service (port 8001)
+  # ============================================================
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    environment:
+      <<: *common-env
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/api/accounts/login/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - media_data:/app/media
+
+  # ============================================================
+  # Restaurant Service (port 8002)
+  # ============================================================
+  restaurant-service:
+    build:
+      context: .
+      dockerfile: restaurant-service/Dockerfile
+    environment:
+      <<: *common-env
+      RESTAURANT_DB_NAME: ${RESTAURANT_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    volumes:
+      - media_data:/app/media
+
+  # ============================================================
+  # Order Service (port 8003)
+  # ============================================================
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    environment:
+      <<: *common-env
+      ORDER_DB_NAME: ${ORDER_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 128M
+
+  # ============================================================
+  # Driver Service (port 8004)
+  # ============================================================
+  driver-service:
+    build:
+      context: .
+      dockerfile: driver-service/Dockerfile
+    environment:
+      <<: *common-env
+      DRIVER_DB_NAME: ${DRIVER_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+  # ============================================================
+  # Payment Service (port 8005)
+  # ============================================================
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    environment:
+      <<: *common-env
+      PAYMENT_DB_NAME: ${PAYMENT_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # ============================================================
+  # Real-time Service (Socket.IO - port 3001)
+  # ============================================================
+  realtime-service:
+    build:
+      context: .
+      dockerfile: realtime-service/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379
+      REALTIME_PORT: "3001"
+      ORDER_SERVICE_URL: http://order-service:8003
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 64M
+
+  # ============================================================
+  # Frontend Builder
+  # ============================================================
+  frontend:
+    build:
+      context: ..
+      dockerfile: backend/frontend/Dockerfile
+      args:
+        VITE_API_URL: ""
+        VITE_REALTIME_URL: ""
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY}
+    volumes:
+      - frontend_build:/app/frontend
+
+  # ============================================================
+  # API Gateway (Nginx - port 80)
+  # ============================================================
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - restaurant-service
+      - order-service
+      - driver-service
+      - payment-service
+      - realtime-service
+      - frontend
+    volumes:
+      - frontend_build:/app/frontend:ro
+      - media_data:/app/media:ro
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  # ============================================================
+  # Database Migration Runner (one-shot)
+  # ============================================================
+  migrate-auth:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    command: python manage.py migrate --noinput
+    environment:
+      <<: *common-env
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate-restaurant:
+    build:
+      context: .
+      dockerfile: restaurant-service/Dockerfile
+    command: python manage.py migrate --noinput
+    environment:
+      <<: *common-env
+      RESTAURANT_DB_NAME: ${RESTAURANT_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate-payment:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    command: python manage.py migrate --noinput
+    environment:
+      <<: *common-env
+      PAYMENT_DB_NAME: ${PAYMENT_DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  frontend_build:
+  media_data:

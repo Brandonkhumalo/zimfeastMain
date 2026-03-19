@@ -4,8 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'services/**'
-      - 'real-time-server/**'
+      - 'backend/**'
       - '.github/workflows/deploy-services.yml'
   workflow_dispatch:
     inputs:
@@ -42,17 +41,17 @@ jobs:
           if [ "${{ github.event.inputs.service }}" = "all" ] || [ "${{ github.event_name }}" = "push" ]; then
             # On push, detect which services changed
             if [ "${{ github.event_name }}" = "push" ]; then
-              CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || echo "services/")
+              CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || echo "backend/")
             else
-              CHANGED="services/"
+              CHANGED="backend/"
             fi
 
-            echo "auth=$([[ "$CHANGED" == *"services/auth-service"* || "$CHANGED" == *"services/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
-            echo "restaurant=$([[ "$CHANGED" == *"services/restaurant-service"* || "$CHANGED" == *"services/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
-            echo "order=$([[ "$CHANGED" == *"services/order-service"* || "$CHANGED" == *"services/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
-            echo "driver=$([[ "$CHANGED" == *"services/driver-service"* || "$CHANGED" == *"services/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
-            echo "payment=$([[ "$CHANGED" == *"services/payment-service"* || "$CHANGED" == *"services/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
-            echo "realtime=$([[ "$CHANGED" == *"real-time-server"* || "$CHANGED" == *"services/realtime-service"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "auth=$([[ "$CHANGED" == *"backend/auth-service"* || "$CHANGED" == *"backend/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "restaurant=$([[ "$CHANGED" == *"backend/restaurant-service"* || "$CHANGED" == *"backend/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "order=$([[ "$CHANGED" == *"backend/order-service"* || "$CHANGED" == *"backend/go-shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "driver=$([[ "$CHANGED" == *"backend/driver-service"* || "$CHANGED" == *"backend/go-shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "payment=$([[ "$CHANGED" == *"backend/payment-service"* || "$CHANGED" == *"backend/shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "realtime=$([[ "$CHANGED" == *"backend/realtime-service"* || "$CHANGED" == *"backend/go-shared"* || "${{ github.event.inputs.service }}" == "all" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
           else
             # Deploy specific service
             for svc in auth restaurant order driver payment realtime; do
@@ -68,23 +67,25 @@ jobs:
         service:
           - name: auth
             port: 8001
-            dockerfile: services/auth-service/Dockerfile
+            dockerfile: auth-service/Dockerfile
             deploy: ${{ needs.detect-changes.outputs.auth }}
           - name: restaurant
             port: 8002
-            dockerfile: services/restaurant-service/Dockerfile
+            dockerfile: restaurant-service/Dockerfile
             deploy: ${{ needs.detect-changes.outputs.restaurant }}
           - name: order
             port: 8003
-            dockerfile: services/order-service/Dockerfile
+            dockerfile: order-service/Dockerfile
             deploy: ${{ needs.detect-changes.outputs.order }}
+            is_go: true
           - name: driver
             port: 8004
-            dockerfile: services/driver-service/Dockerfile
+            dockerfile: driver-service/Dockerfile
             deploy: ${{ needs.detect-changes.outputs.driver }}
+            is_go: true
           - name: payment
             port: 8005
-            dockerfile: services/payment-service/Dockerfile
+            dockerfile: payment-service/Dockerfile
             deploy: ${{ needs.detect-changes.outputs.payment }}
     if: |
       needs.detect-changes.outputs.auth == 'true' ||
@@ -122,25 +123,25 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/${{ env.PROJECT }}/${{ matrix.service.name }}:$IMAGE_TAG \
                        -t $ECR_REGISTRY/${{ env.PROJECT }}/${{ matrix.service.name }}:latest \
-                       -f ${{ matrix.service.dockerfile }} .
+                       -f backend/${{ matrix.service.dockerfile }} backend/
           docker push $ECR_REGISTRY/${{ env.PROJECT }}/${{ matrix.service.name }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ env.PROJECT }}/${{ matrix.service.name }}:latest
 
       - name: Run migrations
-        if: matrix.service.deploy == 'true'
+        if: matrix.service.deploy == 'true' && matrix.service.is_go != true
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           # Run migrations using ECS RunTask
           TASK_DEF=$(aws ecs describe-task-definition --task-definition ${{ env.PROJECT }}-${{ matrix.service.name }} --query 'taskDefinition.taskDefinitionArn' --output text)
-          SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:Name,Values=${{ env.PROJECT }}-private-*" --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
-          SG=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Values=${{ env.PROJECT }}-ecs-sg" --query 'SecurityGroups[0].SecurityGroupId' --output text)
+          SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:Name,Values=${{ env.PROJECT }}-public-*" --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
+          SG=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Values=${{ env.PROJECT }}-ecs-*" --query 'SecurityGroups[0].SecurityGroupId' --output text)
 
           aws ecs run-task \
             --cluster ${{ env.ECS_CLUSTER }} \
             --task-definition $TASK_DEF \
             --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}" \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=ENABLED}" \
             --overrides '{"containerOverrides":[{"name":"${{ matrix.service.name }}","command":["python","manage.py","migrate","--noinput"]}]}' \
             --count 1
 
@@ -183,7 +184,7 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/${{ env.PROJECT }}/realtime:$IMAGE_TAG \
                        -t $ECR_REGISTRY/${{ env.PROJECT }}/realtime:latest \
-                       -f services/realtime-service/Dockerfile .
+                       -f backend/realtime-service/Dockerfile backend/
           docker push $ECR_REGISTRY/${{ env.PROJECT }}/realtime:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ env.PROJECT }}/realtime:latest
 

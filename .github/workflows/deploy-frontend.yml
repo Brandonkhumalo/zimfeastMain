@@ -4,12 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/**'
-      - 'shared/**'
-      - 'package.json'
-      - 'vite.config.ts'
-      - 'index.html'
-      - 'tsconfig.json'
+      - 'webapp/**'
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
@@ -32,11 +27,14 @@ jobs:
         with:
           node-version: 18
           cache: npm
+          cache-dependency-path: webapp/package-lock.json
 
       - name: Install dependencies
+        working-directory: webapp
         run: npm ci
 
       - name: Build frontend
+        working-directory: webapp
         env:
           VITE_API_URL: ""
           VITE_REALTIME_URL: ""
@@ -52,18 +50,16 @@ jobs:
 
       - name: Sync to S3
         run: |
-          aws s3 sync dist/public/ s3://zimfeast-frontend \
+          aws s3 sync webapp/dist/public/ s3://zimfeast-frontend \
             --delete \
             --cache-control "public, max-age=31536000, immutable" \
             --exclude "index.html" \
             --exclude "*.json"
 
-          # index.html should not be cached aggressively
-          aws s3 cp dist/public/index.html s3://zimfeast-frontend/index.html \
+          aws s3 cp webapp/dist/public/index.html s3://zimfeast-frontend/index.html \
             --cache-control "public, max-age=0, must-revalidate"
 
-          # Copy any JSON files with short cache
-          find dist/public -name "*.json" -exec sh -c 'aws s3 cp "$1" "s3://zimfeast-frontend/${1#dist/public/}" --cache-control "public, max-age=60"' _ {} \;
+          find webapp/dist/public -name "*.json" -exec sh -c 'aws s3 cp "$1" "s3://zimfeast-frontend/${1#webapp/dist/public/}" --cache-control "public, max-age=60"' _ {} \;
 
       - name: Invalidate CloudFront cache
         run: |

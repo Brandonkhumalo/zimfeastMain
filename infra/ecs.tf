@@ -4,7 +4,7 @@ resource "aws_ecs_cluster" "main" {
 
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = "disabled"
   }
 
   tags = { Name = "${var.project}-cluster" }
@@ -27,7 +27,7 @@ locals {
     { name = "REDIS_URL", value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379" },
     { name = "POSTGRES_USER", value = var.db_username },
     { name = "POSTGRES_PASSWORD", value = var.db_password },
-    { name = "POSTGRES_HOST", value = aws_rds_cluster.main.endpoint },
+    { name = "POSTGRES_HOST", value = aws_db_instance.main.address },
     { name = "POSTGRES_PORT", value = "5432" },
     { name = "GOOGLE_API_KEY", value = var.google_api_key },
     { name = "OPENAI_API_KEY", value = var.openai_api_key },
@@ -113,9 +113,9 @@ resource "aws_ecs_service" "services" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -138,7 +138,7 @@ resource "aws_ecs_service" "services" {
   depends_on = [aws_lb_listener.https]
 }
 
-# ─── Realtime Service (Node.js) ──────────────────────────────────────
+# ─── Realtime Service (Go) ──────────────────────────────────────
 resource "aws_service_discovery_service" "realtime" {
   name = "realtime"
 
@@ -178,7 +178,6 @@ resource "aws_ecs_task_definition" "realtime" {
     environment = [
       { name = "REDIS_URL", value = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:6379" },
       { name = "REALTIME_PORT", value = "3001" },
-      { name = "NODE_ENV", value = "production" },
       { name = "ORDER_SERVICE_URL", value = "http://order.${var.project}.local:8003" },
     ]
 
@@ -201,9 +200,9 @@ resource "aws_ecs_service" "realtime" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
