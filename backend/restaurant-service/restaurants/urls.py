@@ -17,11 +17,23 @@ urlpatterns = [
     path('create/category/', views.create_category, name='create_category'),
     path('get/category/types/', views.list_categories, name='list_categories'),
 
+    # Operating hours toggle
+    path('toggle-open/', views.toggle_restaurant_open, name='toggle_restaurant_open'),
+
     # Finance
     path('finance/', views.restaurant_finance, name='restaurant_finance'),
 
+    # Admin endpoints (must come before dynamic restaurant_id patterns)
+    path('admin/list/', views.admin_list_restaurants, name='admin_list_restaurants'),
+    path('admin/reviews/', views.admin_all_reviews, name='admin_all_reviews'),
+    path('admin/<str:restaurant_id>/suspend/', views.admin_suspend_restaurant, name='admin_suspend_restaurant'),
+
     # Branch management (by branch ID - must come before restaurant_id patterns)
     path('branches/<str:branch_id>/', views.branch_detail, name='branch_detail'),
+
+    # Restaurant reviews
+    path('<str:restaurant_id>/review/', views.submit_restaurant_review, name='submit_restaurant_review'),
+    path('<str:restaurant_id>/reviews/', views.list_restaurant_reviews, name='list_restaurant_reviews'),
 
     # Dynamic restaurant ID patterns
     path('<str:restaurant_id>/', views.update_restaurant, name='update_restaurant'),

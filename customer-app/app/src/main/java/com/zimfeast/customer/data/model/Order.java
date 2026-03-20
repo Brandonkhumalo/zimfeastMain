@@ -46,6 +46,9 @@ public class Order {
     @SerializedName("driver")
     private Driver driver;
 
+    @SerializedName("scheduled_for")
+    private String scheduledFor;
+
     @SerializedName("created")
     private String createdAt;
 
@@ -105,6 +108,9 @@ public class Order {
 
     public Driver getDriver() { return driver; }
     public void setDriver(Driver driver) { this.driver = driver; }
+
+    public String getScheduledFor() { return scheduledFor; }
+    public void setScheduledFor(String scheduledFor) { this.scheduledFor = scheduledFor; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }

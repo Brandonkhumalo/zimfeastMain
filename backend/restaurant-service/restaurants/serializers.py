@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     CuisineType, Restaurant, RestaurantExternalAPI, MenuItem, CategoryType,
     Branch, RestaurantChain, RestaurantEarning, RestaurantFinanceSummary,
-    RestaurantDebt,
+    RestaurantDebt, RestaurantReview,
 )
 
 
@@ -78,7 +78,11 @@ class RestaurantCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Restaurant
-        fields = ["id", "name", "phone_number", "description", "full_address", "lat", "lng", "minimum_order_price", "est_delivery_time", "cuisines"]
+        fields = [
+            "id", "name", "phone_number", "description", "full_address",
+            "lat", "lng", "minimum_order_price", "est_delivery_time", "cuisines",
+            "opening_time", "closing_time",
+        ]
 
     def create(self, validated_data):
         cuisines = validated_data.pop("cuisines", [])
@@ -107,6 +111,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
     accepts_direct_payment = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     imageUrl = serializers.SerializerMethodField()
+    is_open = serializers.SerializerMethodField()
 
     class Meta:
         model = Restaurant
@@ -114,7 +119,8 @@ class RestaurantSerializer(serializers.ModelSerializer):
             "id", "name", "phone_number", "description", "full_address",
             "lat", "lng", "minimum_order_price", "est_delivery_time",
             "cuisines", "external_apis", "menu_items", "branches",
-            "chain", "chain_name", "accepts_direct_payment", "rating", "imageUrl", "created",
+            "chain", "chain_name", "accepts_direct_payment", "rating", "imageUrl",
+            "opening_time", "closing_time", "is_open", "created",
         ]
 
     def get_branches(self, obj):
@@ -134,11 +140,16 @@ class RestaurantSerializer(serializers.ModelSerializer):
             return f"/media/{obj.profile_image}"
         return None
 
+    def get_is_open(self, obj):
+        """Return the computed open/closed status from the model property."""
+        return obj.is_currently_open
+
     def get_rating(self, obj):
-        try:
-            return obj.dashboard.today_average_rating
-        except Exception:
-            return 4.5
+        # Use the denormalized average_rating field kept up-to-date by reviews.
+        # Fall back to 0 if no reviews yet (frontend can decide how to display).
+        if obj.average_rating and obj.average_rating > 0:
+            return round(obj.average_rating, 1)
+        return 0
 
 
 class BranchSerializer(serializers.ModelSerializer):
@@ -188,3 +199,10 @@ class RestaurantDebtSerializer(serializers.ModelSerializer):
             "total_owed", "settled", "created",
         ]
         read_only_fields = ("created",)
+
+
+class RestaurantReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RestaurantReview
+        fields = ["id", "restaurant", "user_id", "order_id", "rating", "comment", "created"]
+        read_only_fields = ("id", "restaurant", "user_id", "created")

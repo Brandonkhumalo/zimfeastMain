@@ -58,6 +58,7 @@ public class RegisterActivity extends AppCompatActivity {
         String phone = binding.etPhone.getText().toString().trim();
         String password = binding.etPassword.getText().toString().trim();
         String role = getRoleValue(binding.spinnerRole.getSelectedItemPosition());
+        String referralCode = binding.etReferralCode.getText().toString().trim().toUpperCase();
 
         if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Please fill in all required fields", Toast.LENGTH_SHORT).show();
@@ -73,6 +74,9 @@ public class RegisterActivity extends AppCompatActivity {
         userData.put("phone_number", phone);
         userData.put("password", password);
         userData.put("role", role);
+        if (!referralCode.isEmpty()) {
+            userData.put("referral_code", referralCode);
+        }
 
         ApiClient.getInstance().getApiService().register(userData).enqueue(new Callback<AuthResponse>() {
             @Override

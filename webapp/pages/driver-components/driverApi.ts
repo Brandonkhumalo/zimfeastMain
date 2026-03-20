@@ -1,16 +1,16 @@
-import { apiRequest } from "./apiRequest";
+import { apiRequest } from "@/lib/apiRequest";
 
 export async function getDriverStatus(): Promise<{ is_online: boolean }> {
-  return apiRequest<{ is_online: boolean }>("GET", "/api/drivers/status/");
+  return apiRequest<{ is_online: boolean }>("/api/drivers/status/");
 }
 
 export async function toggleDriverStatus(): Promise<{ is_online: boolean }> {
-  return apiRequest<{ is_online: boolean }>("POST", "/api/drivers/status/toggle/");
+  return apiRequest<{ is_online: boolean }>("/api/drivers/status/toggle/", "POST");
 }
 
 export async function getActiveDriverOrders(): Promise<
   { id: string; status: string; fee: number; location: string | null }[]> {
-  return apiRequest("GET", "/api/drivers/active/orders/");
+  return apiRequest("/api/drivers/active/orders/");
 }
 
 export async function getDriverDailyFinances(): Promise<{
@@ -19,9 +19,23 @@ export async function getDriverDailyFinances(): Promise<{
   average_rating: number;
   hours_online: number;
 }> {
-  return apiRequest("GET", "/api/drivers/daily/finances/");
+  return apiRequest("/api/drivers/daily/finances/");
 }
 
-export async function getDriverOrderHistory(): Promise<any[]> {
-  return apiRequest("GET", "/api/drivers/orders/history/");
+export async function getDriverOrderHistory(cursor?: string) {
+  const url = cursor
+    ? `/api/drivers/orders/history/?cursor=${encodeURIComponent(cursor)}`
+    : `/api/drivers/orders/history/`;
+
+  return apiRequest<{
+    results: {
+      id: string;
+      status: string;
+      fee: number;
+      location: string | null;
+      order_date: string;
+    }[];
+    next: string | null;
+    previous: string | null;
+  }>(url);
 }

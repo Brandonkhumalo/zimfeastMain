@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
@@ -15,6 +16,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminRegister from "@/pages/AdminRegister";
 import AdminAnalytics from "@/pages/AdminAnalytics";
+import AdminRouter from "@/pages/admin/AdminRouter";
 import Checkout from "@/pages/Checkout";
 import PaymentReturn from "@/pages/PaymentReturn";
 import Login from '@/pages/Login';
@@ -60,11 +62,12 @@ function AppRouter() {
       <Route path="/customer" component={() => <PrivateRoute component={CustomerApp} allowedRoles={["customer", "admin"]} />} />
       <Route path="/restaurant" component={() => <PrivateRoute component={RestaurantDashboard} allowedRoles={["restaurant", "admin"]} />} />
       <Route path="/driver" component={() => <PrivateRoute component={DriverApp} allowedRoles={["driver", "admin"]} />} />
-      <Route path="/admin" component={() => <PrivateRoute component={AdminDashboard} allowedRoles={["admin"]} />} />
+      {/* New admin portal with sidebar layout — catches all /admin/* routes */}
+      <Route path="/admin/:rest*" component={() => <PrivateRoute component={AdminRouter} allowedRoles={["admin"]} />} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment-return" component={PaymentReturn} />
 
-      {/* Admin analytics portal (separate auth) */}
+      {/* Legacy admin routes (backward compatibility) */}
       <Route path="/zimfeast/admin/login" component={AdminLogin} />
       <Route path="/zimfeast/admin/register_user" component={AdminRegister} />
       <Route path="/zimfeast/admin/dashboard" component={AdminAnalytics} />
@@ -77,12 +80,14 @@ function AppRouter() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <AppRouter />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <AppRouter />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

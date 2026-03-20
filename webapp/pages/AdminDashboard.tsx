@@ -44,7 +44,7 @@ export default function AdminDashboard() {
 
   const reviewMutation = useMutation({
     mutationFn: async ({ type, id, action, comments }: { type: 'restaurant' | 'driver'; id: string; action: 'approve' | 'reject'; comments: string }) => {
-      return await apiRequest("POST", `/api/admin/${type}-applications/${id}/review`, { action, comments });
+      return await apiRequest(`/api/admin/${type}-applications/${id}/review`, "POST", { action, comments });
     },
     onSuccess: (data, variables) => {
       toast({ title: "Application Reviewed", description: `${variables.type} application ${variables.action}d`, variant: "default" });

@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httprate"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"zimfeast/shared/auth"
@@ -49,14 +51,24 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
+	// CORS: read allowed origins from env, default to localhost for safety
+	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+	if len(corsOrigins) == 0 || (len(corsOrigins) == 1 && corsOrigins[0] == "") {
+		corsOrigins = []string{"http://localhost:5000", "http://localhost:3000"}
+	}
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   corsOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
 	}))
+	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
-	r.Get("/api/drivers/health/", h.HealthCheck)
+	r.Get("/api/drivers/health/", h.AdminHealthCheck)
+
+	// Admin endpoints (public, admin auth handled by frontend)
+	r.Get("/api/drivers/admin/list/", h.AdminListDrivers)
+	r.Get("/api/drivers/admin/driver/{id}/detail/", h.AdminDriverDetail)
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.JWTMiddleware(cfg.SecretKey))
@@ -72,6 +84,7 @@ func main() {
 		r.Get("/api/drivers/daily/finances/", h.GetFinance)
 		r.Post("/api/drivers/daily/finances/", h.UpdateFinance)
 		r.Post("/api/drivers/rate/driver/", h.SubmitRating)
+		r.Get("/api/drivers/ratings/recent/", h.GetRecentRatings)
 	})
 
 	port := os.Getenv("DRIVER_PORT")

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/surface">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="How was your order?"
+        android:textSize="20sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-black"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rate your experience to help others."
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Restaurant Rating -->
+    <TextView
+        android:id="@+id/tv_restaurant_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rate Restaurant"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-bold"
+        android:layout_marginBottom="8dp" />
+
+    <RatingBar
+        android:id="@+id/rating_restaurant"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:numStars="5"
+        android:stepSize="1"
+        android:rating="0"
+        android:progressTint="@color/rating_star"
+        android:progressBackgroundTint="@color/divider"
+        android:secondaryProgressTint="@color/rating_star"
+        style="?android:attr/ratingBarStyle"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Driver Rating -->
+    <TextView
+        android:id="@+id/tv_driver_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rate Driver"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-bold"
+        android:layout_marginBottom="8dp" />
+
+    <RatingBar
+        android:id="@+id/rating_driver"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:numStars="5"
+        android:stepSize="1"
+        android:rating="0"
+        android:progressTint="@color/rating_star"
+        android:progressBackgroundTint="@color/divider"
+        android:secondaryProgressTint="@color/rating_star"
+        style="?android:attr/ratingBarStyle"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Comment field -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Comment (optional)"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-bold"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Widget.ZimFeast.TextInputLayout"
+        android:layout_marginBottom="20dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_comment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tell us about your experience..."
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:maxLines="4"
+            android:textSize="14sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Buttons row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_skip"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Skip"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-bold"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_outlined_box"
+            android:stateListAnimator="@null" />
+
+        <Button
+            android:id="@+id/btn_submit_rating"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1.5"
+            android:layout_marginStart="8dp"
+            android:text="Submit Rating"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-black"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_button_orange_gradient"
+            android:stateListAnimator="@null" />
+    </LinearLayout>
+</LinearLayout>

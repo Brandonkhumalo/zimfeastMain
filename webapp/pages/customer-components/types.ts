@@ -40,6 +40,9 @@ export interface Restaurant {
   coordinates?: { lat: number; lng: number };
   estimatedDeliveryTime?: number;
   distance_km?: number | null;
+  opening_time?: string | null;
+  closing_time?: string | null;
+  is_open?: boolean;
   created: string;
 }
 

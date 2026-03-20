@@ -5,14 +5,17 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
@@ -24,11 +27,15 @@ import com.zimfeast.driver.R;
 import com.zimfeast.driver.ZimFeastDriverApp;
 import com.zimfeast.driver.data.api.ApiClient;
 import com.zimfeast.driver.data.api.ApiService;
+import com.zimfeast.driver.data.model.DailyFinance;
 import com.zimfeast.driver.data.model.DeliveryOffer;
+import com.zimfeast.driver.data.model.DriverProfile;
 import com.zimfeast.driver.data.model.StatusUpdateRequest;
 import com.zimfeast.driver.service.LocationService;
 import com.zimfeast.driver.socket.SocketManager;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -39,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
 
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
 
+    // -- Home tab views --
     private SwitchMaterial switchOnline;
     private TextView tvStatus;
     private TextView tvDriverName;
@@ -52,18 +60,39 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     private Button btnAccept;
     private Button btnDecline;
 
+    // -- Tab containers --
     private LinearLayout homeContent;
     private ScrollView earningsContent;
     private ScrollView settingsContent;
     private BottomNavigationView bottomNav;
 
+    // -- Settings tab views --
     private TextView tvSettingsName;
     private TextView tvSettingsPhone;
     private TextView tvSettingsVehicle;
     private View viewConnectionIndicator;
     private TextView tvConnectionStatus;
     private Button btnLogout;
+    private Button btnEditProfile;         // Task 12: Edit Profile button
 
+    // -- Earnings tab views (Task 11) --
+    private TextView tvTotalEarnings;
+    private TextView tvTotalDeliveries;
+    private TextView tvTotalDistance;
+    private TextView tvTotalTips;
+    private TextView tvHoursOnline;
+    private TextView tvAverageRating;
+    private Button btnViewHistory;          // Task 13: View History button
+
+    // -- Header rating views (Task 14) --
+    private LinearLayout layoutHeaderRating;
+    private TextView tvHeaderRating;
+
+    // -- Recent Reviews section --
+    private LinearLayout layoutRecentReviews;
+    private TextView tvNoReviews;
+
+    // -- Core state --
     private SocketManager socketManager;
     private ApiService apiService;
     private DeliveryOffer currentOffer;
@@ -75,6 +104,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Redirect to login if not authenticated
         if (ZimFeastDriverApp.getInstance().getAuthToken() == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
@@ -92,9 +122,13 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
 
         checkLocationPermission();
         updateSettingsInfo();
+
+        // Task 14: Fetch driver profile to display rating in header
+        fetchDriverProfile();
     }
 
     private void initViews() {
+        // Home tab
         switchOnline = findViewById(R.id.switch_online);
         tvStatus = findViewById(R.id.tv_status);
         tvDriverName = findViewById(R.id.tv_driver_name);
@@ -107,19 +141,39 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         btnAccept = findViewById(R.id.btn_accept);
         btnDecline = findViewById(R.id.btn_decline);
 
+        // Tab containers
         homeContent = findViewById(R.id.home_content);
         earningsContent = findViewById(R.id.earnings_content);
         settingsContent = findViewById(R.id.settings_content);
         bottomNav = findViewById(R.id.bottom_nav);
 
+        // Settings tab
         tvSettingsName = findViewById(R.id.tv_settings_name);
         tvSettingsPhone = findViewById(R.id.tv_settings_phone);
         tvSettingsVehicle = findViewById(R.id.tv_settings_vehicle);
         viewConnectionIndicator = findViewById(R.id.view_connection_indicator);
         tvConnectionStatus = findViewById(R.id.tv_connection_status);
         btnLogout = findViewById(R.id.btn_logout);
+        btnEditProfile = findViewById(R.id.btn_edit_profile);       // Task 12
+
+        // Earnings tab views (Task 11)
+        tvTotalEarnings = findViewById(R.id.tv_total_earnings);
+        tvTotalDeliveries = findViewById(R.id.tv_total_deliveries);
+        tvTotalDistance = findViewById(R.id.tv_total_distance);
+        tvTotalTips = findViewById(R.id.tv_total_tips);
+        tvHoursOnline = findViewById(R.id.tv_hours_online);
+        tvAverageRating = findViewById(R.id.tv_average_rating);
+        btnViewHistory = findViewById(R.id.btn_view_history);       // Task 13
+
+        // Header rating (Task 14)
+        layoutHeaderRating = findViewById(R.id.layout_header_rating);
+        tvHeaderRating = findViewById(R.id.tv_header_rating);
 
         tvOfflineMessage = findViewById(R.id.tv_offline_message);
+
+        // Recent Reviews
+        layoutRecentReviews = findViewById(R.id.layout_recent_reviews);
+        tvNoReviews = findViewById(R.id.tv_no_reviews);
 
         tvDriverName.setText(ZimFeastDriverApp.getInstance().getDriverName());
         cardDeliveryOffer.setVisibility(View.GONE);
@@ -149,10 +203,19 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         settingsContent.setVisibility(View.GONE);
     }
 
+    /**
+     * Task 11: When the earnings tab is selected, show it and auto-refresh
+     * the daily finances data from the API.
+     */
     private void showEarnings() {
         homeContent.setVisibility(View.GONE);
         earningsContent.setVisibility(View.VISIBLE);
         settingsContent.setVisibility(View.GONE);
+
+        // Auto-refresh earnings data every time the tab is selected
+        fetchDailyFinances();
+        // Also refresh recent review comments
+        fetchRecentRatings();
     }
 
     private void showSettings() {
@@ -161,6 +224,370 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         settingsContent.setVisibility(View.VISIBLE);
         updateSettingsInfo();
     }
+
+    // ========================================================================
+    // Task 11: Fetch and display daily finances in the earnings tab
+    // ========================================================================
+
+    /**
+     * Calls GET /api/drivers/daily/finances/ and binds the response data
+     * to the earnings tab views (total earnings, deliveries, tips, hours, rating).
+     */
+    private void fetchDailyFinances() {
+        apiService.getDailyFinances().enqueue(new Callback<DailyFinance>() {
+            @Override
+            public void onResponse(Call<DailyFinance> call, Response<DailyFinance> response) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+
+                    if (response.isSuccessful() && response.body() != null) {
+                        DailyFinance finance = response.body();
+                        bindEarningsData(finance);
+                    }
+                    // If the API call fails, the views retain their current/default values
+                });
+            }
+
+            @Override
+            public void onFailure(Call<DailyFinance> call, Throwable t) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    Toast.makeText(MainActivity.this,
+                            "Could not refresh earnings", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    /**
+     * Binds the DailyFinance data to the earnings tab UI elements.
+     * Updates total earnings, delivery count, tips, hours online, and average rating.
+     */
+    private void bindEarningsData(DailyFinance finance) {
+        if (tvTotalEarnings != null) {
+            tvTotalEarnings.setText(finance.getFormattedEarnings());
+        }
+        if (tvTotalDeliveries != null) {
+            tvTotalDeliveries.setText(String.valueOf(finance.getTodayDeliveries()));
+        }
+        if (tvTotalTips != null) {
+            tvTotalTips.setText(finance.getFormattedTips());
+        }
+        if (tvHoursOnline != null) {
+            tvHoursOnline.setText(finance.getFormattedHours());
+        }
+        // Task 14: Display average rating from daily finances in the earnings tab
+        if (tvAverageRating != null) {
+            tvAverageRating.setText(String.format("%.1f", finance.getAverageRating()));
+        }
+    }
+
+    // ========================================================================
+    // Recent Reviews: Fetch and display rating comments in the earnings tab
+    // ========================================================================
+
+    /**
+     * Calls GET /api/drivers/ratings/recent/ and dynamically adds review cards
+     * into the layout_recent_reviews container. Each card shows the star rating
+     * and the comment text. If no reviews are returned, a "No reviews yet"
+     * placeholder is shown instead.
+     */
+    @SuppressWarnings("unchecked")
+    private void fetchRecentRatings() {
+        apiService.getRecentRatings().enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    if (layoutRecentReviews == null) return;
+
+                    // Remove all views except the "no reviews" placeholder
+                    layoutRecentReviews.removeAllViews();
+
+                    if (response.isSuccessful() && response.body() != null) {
+                        Object ratingsObj = response.body().get("ratings");
+                        if (ratingsObj instanceof List) {
+                            List<Map<String, Object>> ratings = (List<Map<String, Object>>) ratingsObj;
+
+                            if (ratings.isEmpty()) {
+                                addNoReviewsPlaceholder();
+                                return;
+                            }
+
+                            for (Map<String, Object> entry : ratings) {
+                                addReviewCard(entry);
+                            }
+                            return;
+                        }
+                    }
+                    addNoReviewsPlaceholder();
+                });
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                // Silently fail — keep existing content
+            }
+        });
+    }
+
+    /** Adds a "No reviews yet" placeholder text into the reviews container. */
+    private void addNoReviewsPlaceholder() {
+        if (layoutRecentReviews == null) return;
+        TextView tv = new TextView(this);
+        tv.setText("No reviews yet");
+        tv.setTextSize(14);
+        tv.setTextColor(getResources().getColor(R.color.text_tertiary, getTheme()));
+        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        tv.setPadding(0, 32, 0, 32);
+        layoutRecentReviews.addView(tv);
+    }
+
+    /**
+     * Creates a single review card (rating stars + comment) and appends it to
+     * the reviews container. Each card has a rounded background, star display,
+     * and the review comment text.
+     */
+    private void addReviewCard(Map<String, Object> entry) {
+        if (layoutRecentReviews == null) return;
+
+        // Extract rating and comment
+        double rating = 0;
+        Object ratingObj = entry.get("rating");
+        if (ratingObj instanceof Number) {
+            rating = ((Number) ratingObj).doubleValue();
+        }
+        String comment = "";
+        Object commentObj = entry.get("comment");
+        if (commentObj instanceof String) {
+            comment = (String) commentObj;
+        }
+
+        // Card container
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        int paddingPx = (int) (14 * getResources().getDisplayMetrics().density);
+        int marginPx = (int) (6 * getResources().getDisplayMetrics().density);
+        card.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        cardParams.setMargins(0, marginPx, 0, marginPx);
+        card.setLayoutParams(cardParams);
+        card.setBackgroundResource(R.drawable.bg_outlined_box);
+
+        // Star rating text (e.g., "4.0 stars")
+        TextView tvRating = new TextView(this);
+        StringBuilder stars = new StringBuilder();
+        int fullStars = (int) rating;
+        for (int i = 0; i < fullStars; i++) stars.append("\u2605"); // filled star
+        for (int i = fullStars; i < 5; i++) stars.append("\u2606"); // empty star
+        tvRating.setText(stars.toString());
+        tvRating.setTextSize(18);
+        tvRating.setTextColor(getResources().getColor(R.color.rating_star, getTheme()));
+        card.addView(tvRating);
+
+        // Comment text (only if non-empty)
+        if (!comment.isEmpty()) {
+            TextView tvComment = new TextView(this);
+            tvComment.setText(comment);
+            tvComment.setTextSize(13);
+            tvComment.setTextColor(getResources().getColor(R.color.text_secondary, getTheme()));
+            int topMargin = (int) (6 * getResources().getDisplayMetrics().density);
+            LinearLayout.LayoutParams commentParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            commentParams.setMargins(0, topMargin, 0, 0);
+            tvComment.setLayoutParams(commentParams);
+            card.addView(tvComment);
+        }
+
+        layoutRecentReviews.addView(card);
+    }
+
+    // ========================================================================
+    // Task 14: Fetch driver profile to display overall rating in the header
+    // ========================================================================
+
+    /**
+     * Calls GET /api/drivers/profile/ and uses the rating field to display
+     * the overall driver rating badge in the header area.
+     */
+    private void fetchDriverProfile() {
+        apiService.getDriverProfile().enqueue(new Callback<DriverProfile>() {
+            @Override
+            public void onResponse(Call<DriverProfile> call, Response<DriverProfile> response) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+
+                    if (response.isSuccessful() && response.body() != null) {
+                        DriverProfile profile = response.body();
+                        double rating = profile.getRating();
+
+                        // Show the rating badge only if the driver has a rating > 0
+                        if (layoutHeaderRating != null && tvHeaderRating != null) {
+                            if (rating > 0) {
+                                layoutHeaderRating.setVisibility(View.VISIBLE);
+                                tvHeaderRating.setText(String.format("%.1f", rating));
+                            } else {
+                                layoutHeaderRating.setVisibility(View.GONE);
+                            }
+                        }
+
+                        // Also update driver info from profile if available
+                        String fullName = profile.getFullName().trim();
+                        if (!fullName.isEmpty() && !fullName.equals(" ")) {
+                            tvDriverName.setText(fullName);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call<DriverProfile> call, Throwable t) {
+                // Silently fail — the header rating badge stays hidden
+            }
+        });
+    }
+
+    // ========================================================================
+    // Task 12: Edit Profile dialog
+    // ========================================================================
+
+    /**
+     * Shows an AlertDialog with EditText fields for phone number and vehicle info.
+     * Pre-populates with current values from SharedPreferences.
+     * On save, calls PATCH /api/drivers/profile/ and updates local storage.
+     */
+    private void showEditProfileDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Edit Profile");
+
+        // Create a vertical LinearLayout to hold the input fields
+        LinearLayout dialogLayout = new LinearLayout(this);
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        int paddingPx = (int) (20 * getResources().getDisplayMetrics().density);
+        dialogLayout.setPadding(paddingPx, paddingPx, paddingPx, 0);
+
+        // Phone number input field
+        TextView phoneLabel = new TextView(this);
+        phoneLabel.setText("Phone Number");
+        phoneLabel.setTextSize(14);
+        phoneLabel.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+        dialogLayout.addView(phoneLabel);
+
+        EditText editPhone = new EditText(this);
+        editPhone.setInputType(InputType.TYPE_CLASS_PHONE);
+        editPhone.setHint("e.g. +263 77 123 4567");
+        String currentPhone = ZimFeastDriverApp.getInstance().getDriverPhone();
+        if (!currentPhone.isEmpty()) {
+            editPhone.setText(currentPhone);
+        }
+        dialogLayout.addView(editPhone);
+
+        // Spacer between fields
+        View spacer = new View(this);
+        spacer.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                (int) (16 * getResources().getDisplayMetrics().density)));
+        dialogLayout.addView(spacer);
+
+        // Vehicle type input field
+        TextView vehicleLabel = new TextView(this);
+        vehicleLabel.setText("Vehicle Type");
+        vehicleLabel.setTextSize(14);
+        vehicleLabel.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+        dialogLayout.addView(vehicleLabel);
+
+        EditText editVehicle = new EditText(this);
+        editVehicle.setInputType(InputType.TYPE_CLASS_TEXT);
+        editVehicle.setHint("e.g. Motorcycle, Car, Bicycle");
+        String currentVehicle = ZimFeastDriverApp.getInstance().getDriverVehicle();
+        editVehicle.setText(currentVehicle);
+        dialogLayout.addView(editVehicle);
+
+        builder.setView(dialogLayout);
+
+        // Save button — calls the update profile API
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String newPhone = editPhone.getText().toString().trim();
+            String newVehicle = editVehicle.getText().toString().trim();
+
+            if (newPhone.isEmpty() && newVehicle.isEmpty()) {
+                Toast.makeText(this, "No changes to save", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            updateProfile(newPhone, newVehicle);
+        });
+
+        // Cancel button — dismisses without saving
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+
+        builder.show();
+    }
+
+    /**
+     * Sends PATCH /api/drivers/profile/ with the updated phone and vehicle type.
+     * On success, persists changes to SharedPreferences and refreshes the settings display.
+     */
+    private void updateProfile(String phone, String vehicleType) {
+        // Build the request body with only the fields that have values
+        Map<String, Object> updates = new HashMap<>();
+        if (!phone.isEmpty()) {
+            updates.put("phone_number", phone);
+        }
+        if (!vehicleType.isEmpty()) {
+            updates.put("vehicle_type", vehicleType);
+        }
+
+        if (updates.isEmpty()) return;
+
+        apiService.updateDriverProfile(updates).enqueue(new Callback<DriverProfile>() {
+            @Override
+            public void onResponse(Call<DriverProfile> call, Response<DriverProfile> response) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+
+                    if (response.isSuccessful() && response.body() != null) {
+                        DriverProfile updated = response.body();
+
+                        // Persist the updated values to SharedPreferences
+                        ZimFeastDriverApp app = ZimFeastDriverApp.getInstance();
+                        app.saveDriverInfo(
+                                app.getDriverId(),
+                                app.getDriverName(),
+                                updated.getPhoneNumber() != null ? updated.getPhoneNumber() : phone,
+                                updated.getVehicleType() != null ? updated.getVehicleType() : vehicleType
+                        );
+
+                        // Refresh the settings display with new values
+                        updateSettingsInfo();
+
+                        Toast.makeText(MainActivity.this,
+                                "Profile updated successfully", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this,
+                                "Failed to update profile", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call<DriverProfile> call, Throwable t) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    Toast.makeText(MainActivity.this,
+                            "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    // ========================================================================
+    // Settings & Connection
+    // ========================================================================
 
     private void updateSettingsInfo() {
         ZimFeastDriverApp app = ZimFeastDriverApp.getInstance();
@@ -189,6 +616,10 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         }
     }
 
+    // ========================================================================
+    // Listeners setup
+    // ========================================================================
+
     private void setupListeners() {
         switchOnline.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
@@ -213,7 +644,24 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         if (btnLogout != null) {
             btnLogout.setOnClickListener(v -> logout());
         }
+
+        // Task 12: Edit Profile button opens the edit dialog
+        if (btnEditProfile != null) {
+            btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
+        }
+
+        // Task 13: View History button opens the OrderHistoryActivity
+        if (btnViewHistory != null) {
+            btnViewHistory.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, OrderHistoryActivity.class);
+                startActivity(intent);
+            });
+        }
     }
+
+    // ========================================================================
+    // Auth / Logout
+    // ========================================================================
 
     private void logout() {
         // Stop location service
@@ -232,6 +680,10 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         startActivity(intent);
         finish();
     }
+
+    // ========================================================================
+    // Permissions
+    // ========================================================================
 
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -259,6 +711,10 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
             }
         }
     }
+
+    // ========================================================================
+    // Online / Offline toggle
+    // ========================================================================
 
     private void goOnline() {
         tvStatus.setText("Connecting...");
@@ -289,6 +745,10 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         hideDeliveryOffer();
         updateConnectionStatus(false);
     }
+
+    // ========================================================================
+    // Delivery offer handling
+    // ========================================================================
 
     private void showDeliveryOffer(DeliveryOffer offer) {
         currentOffer = offer;
@@ -326,6 +786,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
                 int secondsLeft = (int) (millisUntilFinished / 1000);
                 tvOfferTimer.setText(secondsLeft + "s");
 
+                // Color shifts to warn driver as time runs out
                 if (secondsLeft <= 10) {
                     tvOfferTimer.setTextColor(0xFFFF0000);
                 } else if (secondsLeft <= 20) {
@@ -445,6 +906,10 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         }
     }
 
+    // ========================================================================
+    // SocketManager.SocketListener callbacks
+    // ========================================================================
+
     @Override
     public void onConnected() {
         runOnUiThread(() -> {
@@ -511,6 +976,20 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
             btnAccept.setEnabled(true);
             btnAccept.setText("Accept");
         });
+    }
+
+    // ========================================================================
+    // Lifecycle
+    // ========================================================================
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh earnings data when returning from another activity (e.g. after a delivery)
+        // Only if the earnings tab is currently visible
+        if (earningsContent != null && earningsContent.getVisibility() == View.VISIBLE) {
+            fetchDailyFinances();
+        }
     }
 
     @Override

@@ -3,8 +3,7 @@ import { CheckoutForm } from "./checkout-components/CheckoutForm";
 
 export default function Checkout() {
   const urlParams = new URLSearchParams(window.location.search);
-  // Hardcoded for testing
-  const orderId = urlParams.get('orderId') || '6c7a9a9f-f18a-4574-a82a-f483e41ced7f';
+  const orderId = urlParams.get('orderId');
 
   useEffect(() => {
     if (!orderId) window.location.href = '/home';

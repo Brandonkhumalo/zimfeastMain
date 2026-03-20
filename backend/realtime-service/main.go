@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -31,6 +34,17 @@ func main() {
 
 	driverSvc := internal.NewDriverService(pub)
 	orderSvc := internal.NewOrderService(pub, driverSvc, cfg)
+
+	// Restore in-memory state from Redis (crash recovery)
+	driversRestored, err := driverSvc.RestoreFromRedis(context.Background())
+	if err != nil {
+		log.Printf("[startup] warning: failed to restore drivers from Redis: %v", err)
+	}
+	ordersRestored, err := orderSvc.RestoreFromRedis(context.Background())
+	if err != nil {
+		log.Printf("[startup] warning: failed to restore orders from Redis: %v", err)
+	}
+	log.Printf("[startup] restored %d drivers, %d active orders from Redis", driversRestored, ordersRestored)
 
 	// Socket.IO server
 	sio := socketio.NewServer(&engineio.Options{
@@ -122,8 +136,13 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	// CORS: read allowed origins from env, default to localhost for safety
+	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+	if len(corsOrigins) == 0 || (len(corsOrigins) == 1 && corsOrigins[0] == "") {
+		corsOrigins = []string{"http://localhost:5000", "http://localhost:3000"}
+	}
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   corsOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
@@ -134,9 +153,27 @@ func main() {
 
 	// REST endpoints
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		// Enhanced health check with Redis ping
+		redisStatus := "ok"
+		if err := pub.Client().Ping(context.Background()).Err(); err != nil {
+			redisStatus = fmt.Sprintf("error: %v", err)
+		}
+
+		overallStatus := "ok"
+		if redisStatus != "ok" {
+			overallStatus = "degraded"
+		}
+
+		// Count connected drivers and active orders for ops visibility
+		onlineDrivers := len(driverSvc.GetOnlineDrivers())
+
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":    "ok",
-			"timestamp": time.Now().UTC().Format(time.RFC3339),
+			"status":         overallStatus,
+			"service":        "realtime-service",
+			"redis":          redisStatus,
+			"online_drivers": onlineDrivers,
+			"timestamp":      time.Now().UTC().Format(time.RFC3339),
 		})
 	})
 
@@ -211,26 +248,41 @@ func main() {
 }
 
 func subscribeRedisEvents(pub *redispub.Publisher, orderSvc *internal.OrderService, sio *socketio.Server) {
-	ctx := context.Background()
-	sub := pub.Subscribe(ctx, "orders.delivery.created", "orders.status.changed")
-	defer sub.Close()
+	backoff := time.Second // Start with 1s backoff
+	maxBackoff := 30 * time.Second
 
-	ch := sub.Channel()
-	for msg := range ch {
-		var data map[string]interface{}
-		if err := json.Unmarshal([]byte(msg.Payload), &data); err != nil {
-			log.Printf("[redis] failed to parse message on %s: %v", msg.Channel, err)
-			continue
-		}
+	for {
+		ctx := context.Background()
+		sub := pub.Subscribe(ctx, "orders.delivery.created", "orders.status.changed")
 
-		switch msg.Channel {
-		case "orders.delivery.created":
-			go orderSvc.HandleNewDeliveryOrder(data, sio)
-		case "orders.status.changed":
-			orderID, _ := data["orderId"].(string)
-			if orderID != "" {
-				sio.BroadcastToRoom("/customers", "order:"+orderID, "order:status", data)
+		ch := sub.Channel()
+		for msg := range ch {
+			// Reset backoff on successful message receive
+			backoff = time.Second
+
+			var data map[string]interface{}
+			if err := json.Unmarshal([]byte(msg.Payload), &data); err != nil {
+				log.Printf("[redis] failed to parse message on %s: %v", msg.Channel, err)
+				continue
+			}
+
+			switch msg.Channel {
+			case "orders.delivery.created":
+				go orderSvc.HandleNewDeliveryOrder(data, sio)
+			case "orders.status.changed":
+				orderID, _ := data["orderId"].(string)
+				if orderID != "" {
+					sio.BroadcastToRoom("/customers", "order:"+orderID, "order:status", data)
+				}
 			}
 		}
+
+		// Channel closed — Redis disconnected
+		sub.Close()
+		log.Printf("[redis] subscription channel closed, reconnecting in %v...", backoff)
+		time.Sleep(backoff)
+
+		// Exponential backoff: double the wait time, cap at maxBackoff
+		backoff = time.Duration(math.Min(float64(backoff*2), float64(maxBackoff)))
 	}
 }

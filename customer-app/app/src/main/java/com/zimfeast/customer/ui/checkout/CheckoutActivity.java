@@ -13,11 +13,14 @@ import com.zimfeast.customer.data.api.ApiClient;
 import com.zimfeast.customer.data.model.Order;
 import com.zimfeast.customer.data.model.PaymentRequest;
 import com.zimfeast.customer.data.model.PaymentResponse;
+import com.zimfeast.customer.data.model.PromoValidation;
+import com.zimfeast.customer.data.model.ReferralCreditsResponse;
 import com.zimfeast.customer.data.model.VoucherBalance;
 import com.zimfeast.customer.databinding.ActivityCheckoutBinding;
 import com.zimfeast.customer.ui.tracking.OrderTrackingActivity;
 import com.zimfeast.customer.util.DeliveryUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -34,6 +37,15 @@ public class CheckoutActivity extends AppCompatActivity {
     private boolean useVoucher = false;
     private double voucherBalance = 0;
 
+    // Promo code state
+    private PromoValidation appliedPromo = null;
+    private double promoDiscount = 0;
+
+    // Referral credit state
+    private boolean useReferralCredit = false;
+    private int availableReferralCredits = 0;
+    private double referralDiscount = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,11 +61,13 @@ public class CheckoutActivity extends AppCompatActivity {
 
         setupViews();
         loadOrderDetails();
+        loadReferralCredits();
     }
 
     private void setupViews() {
         binding.btnBack.setOnClickListener(v -> finish());
 
+        // Payment method radio group listener
         binding.rgPaymentMethod.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rb_paynow_web) {
                 selectedPaymentMethod = "web";
@@ -77,10 +91,12 @@ public class CheckoutActivity extends AppCompatActivity {
             updatePayButton();
         });
 
+        // Mobile provider spinner
         String[] providers = {getString(R.string.ecocash), getString(R.string.onemoney), getString(R.string.innbucks)};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, providers);
         binding.spinnerProvider.setAdapter(adapter);
 
+        // Voucher checkbox
         binding.cbUseVoucher.setOnCheckedChangeListener((buttonView, isChecked) -> {
             useVoucher = isChecked;
             if (isChecked) {
@@ -89,6 +105,19 @@ public class CheckoutActivity extends AppCompatActivity {
             } else {
                 binding.layoutVoucherBreakdown.setVisibility(View.GONE);
             }
+            updatePayButton();
+        });
+
+        // Promo code apply button
+        binding.btnApplyPromo.setOnClickListener(v -> validatePromoCode());
+
+        // Promo code remove button
+        binding.btnRemovePromo.setOnClickListener(v -> removePromoCode());
+
+        // Referral credit checkbox
+        binding.cbUseReferral.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            useReferralCredit = isChecked;
+            updateDiscountBreakdown();
             updatePayButton();
         });
 
@@ -135,11 +164,9 @@ public class CheckoutActivity extends AppCompatActivity {
                             isDirectPayment = directObj instanceof Boolean && (Boolean) directObj;
 
                             if (isDirectPayment) {
-                                // Hide voucher option, show notice
                                 binding.rbVoucher.setVisibility(View.GONE);
                                 binding.layoutUseVoucher.setVisibility(View.GONE);
                                 binding.tvDirectPaymentNotice.setVisibility(View.VISIBLE);
-                                // Force to web if voucher was selected
                                 if ("voucher".equals(selectedPaymentMethod)) {
                                     binding.rbPaynowWeb.setChecked(true);
                                 }
@@ -201,10 +228,167 @@ public class CheckoutActivity extends AppCompatActivity {
         });
     }
 
+    // ─── Promo Code Logic ──────────────────────────────────────────────
+
+    private void validatePromoCode() {
+        String code = binding.etPromoCode.getText().toString().trim().toUpperCase();
+        if (code.isEmpty()) {
+            Toast.makeText(this, "Please enter a promo code", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (currentOrder == null) return;
+
+        binding.btnApplyPromo.setEnabled(false);
+        binding.tvPromoError.setVisibility(View.GONE);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("code", code);
+        body.put("order_amount", currentOrder.getTotal());
+
+        ApiClient.getInstance().getApiService().validatePromo(body).enqueue(new Callback<PromoValidation>() {
+            @Override
+            public void onResponse(Call<PromoValidation> call, Response<PromoValidation> response) {
+                if (isFinishing() || isDestroyed()) return;
+                binding.btnApplyPromo.setEnabled(true);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    PromoValidation validation = response.body();
+                    appliedPromo = validation;
+
+                    // Parse discount amount
+                    if (validation.getDiscountAmount() != null) {
+                        try {
+                            promoDiscount = Double.parseDouble(validation.getDiscountAmount());
+                        } catch (NumberFormatException e) {
+                            promoDiscount = 0;
+                        }
+                    }
+
+                    // Show applied state
+                    binding.layoutPromoInput.setVisibility(View.GONE);
+                    binding.layoutPromoApplied.setVisibility(View.VISIBLE);
+                    binding.tvPromoCodeApplied.setText(validation.getCode());
+                    binding.tvPromoMessage.setText(validation.getMessage());
+
+                    updateDiscountBreakdown();
+                    updatePayButton();
+                    Toast.makeText(CheckoutActivity.this, "Promo code applied!", Toast.LENGTH_SHORT).show();
+                } else {
+                    // Try to parse error response
+                    try {
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "";
+                        // Simple extraction of "detail" field
+                        if (errorBody.contains("\"detail\"")) {
+                            int start = errorBody.indexOf("\"detail\"") + 10;
+                            int end = errorBody.indexOf("\"", start);
+                            String detail = errorBody.substring(start, end);
+                            binding.tvPromoError.setText(detail);
+                        } else {
+                            binding.tvPromoError.setText("Invalid promo code.");
+                        }
+                    } catch (Exception e) {
+                        binding.tvPromoError.setText("Invalid promo code.");
+                    }
+                    binding.tvPromoError.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<PromoValidation> call, Throwable t) {
+                if (isFinishing() || isDestroyed()) return;
+                binding.btnApplyPromo.setEnabled(true);
+                binding.tvPromoError.setText("Failed to validate promo code.");
+                binding.tvPromoError.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    private void removePromoCode() {
+        appliedPromo = null;
+        promoDiscount = 0;
+        binding.etPromoCode.setText("");
+        binding.layoutPromoInput.setVisibility(View.VISIBLE);
+        binding.layoutPromoApplied.setVisibility(View.GONE);
+        binding.tvPromoError.setVisibility(View.GONE);
+        updateDiscountBreakdown();
+        updatePayButton();
+    }
+
+    // ─── Referral Credits Logic ────────────────────────────────────────
+
+    private void loadReferralCredits() {
+        ApiClient.getInstance().getApiService().getReferralCredits().enqueue(new Callback<ReferralCreditsResponse>() {
+            @Override
+            public void onResponse(Call<ReferralCreditsResponse> call, Response<ReferralCreditsResponse> response) {
+                if (isFinishing() || isDestroyed()) return;
+                if (response.isSuccessful() && response.body() != null) {
+                    availableReferralCredits = response.body().getAvailableCredits();
+                    if (availableReferralCredits > 0) {
+                        binding.cardReferralCredit.setVisibility(View.VISIBLE);
+                        String creditText = availableReferralCredits + " credit"
+                                + (availableReferralCredits != 1 ? "s" : "") + " available";
+                        binding.tvReferralCreditsCount.setText(creditText);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ReferralCreditsResponse> call, Throwable t) {
+                // Silently fail - referral is optional
+            }
+        });
+    }
+
+    // ─── Discount Breakdown ────────────────────────────────────────────
+
+    private void updateDiscountBreakdown() {
+        if (currentOrder == null) return;
+
+        double total = currentOrder.getTotal();
+        boolean hasDiscount = false;
+
+        // Promo discount
+        if (promoDiscount > 0) {
+            binding.layoutPromoDiscountRow.setVisibility(View.VISIBLE);
+            String label = appliedPromo != null
+                    ? "Promo (" + appliedPromo.getCode() + ")"
+                    : "Promo discount";
+            binding.tvPromoDiscountLabel.setText(label);
+            binding.tvPromoDiscountAmount.setText("-" + DeliveryUtils.formatCurrency(promoDiscount, "USD"));
+            hasDiscount = true;
+        } else {
+            binding.layoutPromoDiscountRow.setVisibility(View.GONE);
+        }
+
+        // Referral discount (15% of amount after promo)
+        if (useReferralCredit && availableReferralCredits > 0) {
+            double afterPromo = total - promoDiscount;
+            referralDiscount = afterPromo * 0.15;
+            binding.layoutReferralDiscountRow.setVisibility(View.VISIBLE);
+            binding.tvReferralDiscountAmount.setText("-" + DeliveryUtils.formatCurrency(referralDiscount, "USD"));
+            hasDiscount = true;
+        } else {
+            referralDiscount = 0;
+            binding.layoutReferralDiscountRow.setVisibility(View.GONE);
+        }
+
+        if (hasDiscount) {
+            double discountedTotal = total - promoDiscount - referralDiscount;
+            if (discountedTotal < 0) discountedTotal = 0;
+            binding.tvDiscountedTotal.setText(DeliveryUtils.formatCurrency(discountedTotal, "USD"));
+            binding.layoutDiscountBreakdown.setVisibility(View.VISIBLE);
+        } else {
+            binding.layoutDiscountBreakdown.setVisibility(View.GONE);
+        }
+    }
+
+    // ─── Existing helpers (updated for discounts) ──────────────────────
+
     private void updateVoucherBreakdown() {
         if (currentOrder == null || !useVoucher) return;
 
-        double total = currentOrder.getTotal();
+        double total = getAmountAfterDiscounts();
         double deduction = Math.min(voucherBalance, total);
         double paynowAmt = total - deduction;
 
@@ -213,17 +397,26 @@ public class CheckoutActivity extends AppCompatActivity {
         binding.layoutVoucherBreakdown.setVisibility(View.VISIBLE);
     }
 
+    private double getAmountAfterDiscounts() {
+        if (currentOrder == null) return 0;
+        double total = currentOrder.getTotal() - promoDiscount - referralDiscount;
+        return Math.max(total, 0);
+    }
+
     private void updatePayButton() {
         if (currentOrder == null) return;
 
-        double total = currentOrder.getTotal();
+        double payAmount = getAmountAfterDiscounts();
+
         if (useVoucher && voucherBalance > 0 && !"voucher".equals(selectedPaymentMethod)) {
-            double paynowAmt = total - Math.min(voucherBalance, total);
+            double paynowAmt = payAmount - Math.min(voucherBalance, payAmount);
             if (paynowAmt > 0) {
                 binding.btnPay.setText("Pay " + DeliveryUtils.formatCurrency(paynowAmt, "USD") + " via PayNow");
             } else {
                 binding.btnPay.setText("Pay with Voucher");
             }
+        } else if (promoDiscount > 0 || referralDiscount > 0) {
+            binding.btnPay.setText("Pay " + DeliveryUtils.formatCurrency(payAmount, "USD"));
         } else {
             binding.btnPay.setText(getString(R.string.pay_now));
         }
@@ -252,6 +445,16 @@ public class CheckoutActivity extends AppCompatActivity {
         } else {
             // Web payment - include useVoucher flag
             request = new PaymentRequest(orderId, "paynow", useVoucher);
+        }
+
+        // Attach promo code if applied
+        if (appliedPromo != null) {
+            request.setPromoCode(appliedPromo.getCode());
+        }
+
+        // Attach referral credit flag
+        if (useReferralCredit && availableReferralCredits > 0) {
+            request.setUseReferralCredit(true);
         }
 
         setLoading(true);

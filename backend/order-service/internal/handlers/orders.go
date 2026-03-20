@@ -26,6 +26,33 @@ type Handler struct {
 	cfg *config.Config
 }
 
+// validTransitions defines the allowed order status state machine.
+// Each key maps to the set of statuses it can transition to.
+var validTransitions = map[string][]string{
+	"scheduled":        {"pending_payment", "cancelled"},
+	"pending_payment":  {"paid", "cancelled"},
+	"paid":             {"preparing", "cancelled"},
+	"preparing":        {"ready"},
+	"ready":            {"collected"},
+	"collected":        {"assigned"},
+	"assigned":         {"out_for_delivery"},
+	"out_for_delivery": {"delivered"},
+}
+
+// isValidTransition checks whether transitioning from one status to another is allowed.
+func isValidTransition(from, to string) bool {
+	allowed, ok := validTransitions[from]
+	if !ok {
+		return false
+	}
+	for _, s := range allowed {
+		if s == to {
+			return true
+		}
+	}
+	return false
+}
+
 func New(db *pgxpool.Pool, pub *redispub.Publisher, cfg *config.Config) *Handler {
 	return &Handler{db: db, pub: pub, cfg: cfg}
 }
@@ -52,6 +79,7 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		DeliveryAddress string  `json:"delivery_address"`
 		Method          string  `json:"method"`
 		Tip             float64 `json:"tip"`
+		ScheduledFor    string  `json:"scheduled_for"` // Optional ISO 8601 datetime for scheduled orders
 		Items           []struct {
 			MenuItemID    string  `json:"menu_item_id"`
 			MenuItemName  string  `json:"menu_item_name"`
@@ -95,7 +123,34 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	totalFee += deliveryFee + body.Tip
 
-	eachItemPriceJSON, _ := json.Marshal(eachItemPrice)
+	eachItemPriceJSON, err := json.Marshal(eachItemPrice)
+	if err != nil {
+		log.Printf("[order] failed to marshal each_item_price: %v", err)
+		response.Error(w, http.StatusInternalServerError, "Failed to process item prices")
+		return
+	}
+
+	// Determine initial status and parse scheduled_for if provided.
+	// If the client sends a scheduled_for timestamp, the order starts as "scheduled"
+	// and a background dispatcher will transition it to "pending_payment" when the
+	// scheduled time arrives.
+	initialStatus := "pending_payment"
+	var scheduledFor *time.Time
+	if body.ScheduledFor != "" {
+		parsed, parseErr := time.Parse(time.RFC3339, body.ScheduledFor)
+		if parseErr != nil {
+			response.Error(w, http.StatusBadRequest, "Invalid scheduled_for format. Use ISO 8601 (e.g. 2026-03-20T12:00:00Z)")
+			return
+		}
+		// Scheduled time must be in the future
+		if parsed.Before(time.Now()) {
+			response.Error(w, http.StatusBadRequest, "scheduled_for must be in the future")
+			return
+		}
+		scheduledFor = &parsed
+		initialStatus = "scheduled"
+	}
+
 	orderID := uuid.New()
 
 	tx, err := h.db.Begin(r.Context())
@@ -110,12 +165,12 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 			id, status, method, customer_id, restaurant_id,
 			total_fee, tip, delivery_fee, each_item_price,
 			restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
-			restaurant_names, created
-		) VALUES ($1, 'pending_payment', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())`,
-		orderID, body.Method, user.ID, body.RestaurantID,
+			restaurant_names, scheduled_for, created
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())`,
+		orderID, initialStatus, body.Method, user.ID, body.RestaurantID,
 		totalFee, body.Tip, deliveryFee, string(eachItemPriceJSON),
 		body.RestaurantLat, body.RestaurantLng, body.DeliveryLat, body.DeliveryLng, body.DeliveryAddress,
-		body.RestaurantNames)
+		body.RestaurantNames, scheduledFor)
 	if err != nil {
 		log.Printf("[order] create error: %v", err)
 		response.Error(w, http.StatusInternalServerError, "Failed to create order")
@@ -172,7 +227,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
 				FROM orders_order WHERE customer_id = $1 AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -181,7 +236,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
 				FROM orders_order WHERE customer_id = $1
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -193,7 +248,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
 				FROM orders_order WHERE driver_id = $1 AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -202,7 +257,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
 				FROM orders_order WHERE driver_id = $1
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -214,8 +269,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
-				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment') AND created < $2
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment', 'scheduled') AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
 		} else {
@@ -223,8 +278,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
-				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment')
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment', 'scheduled')
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
 		}
@@ -278,8 +333,8 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if status != "pending_payment" && status != "paid" {
-		response.Error(w, http.StatusBadRequest, "Can only cancel orders with status pending_payment or paid")
+	if status != "scheduled" && status != "pending_payment" && status != "paid" {
+		response.Error(w, http.StatusBadRequest, "Can only cancel orders with status scheduled, pending_payment, or paid")
 		return
 	}
 
@@ -312,7 +367,7 @@ func (h *Handler) AllOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
 				FROM orders_order WHERE created < $1 ORDER BY created DESC LIMIT $2`,
 			cursorTime, limit+1)
 	} else {
@@ -321,7 +376,7 @@ func (h *Handler) AllOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
 				FROM orders_order ORDER BY created DESC LIMIT $1`, limit+1)
 	}
 	if err != nil {
@@ -372,7 +427,12 @@ func (h *Handler) AssignDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vehicleJSON, _ := json.Marshal(body.DriverVehicle)
+	vehicleJSON, err := json.Marshal(body.DriverVehicle)
+	if err != nil {
+		log.Printf("[order] failed to marshal driver_vehicle: %v", err)
+		response.Error(w, http.StatusInternalServerError, "Failed to process vehicle data")
+		return
+	}
 
 	// Use SELECT FOR UPDATE to prevent double assignment
 	tx, err := h.db.Begin(r.Context())
@@ -436,12 +496,30 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	validStatuses := map[string]bool{
-		"assigned": true, "out_for_delivery": true, "delivered": true,
+		"pending_payment": true, "assigned": true, "out_for_delivery": true, "delivered": true,
 		"cancelled": true, "preparing": true, "ready": true,
-		"collected": true, "paid": true,
+		"collected": true, "paid": true, "scheduled": true,
 	}
 	if !validStatuses[body.Status] {
 		response.Error(w, http.StatusBadRequest, "Invalid status: "+body.Status)
+		return
+	}
+
+	// Fetch current status and validate transition
+	var currentStatus string
+	err := h.db.QueryRow(r.Context(),
+		`SELECT status FROM orders_order WHERE id = $1`, orderID).Scan(&currentStatus)
+	if err == pgx.ErrNoRows {
+		response.Error(w, http.StatusNotFound, "Order not found")
+		return
+	} else if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to fetch order")
+		return
+	}
+
+	if !isValidTransition(currentStatus, body.Status) {
+		response.Error(w, http.StatusBadRequest,
+			fmt.Sprintf("Cannot transition from '%s' to '%s'", currentStatus, body.Status))
 		return
 	}
 
@@ -490,6 +568,7 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 		driverName, driverPhone, driverVehicle    *string
 		restaurantNames                           *string
 		externalOrderNumbers                      *string
+		scheduledFor                              *time.Time
 		created                                   time.Time
 		deliveryOutTime, deliveryCompleteTime     *time.Time
 	)
@@ -499,13 +578,13 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 			total_fee, tip, delivery_fee, each_item_price,
 			restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 			driver_name, driver_phone, driver_vehicle, restaurant_names,
-			external_order_numbers, created, delivery_out_time, delivery_complete_time
+			external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
 			FROM orders_order WHERE id = $1`, orderID).
 		Scan(&id, &status, &method, &customerID, &driverID, &restaurantID,
 			&totalFee, &tip, &deliveryFee, &eachItemPrice,
 			&restaurantLat, &restaurantLng, &deliveryLat, &deliveryLng, &deliveryAddress,
 			&driverName, &driverPhone, &driverVehicle, &restaurantNames,
-			&externalOrderNumbers, &created, &deliveryOutTime, &deliveryCompleteTime)
+			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime)
 	if err != nil {
 		return nil
 	}
@@ -525,7 +604,9 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 
 	if eachItemPrice != nil {
 		var parsed interface{}
-		json.Unmarshal([]byte(*eachItemPrice), &parsed)
+		if err := json.Unmarshal([]byte(*eachItemPrice), &parsed); err != nil {
+			log.Printf("[order] failed to parse each_item_price for order %s: %v", id, err)
+		}
 		order["each_item_price"] = parsed
 	}
 	if restaurantLat != nil {
@@ -551,7 +632,9 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 	}
 	if driverVehicle != nil {
 		var parsed interface{}
-		json.Unmarshal([]byte(*driverVehicle), &parsed)
+		if err := json.Unmarshal([]byte(*driverVehicle), &parsed); err != nil {
+			log.Printf("[order] failed to parse driver_vehicle for order %s: %v", id, err)
+		}
 		order["driver_vehicle"] = parsed
 	}
 	if restaurantNames != nil {
@@ -559,8 +642,13 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 	}
 	if externalOrderNumbers != nil {
 		var parsed interface{}
-		json.Unmarshal([]byte(*externalOrderNumbers), &parsed)
+		if err := json.Unmarshal([]byte(*externalOrderNumbers), &parsed); err != nil {
+			log.Printf("[order] failed to parse external_order_numbers for order %s: %v", id, err)
+		}
 		order["external_order_numbers"] = parsed
+	}
+	if scheduledFor != nil {
+		order["scheduled_for"] = scheduledFor.Format(time.RFC3339)
 	}
 	if deliveryOutTime != nil {
 		order["delivery_out_time"] = deliveryOutTime.Format(time.RFC3339)
@@ -617,6 +705,7 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 			driverName, driverPhone, driverVehicle    *string
 			restaurantNames                           *string
 			externalOrderNumbers                      *string
+			scheduledFor                              *time.Time
 			created                                   time.Time
 			deliveryOutTime, deliveryCompleteTime     *time.Time
 		)
@@ -625,7 +714,7 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 			&totalFee, &tip, &deliveryFee, &eachItemPrice,
 			&restaurantLat, &restaurantLng, &deliveryLat, &deliveryLng, &deliveryAddress,
 			&driverName, &driverPhone, &driverVehicle, &restaurantNames,
-			&externalOrderNumbers, &created, &deliveryOutTime, &deliveryCompleteTime); err != nil {
+			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime); err != nil {
 			log.Printf("[order] scan error: %v", err)
 			continue
 		}
@@ -645,7 +734,9 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 
 		if eachItemPrice != nil {
 			var parsed interface{}
-			json.Unmarshal([]byte(*eachItemPrice), &parsed)
+			if err := json.Unmarshal([]byte(*eachItemPrice), &parsed); err != nil {
+				log.Printf("[order] failed to parse each_item_price for order %s: %v", id, err)
+			}
 			order["each_item_price"] = parsed
 		}
 		if restaurantLat != nil {
@@ -671,11 +762,16 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 		}
 		if driverVehicle != nil {
 			var parsed interface{}
-			json.Unmarshal([]byte(*driverVehicle), &parsed)
+			if err := json.Unmarshal([]byte(*driverVehicle), &parsed); err != nil {
+				log.Printf("[order] failed to parse driver_vehicle for order %s: %v", id, err)
+			}
 			order["driver_vehicle"] = parsed
 		}
 		if restaurantNames != nil {
 			order["restaurant_names"] = *restaurantNames
+		}
+		if scheduledFor != nil {
+			order["scheduled_for"] = scheduledFor.Format(time.RFC3339)
 		}
 		if deliveryOutTime != nil {
 			order["delivery_out_time"] = deliveryOutTime.Format(time.RFC3339)

@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Restaurant } from "@shared/schema";
 import { calculateDeliveryFeeFromCoordinates, DEFAULT_DELIVERY_FEE } from "@shared/deliveryUtils";
+import AddressBook, { type SavedAddress } from "@/components/AddressBook";
 
 interface CartItem {
   id: string;
@@ -29,35 +33,53 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const getCurrencySymbol = (curr: string) => curr === 'USD' ? '$' : 'Z$';
-  
+
+  // ── Address selection state ─────────────────────────────────────────
+  const [selectedAddress, setSelectedAddress] = useState<SavedAddress | null>(null);
+  const [useCurrentLoc, setUseCurrentLoc] = useState(true); // default to current location
+
+  // ── Schedule order state ────────────────────────────────────────────
+  const [scheduleMode, setScheduleMode] = useState<"now" | "later">("now");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+
+  // The effective delivery location: either a saved address or the browser location
+  const effectiveLocation = useCurrentLoc
+    ? userLocation
+    : selectedAddress
+      ? { lat: selectedAddress.lat, lng: selectedAddress.lng }
+      : null;
+
+  const effectiveAddressText = useCurrentLoc
+    ? "Current Location"
+    : selectedAddress?.address_text ?? "";
+
   // Get unique restaurant IDs from cart items
   const restaurantIds = Array.from(new Set(items.map(item => item.restaurantId).filter(Boolean) as string[]));
-  
+
   // Fetch restaurant data for delivery fee calculation
   const { data: restaurants } = useQuery<Restaurant[]>({
     queryKey: ['/api/restaurants'],
     enabled: restaurantIds.length > 0,
   });
-  
+
   // Calculate delivery fee based on distance to restaurants
   const getDeliveryFee = (): number => {
-    if (!userLocation || !restaurants || restaurants.length === 0) {
-      return DEFAULT_DELIVERY_FEE; // Default delivery fee when location not available
+    if (!effectiveLocation || !restaurants || restaurants.length === 0) {
+      return DEFAULT_DELIVERY_FEE;
     }
-    
-    let maxDeliveryFee = 1.50; // Minimum delivery fee
-    
-    // For each restaurant in the cart, calculate delivery fee and use the highest one
+
+    let maxDeliveryFee = 1.50;
+
     restaurantIds.forEach(restaurantId => {
       const restaurant = restaurants.find(r => r.id === restaurantId);
       if (restaurant) {
-        // Handle both flat lat/lng and nested coordinates format
         const restaurantLat = (restaurant as any).lat ?? (restaurant.coordinates as any)?.lat;
         const restaurantLng = (restaurant as any).lng ?? (restaurant.coordinates as any)?.lng;
         if (restaurantLat && restaurantLng) {
           const fee = calculateDeliveryFeeFromCoordinates(
-            userLocation.lat,
-            userLocation.lng,
+            effectiveLocation.lat,
+            effectiveLocation.lng,
             restaurantLat,
             restaurantLng
           );
@@ -65,31 +87,38 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
         }
       }
     });
-    
+
     return maxDeliveryFee;
   };
-  
+
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const deliveryFee = getDeliveryFee();
   const total = subtotal + deliveryFee;
 
+  // Build an ISO 8601 datetime string from the date + time inputs
+  const getScheduledForISO = (): string | null => {
+    if (scheduleMode !== "later" || !scheduledDate || !scheduledTime) return null;
+    // Combine date and time into a local datetime and convert to ISO string
+    const combined = new Date(`${scheduledDate}T${scheduledTime}`);
+    if (isNaN(combined.getTime())) return null;
+    return combined.toISOString();
+  };
+
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      if (!userLocation) {
-        throw new Error('Location is required for delivery');
+      if (!effectiveLocation) {
+        throw new Error('Delivery location is required. Select an address or use current location.');
       }
 
-      // For multiple restaurants, we'll create separate orders for each restaurant
-      // For now, let's handle single restaurant orders (most common case)
       const firstRestaurantId = restaurantIds[0];
       if (!firstRestaurantId) {
         throw new Error('No restaurant selected');
       }
 
       const restaurantItems = items.filter(item => item.restaurantId === firstRestaurantId);
-      
-      const orderData = {
+
+      const orderData: any = {
         restaurantId: firstRestaurantId,
         items: restaurantItems.map(item => ({
           name: item.name,
@@ -97,26 +126,34 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
           quantity: item.quantity,
         })),
         subtotal: restaurantItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toString(),
-        deliveryCoordinates: userLocation, // Backend will use this to calculate delivery fee
-        deliveryAddress: 'Current Location', // Could be improved with actual address
+        deliveryCoordinates: effectiveLocation,
+        deliveryAddress: effectiveAddressText,
         currency,
         status: 'pending' as const,
       };
 
-      const response = await apiRequest('POST', '/api/orders', orderData);
-      return response.json();
+      // If scheduling for later, add the scheduled_for field
+      const scheduledFor = getScheduledForISO();
+      if (scheduledFor) {
+        orderData.scheduled_for = scheduledFor;
+      }
+
+      return await apiRequest('/api/orders', 'POST', orderData);
     },
     onSuccess: (order: any) => {
+      const isScheduled = scheduleMode === "later";
       toast({
-        title: "Order Created",
-        description: "Redirecting to payment...",
+        title: isScheduled ? "Order Scheduled" : "Order Created",
+        description: isScheduled
+          ? "Your order has been scheduled. You'll be notified when it's time to pay."
+          : "Redirecting to payment...",
       });
-      
-      // Invalidate orders cache
+
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-      
-      // Redirect to checkout with order ID
-      setLocation(`/checkout?orderId=${order.id}`);
+
+      if (!isScheduled) {
+        setLocation(`/checkout?orderId=${order.id}`);
+      }
       onClose();
     },
     onError: (error: any) => {
@@ -130,11 +167,11 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
 
   const handleCheckout = () => {
     if (items.length === 0) return;
-    
-    if (!userLocation) {
+
+    if (!effectiveLocation) {
       toast({
         title: "Location Required",
-        description: "Please enable location access to calculate delivery fee.",
+        description: "Please select a saved address or use your current location.",
         variant: "destructive",
       });
       return;
@@ -149,7 +186,46 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
       return;
     }
 
+    // Validate schedule time if scheduling
+    if (scheduleMode === "later") {
+      const scheduledFor = getScheduledForISO();
+      if (!scheduledFor) {
+        toast({
+          title: "Schedule Required",
+          description: "Please select both a date and time for your scheduled order.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (new Date(scheduledFor) <= new Date()) {
+        toast({
+          title: "Invalid Time",
+          description: "Scheduled time must be in the future.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     createOrderMutation.mutate();
+  };
+
+  // Helper to get minimum date (today) for the date picker
+  const getMinDate = () => {
+    const now = new Date();
+    return now.toISOString().split("T")[0];
+  };
+
+  // Helper to get minimum time if the selected date is today
+  const getMinTime = () => {
+    if (!scheduledDate) return undefined;
+    const today = new Date().toISOString().split("T")[0];
+    if (scheduledDate === today) {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 30); // at least 30 minutes from now
+      return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    }
+    return undefined;
   };
 
   if (!isOpen) return null;
@@ -157,11 +233,11 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
   return (
     <div className="fixed inset-0 z-50 flex">
       {/* Overlay */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50"
         onClick={onClose}
       />
-      
+
       {/* Sidebar */}
       <div className="ml-auto w-96 bg-white dark:bg-gray-900 shadow-xl border-l border-border h-full flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-border">
@@ -175,7 +251,7 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
             <i className="fas fa-times text-xl"></i>
           </Button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-6">
           {items.length === 0 ? (
             <div className="text-center py-12">
@@ -185,6 +261,7 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Cart Items */}
               {items.map((item) => (
                 <Card key={item.id} className="p-4 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <div className="flex items-start justify-between">
@@ -227,10 +304,126 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
                   </div>
                 </Card>
               ))}
+
+              {/* ── Delivery Address Section ─────────────────────────── */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  <i className="fas fa-map-marker-alt text-orange-500 mr-2"></i>
+                  Delivery Address
+                </h4>
+
+                {/* Toggle: Current Location vs Saved Address */}
+                <div className="flex gap-2 mb-3">
+                  <Button
+                    variant={useCurrentLoc ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() => { setUseCurrentLoc(true); setSelectedAddress(null); }}
+                    data-testid="button-use-current-location-toggle"
+                  >
+                    <i className="fas fa-crosshairs mr-1"></i> Current Location
+                  </Button>
+                  <Button
+                    variant={!useCurrentLoc ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() => setUseCurrentLoc(false)}
+                    data-testid="button-use-saved-address-toggle"
+                  >
+                    <i className="fas fa-bookmark mr-1"></i> Saved Address
+                  </Button>
+                </div>
+
+                {useCurrentLoc ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                    {userLocation ? (
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-check-circle text-green-500"></i>
+                        <span>Using your current location</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                        <i className="fas fa-exclamation-triangle"></i>
+                        <span>Location not available. Please enable location access.</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <AddressBook
+                    compact
+                    selectedId={selectedAddress?.id ?? null}
+                    onSelect={(addr) => setSelectedAddress(addr)}
+                  />
+                )}
+              </div>
+
+              {/* ── Schedule Order Section ────────────────────────────── */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                  <i className="fas fa-clock text-orange-500 mr-2"></i>
+                  When do you want your order?
+                </h4>
+
+                <div className="flex gap-2 mb-3">
+                  <Button
+                    variant={scheduleMode === "now" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() => setScheduleMode("now")}
+                    data-testid="button-order-now"
+                  >
+                    Order Now
+                  </Button>
+                  <Button
+                    variant={scheduleMode === "later" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() => setScheduleMode("later")}
+                    data-testid="button-schedule-later"
+                  >
+                    <i className="fas fa-calendar-alt mr-1"></i> Schedule for Later
+                  </Button>
+                </div>
+
+                {scheduleMode === "later" && (
+                  <div className="space-y-2 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                    <div>
+                      <Label htmlFor="schedule-date" className="text-xs text-gray-600 dark:text-gray-400">Date</Label>
+                      <Input
+                        id="schedule-date"
+                        type="date"
+                        min={getMinDate()}
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-schedule-date"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="schedule-time" className="text-xs text-gray-600 dark:text-gray-400">Time</Label>
+                      <Input
+                        id="schedule-time"
+                        type="time"
+                        min={getMinTime()}
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        className="mt-1"
+                        data-testid="input-schedule-time"
+                      />
+                    </div>
+                    {scheduledDate && scheduledTime && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        <i className="fas fa-check-circle mr-1"></i>
+                        Scheduled for {new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
-        
+
         {items.length > 0 && (
           <div className="border-t border-border p-6 bg-white dark:bg-gray-900">
             <div className="space-y-2 mb-4">
@@ -253,15 +446,17 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, currenc
                 </span>
               </div>
             </div>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleCheckout}
               disabled={createOrderMutation.isPending}
               data-testid="button-checkout"
             >
-              {createOrderMutation.isPending 
-                ? 'Creating Order...' 
-                : `Proceed to Checkout (${getCurrencySymbol(currency)}${total.toFixed(2)})`
+              {createOrderMutation.isPending
+                ? 'Creating Order...'
+                : scheduleMode === "later"
+                  ? `Schedule Order (${getCurrencySymbol(currency)}${total.toFixed(2)})`
+                  : `Proceed to Checkout (${getCurrencySymbol(currency)}${total.toFixed(2)})`
               }
             </Button>
           </div>

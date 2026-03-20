@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httprate"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"zimfeast/shared/auth"
@@ -19,6 +21,7 @@ import (
 	"zimfeast/shared/redispub"
 
 	"zimfeast/order/internal/handlers"
+	"zimfeast/order/internal/scheduler"
 )
 
 func main() {
@@ -45,25 +48,44 @@ func main() {
 
 	h := handlers.New(pool, pub, cfg)
 
+	// Start the scheduled-order dispatcher. It runs every 30 seconds, checking
+	// for orders whose scheduled_for time has arrived and transitioning them
+	// from "scheduled" to "pending_payment". The context is cancelled during
+	// shutdown so the goroutine exits cleanly.
+	schedulerCtx, schedulerCancel := context.WithCancel(context.Background())
+	defer schedulerCancel()
+	sched := scheduler.New(pool, pub)
+	sched.Start(schedulerCtx)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
+	// CORS: read allowed origins from env, default to localhost for safety
+	corsOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+	if len(corsOrigins) == 0 || (len(corsOrigins) == 1 && corsOrigins[0] == "") {
+		corsOrigins = []string{"http://localhost:5000", "http://localhost:3000"}
+	}
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   corsOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
 	}))
+	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
 	// Public endpoints (no auth)
-	r.Get("/api/orders/health/", h.HealthCheck)
+	r.Get("/api/orders/health/", h.AdminHealthCheck)
 	r.Get("/api/orders/all/orders/", h.AllOrders)
 	r.Get("/api/orders/order/{id}/", h.GetOrder)
 	r.Post("/api/orders/order/{id}/assign-driver/", h.AssignDriver)
 	r.Patch("/api/orders/order/{id}/status/", h.UpdateStatus)
 	r.Get("/api/orders/admin/analytics/", h.AdminAnalytics)
 	r.Get("/api/orders/admin/order/{id}/", h.AdminOrderDetail)
+	r.Get("/api/orders/admin/search/", h.AdminSearchOrders)
+	r.Patch("/api/orders/admin/order/{id}/override-status/", h.AdminOverrideStatus)
+	r.Get("/api/orders/admin/live-stats/", h.AdminLiveStats)
+	r.Get("/api/orders/admin/hourly/", h.AdminHourlyOrders)
 
 	// Authenticated endpoints
 	r.Group(func(r chi.Router) {
@@ -91,6 +113,9 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("[server] shutting down...")
+
+	// Stop the scheduled-order dispatcher goroutine first
+	schedulerCancel()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

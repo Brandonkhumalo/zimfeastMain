@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -526,6 +527,60 @@ func (h *Handler) SubmitRating(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetRecentRatings returns the most recent rating comments received by the
+// authenticated driver. Used by the driver app to display a "Recent Reviews"
+// section in the earnings tab.
+// GET /api/drivers/ratings/recent/?limit=10
+func (h *Handler) GetRecentRatings(w http.ResponseWriter, r *http.Request) {
+	user := auth.UserFromContext(r.Context())
+	if user == nil {
+		response.Error(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	limit := parseIntParam(r, "limit", 10)
+	if limit > 50 {
+		limit = 50
+	}
+
+	rows, err := h.db.Query(r.Context(),
+		`SELECT id, rating, comment, created_at
+		 FROM drivers_driverrating
+		 WHERE driver_id = $1
+		 ORDER BY created_at DESC
+		 LIMIT $2`, user.ID, limit)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to fetch ratings")
+		return
+	}
+	defer rows.Close()
+
+	type ratingEntry struct {
+		ID        string  `json:"id"`
+		Rating    float64 `json:"rating"`
+		Comment   string  `json:"comment"`
+		CreatedAt string  `json:"created_at"`
+	}
+
+	ratings := []ratingEntry{}
+	for rows.Next() {
+		var entry ratingEntry
+		var id uuid.UUID
+		var createdAt time.Time
+		if err := rows.Scan(&id, &entry.Rating, &entry.Comment, &createdAt); err != nil {
+			continue
+		}
+		entry.ID = id.String()
+		entry.CreatedAt = createdAt.Format(time.RFC3339)
+		ratings = append(ratings, entry)
+	}
+
+	response.OK(w, map[string]interface{}{
+		"ratings": ratings,
+		"count":   len(ratings),
+	})
+}
+
 // Helper to parse int from query param
 func parseIntParam(r *http.Request, key string, def int) int {
 	v := r.URL.Query().Get(key)
@@ -537,4 +592,320 @@ func parseIntParam(r *http.Request, key string, def int) int {
 		return def
 	}
 	return n
+}
+
+// ──── Admin Endpoints ────
+
+// AdminListDrivers handles GET /api/drivers/admin/list/
+// Returns all drivers with admin info. Supports filtering by status (online/offline),
+// q (search name), page, and page_size query params.
+func (h *Handler) AdminListDrivers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	q := r.URL.Query()
+
+	page := parseIntParam(r, "page", 1)
+	if page < 1 {
+		page = 1
+	}
+	pageSize := parseIntParam(r, "page_size", 20)
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	offset := (page - 1) * pageSize
+
+	// Build dynamic WHERE clauses
+	conditions := []string{}
+	args := []interface{}{}
+	argIdx := 1
+
+	if statusFilter := q.Get("status"); statusFilter != "" {
+		switch statusFilter {
+		case "online":
+			conditions = append(conditions, "d.is_online = true")
+		case "offline":
+			conditions = append(conditions, "d.is_online = false")
+		}
+	}
+
+	if search := q.Get("q"); search != "" {
+		// Search by name from auth service is not possible here directly,
+		// but the driver table may store info. We search vehicle_details for name-like info.
+		// For now, search on user_id or license_number.
+		conditions = append(conditions, fmt.Sprintf("(d.license_number ILIKE $%d OR d.user_id::text ILIKE $%d)", argIdx, argIdx))
+		args = append(args, "%"+search+"%")
+		argIdx++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + joinStrings(conditions, " AND ")
+	}
+
+	// Count total
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM drivers_driver d %s", whereClause)
+	h.db.QueryRow(ctx, countQuery, args...).Scan(&total)
+
+	// Fetch paginated results
+	dataQuery := fmt.Sprintf(
+		`SELECT d.id, d.user_id, d.license_number, d.vehicle_details,
+			d.is_online, d.lat, d.lng, d.created_at,
+			COALESCE(SUM(f.today_deliveries), 0) as total_deliveries,
+			CASE WHEN COALESCE(SUM(f.rating_count), 0) > 0
+				THEN ROUND(CAST(SUM(f.rating_sum) / SUM(f.rating_count) AS numeric), 2)
+				ELSE 0 END as avg_rating
+		 FROM drivers_driver d
+		 LEFT JOIN drivers_driverfinance f ON f.driver_id = d.id
+		 %s
+		 GROUP BY d.id, d.user_id, d.license_number, d.vehicle_details,
+			d.is_online, d.lat, d.lng, d.created_at
+		 ORDER BY d.created_at DESC
+		 LIMIT $%d OFFSET $%d`,
+		whereClause, argIdx, argIdx+1)
+	args = append(args, pageSize, offset)
+
+	rows, err := h.db.Query(ctx, dataQuery, args...)
+	if err != nil {
+		log.Printf("[admin] list drivers error: %v", err)
+		response.Error(w, http.StatusInternalServerError, "Failed to list drivers")
+		return
+	}
+	defer rows.Close()
+
+	var drivers []map[string]interface{}
+	for rows.Next() {
+		var (
+			id, userID     uuid.UUID
+			licenseNumber  string
+			vehicleDetails *string
+			isOnline       bool
+			lat, lng       *float64
+			createdAt      time.Time
+			totalDel       int
+			avgRating      float64
+		)
+		if err := rows.Scan(&id, &userID, &licenseNumber, &vehicleDetails,
+			&isOnline, &lat, &lng, &createdAt, &totalDel, &avgRating); err != nil {
+			log.Printf("[admin] scan driver error: %v", err)
+			continue
+		}
+
+		entry := map[string]interface{}{
+			"id":               id.String(),
+			"user_id":          userID.String(),
+			"license_number":   licenseNumber,
+			"is_online":        isOnline,
+			"total_deliveries": totalDel,
+			"average_rating":   avgRating,
+			"created_at":       createdAt.Format(time.RFC3339),
+		}
+
+		if vehicleDetails != nil {
+			var parsed interface{}
+			if err := json.Unmarshal([]byte(*vehicleDetails), &parsed); err == nil {
+				entry["vehicle_details"] = parsed
+			}
+		}
+		if lat != nil {
+			entry["lat"] = *lat
+		}
+		if lng != nil {
+			entry["lng"] = *lng
+		}
+
+		drivers = append(drivers, entry)
+	}
+
+	if drivers == nil {
+		drivers = []map[string]interface{}{}
+	}
+
+	response.OK(w, map[string]interface{}{
+		"results":   drivers,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
+	})
+}
+
+// AdminDriverDetail handles GET /api/drivers/admin/driver/{id}/detail/
+// Returns full driver detail: profile, finance summary, recent orders, and rating.
+func (h *Handler) AdminDriverDetail(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	driverID := chi.URLParam(r, "id")
+
+	driverUUID, err := uuid.Parse(driverID)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid driver ID")
+		return
+	}
+
+	// Fetch driver profile
+	var (
+		id, userID     uuid.UUID
+		licenseNumber  string
+		vehicleDetails *string
+		isOnline       bool
+		lat, lng       *float64
+		createdAt      time.Time
+	)
+	err = h.db.QueryRow(ctx,
+		`SELECT id, user_id, license_number, vehicle_details, is_online, lat, lng, created_at
+		 FROM drivers_driver WHERE id = $1`, driverUUID).
+		Scan(&id, &userID, &licenseNumber, &vehicleDetails, &isOnline, &lat, &lng, &createdAt)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, "Driver not found")
+		return
+	}
+
+	profile := map[string]interface{}{
+		"id":             id.String(),
+		"user_id":        userID.String(),
+		"license_number": licenseNumber,
+		"is_online":      isOnline,
+		"created_at":     createdAt.Format(time.RFC3339),
+	}
+	if vehicleDetails != nil {
+		var parsed interface{}
+		if err := json.Unmarshal([]byte(*vehicleDetails), &parsed); err == nil {
+			profile["vehicle_details"] = parsed
+		}
+	}
+	if lat != nil {
+		profile["lat"] = *lat
+	}
+	if lng != nil {
+		profile["lng"] = *lng
+	}
+
+	// Finance summary (aggregate all days)
+	var totalDeliveries int
+	var totalEarnings, totalHours float64
+	var avgRating float64
+	h.db.QueryRow(ctx,
+		`SELECT COALESCE(SUM(today_deliveries), 0),
+			COALESCE(SUM(today_earnings), 0),
+			COALESCE(SUM(hours_online), 0),
+			CASE WHEN COALESCE(SUM(rating_count), 0) > 0
+				THEN ROUND(CAST(SUM(rating_sum) / SUM(rating_count) AS numeric), 2)
+				ELSE 0 END
+		 FROM drivers_driverfinance WHERE driver_id = $1`, driverUUID).
+		Scan(&totalDeliveries, &totalEarnings, &totalHours, &avgRating)
+
+	finance := map[string]interface{}{
+		"total_deliveries": totalDeliveries,
+		"total_earnings":   totalEarnings,
+		"total_hours":      totalHours,
+		"average_rating":   avgRating,
+	}
+
+	// Recent orders (last 10)
+	orderRows, err := h.db.Query(ctx,
+		`SELECT id, order_id, status, assigned_at, completed_at
+		 FROM drivers_driverorderstatus
+		 WHERE driver_id = $1
+		 ORDER BY assigned_at DESC LIMIT 10`, driverUUID)
+	var recentOrders []map[string]interface{}
+	if err == nil {
+		defer orderRows.Close()
+		for orderRows.Next() {
+			var oid, orderID uuid.UUID
+			var orderStatus string
+			var assignedAt time.Time
+			var completedAt *time.Time
+			if err := orderRows.Scan(&oid, &orderID, &orderStatus, &assignedAt, &completedAt); err != nil {
+				continue
+			}
+			entry := map[string]interface{}{
+				"id":          oid.String(),
+				"order_id":    orderID.String(),
+				"status":      orderStatus,
+				"assigned_at": assignedAt.Format(time.RFC3339),
+			}
+			if completedAt != nil {
+				entry["completed_at"] = completedAt.Format(time.RFC3339)
+			}
+			recentOrders = append(recentOrders, entry)
+		}
+	}
+	if recentOrders == nil {
+		recentOrders = []map[string]interface{}{}
+	}
+
+	// Recent ratings (last 5)
+	ratingRows, err := h.db.Query(ctx,
+		`SELECT id, rating, comment, created_at
+		 FROM drivers_driverrating
+		 WHERE driver_id = $1
+		 ORDER BY created_at DESC LIMIT 5`, driverUUID)
+	var recentRatings []map[string]interface{}
+	if err == nil {
+		defer ratingRows.Close()
+		for ratingRows.Next() {
+			var rid uuid.UUID
+			var rating float64
+			var comment string
+			var rCreatedAt time.Time
+			if err := ratingRows.Scan(&rid, &rating, &comment, &rCreatedAt); err != nil {
+				continue
+			}
+			recentRatings = append(recentRatings, map[string]interface{}{
+				"id":         rid.String(),
+				"rating":     rating,
+				"comment":    comment,
+				"created_at": rCreatedAt.Format(time.RFC3339),
+			})
+		}
+	}
+	if recentRatings == nil {
+		recentRatings = []map[string]interface{}{}
+	}
+
+	response.OK(w, map[string]interface{}{
+		"profile":        profile,
+		"finance":        finance,
+		"recent_orders":  recentOrders,
+		"recent_ratings": recentRatings,
+	})
+}
+
+// AdminHealthCheck handles GET /api/drivers/health/ (enhanced)
+// Returns service health including DB connection status and Redis ping.
+func (h *Handler) AdminHealthCheck(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	dbStatus := "ok"
+	if err := h.db.Ping(ctx); err != nil {
+		dbStatus = fmt.Sprintf("error: %v", err)
+	}
+
+	redisStatus := "ok"
+	if err := h.pub.Client().Ping(ctx).Err(); err != nil {
+		redisStatus = fmt.Sprintf("error: %v", err)
+	}
+
+	overallStatus := "ok"
+	if dbStatus != "ok" || redisStatus != "ok" {
+		overallStatus = "degraded"
+	}
+
+	response.OK(w, map[string]interface{}{
+		"status":    overallStatus,
+		"service":   "driver-service",
+		"database":  dbStatus,
+		"redis":     redisStatus,
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+// joinStrings joins string slices with a separator (avoids importing strings package).
+func joinStrings(parts []string, sep string) string {
+	result := ""
+	for i, p := range parts {
+		if i > 0 {
+			result += sep
+		}
+		result += p
+	}
+	return result
 }

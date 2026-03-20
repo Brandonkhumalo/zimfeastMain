@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/useCart";
+import { useRestaurants } from "@/hooks/useRestaurants";
+import { useActiveOrder } from "@/hooks/useActiveOrder";
+import { useUserLocation } from "@/hooks/useUserLocation";
 import Navbar from "@/components/Navbar";
 import OrderTracking, { OrderTrackingButton } from "@/components/OrderTracking";
+import RatingDialog from "@/components/RatingDialog";
 import { Button } from "@/components/ui/button";
 
 import Header from "./customer-components/Header";
@@ -15,55 +20,20 @@ import MenuDialog from "@/components/MenuDialog";
 import ChefZimCard from "./customer-components/ChefZimCard";
 import ChefZimDialog from "./customer-components/ChefZimDialog";
 import ChefZimResults from "./customer-components/ChefZimResults";
-import { Restaurant, CartItem } from "./customer-components/types";
-
-interface OrderData {
-  id: string;
-  status: string;
-  method: string;
-  restaurant_names: string;
-  driver_name?: string;
-  driver_phone?: string;
-  driver_vehicle?: string;
-  created: string;
-  delivery_address?: string;
-}
+import ReferralCard from "@/components/ReferralCard";
+import { Restaurant } from "./customer-components/types";
 
 export default function CustomerApp() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
 
+  // Local UI states
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [currency, setCurrency] = useState("USD");
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem("zimfeast_cart");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-
-  useEffect(() => {
-    localStorage.setItem("zimfeast_cart", JSON.stringify(cartItems));
-  }, [cartItems]);
-  const [showNearbyOnly, setShowNearbyOnly] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [prevCursor, setPrevCursor] = useState<string | null>(null);
-  const [restaurantsData, setRestaurantsData] = useState<Restaurant[]>([]);
-  const [allRestaurantsData, setAllRestaurantsData] = useState<Restaurant[]>([]);
-  
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
-  
-  const [activeOrder, setActiveOrder] = useState<OrderData | null>(null);
-  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
-  // Pagination states
-  const [gridPage, setGridPage] = useState(0);
-  const [topPage, setTopPage] = useState(0);
-  
   // Chef Zim AI states
   const [isChefZimOpen, setIsChefZimOpen] = useState(false);
   const [isChefZimResultsOpen, setIsChefZimResultsOpen] = useState(false);
@@ -73,6 +43,19 @@ export default function CustomerApp() {
     closing: string;
   }>({ greeting: "", recommendations: [], closing: "" });
 
+  // Custom hooks
+  const { cartItems, setCartItems, isCartOpen, setIsCartOpen, addToCart } = useCart();
+  const { userLocation, setUserLocation, showNearbyOnly, setShowNearbyOnly, isGettingLocation, getCurrentLocation, toggleNearbyView } = useUserLocation();
+  const { restaurantsData, allRestaurantsData, nextCursor, prevCursor, gridPage, setGridPage, topPage, setTopPage, loadNext, loadPrev } = useRestaurants({
+    searchTerm,
+    selectedCuisine,
+    userLocation,
+    showNearbyOnly,
+    currency,
+  });
+  const { activeOrder, isTrackingOpen, setIsTrackingOpen, deliveredOrder, clearDeliveredOrder } = useActiveOrder({ isAuthenticated });
+
+  // Auth check
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
@@ -84,155 +67,6 @@ export default function CustomerApp() {
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
-  
-  const fetchActiveOrder = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch('/api/orders/list/', {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      if (!res.ok) return;
-      const orders: OrderData[] = await res.json();
-      const active = orders.find(o => 
-        !['delivered', 'collected', 'cancelled'].includes(o.status)
-      );
-      setActiveOrder(active || null);
-    } catch (err) {
-      console.log("No active orders");
-    }
-  };
-  
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchActiveOrder();
-      const interval = setInterval(fetchActiveOrder, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated]);
-
-  const fetchRestaurants = async (cursorUrl?: string) => {
-    try {
-      let url: string;
-      
-      if (cursorUrl) {
-        url = cursorUrl;
-      } else {
-        const params = new URLSearchParams();
-        if (userLocation) {
-          params.append("lat", userLocation.lat.toString());
-          params.append("lng", userLocation.lng.toString());
-        }
-        if (selectedCuisine) params.append("cuisine", selectedCuisine);
-        
-        url = `/api/restaurants/nearby/${params.toString() ? '?' + params.toString() : ''}`;
-      }
-
-      const token = localStorage.getItem("token");
-      const res = await fetch(url, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch restaurants");
-      const data = await res.json();
-      setRestaurantsData(data.results || data);
-      setNextCursor(data.next || null);
-      setPrevCursor(data.previous || null);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to fetch restaurants", variant: "destructive" });
-    }
-  };
-
-  useEffect(() => {
-    fetchRestaurants();
-  }, [userLocation, showNearbyOnly, selectedCuisine]);
-
-  // Fetch all restaurants (unfiltered) for the "All Restaurants" section
-  const fetchAllRestaurants = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch('/api/restaurants/nearby/?page_size=100', {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch all restaurants");
-      const data = await res.json();
-      setAllRestaurantsData(data.results || data);
-    } catch (err: any) {
-      console.error("Error fetching all restaurants:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchAllRestaurants();
-  }, []);
-
-  const loadNext = () => {
-    if (!nextCursor) return;
-    fetchRestaurants(nextCursor);
-  };
-
-  const loadPrev = () => {
-    if (!prevCursor) return;
-    fetchRestaurants(prevCursor);
-  };
-
-  const toggleNearbyView = () => {
-    if (!showNearbyOnly) {
-      if (userLocation) setShowNearbyOnly(true);
-      else getCurrentLocation();
-    } else {
-      setShowNearbyOnly(false);
-    }
-  };
-
-  const getCurrentLocation = () => {
-    setIsGettingLocation(true);
-    if (!navigator.geolocation) {
-      toast({ title: "Location Not Supported", description: "Your browser doesn't support geolocation", variant: "destructive" });
-      setIsGettingLocation(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        setShowNearbyOnly(true);
-        setIsGettingLocation(false);
-        toast({ title: "Location Found", description: "Showing nearby restaurants within 10km", variant: "default" });
-      },
-      () => {
-        setIsGettingLocation(false);
-        toast({ title: "Location Access Denied", description: "Enable location services to find nearby restaurants", variant: "destructive" });
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-    );
-  };
-
-  const addToCart = (item: CartItem) => {
-    setCartItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
-      return [...prev, { ...item, quantity: 1 }];
-    });
-    toast({
-      title: "Added to cart",
-      description: `${item.name} added to your cart`,
-      variant: "default",
-    });
-  };
 
   const handleViewMenu = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -299,9 +133,14 @@ export default function CustomerApp() {
         onSelectRestaurant={handleSelectRestaurantFromSearch}
         onSelectCuisine={setSelectedCuisine}
       />
-      
+
       <ChefZimCard onOpenDialog={() => setIsChefZimOpen(true)} />
-      
+
+      {/* Referral Card */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <ReferralCard />
+      </div>
+
       <QuickFilters selectedCuisine={selectedCuisine} setSelectedCuisine={setSelectedCuisine} />
 
       {/* Restaurants Grid */}
@@ -312,16 +151,16 @@ export default function CustomerApp() {
         userLocation={userLocation}
       />
       <div className="flex justify-center gap-4 py-6">
-        <Button 
-          onClick={() => setGridPage(p => Math.max(p - 1, 0))} 
+        <Button
+          onClick={() => setGridPage(p => Math.max(p - 1, 0))}
           disabled={gridPage === 0}
           className="rounded-xl font-bold px-6 disabled:opacity-40"
           variant="outline"
         >
           <i className="fas fa-chevron-left mr-2"></i>Previous
         </Button>
-        <Button 
-          onClick={() => setGridPage(p => (p + 1) * 5 < restaurantsData.length ? p + 1 : p)} 
+        <Button
+          onClick={() => setGridPage(p => (p + 1) * 5 < restaurantsData.length ? p + 1 : p)}
           disabled={(gridPage + 1) * 5 >= restaurantsData.length}
           className="rounded-xl font-bold px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/20 disabled:opacity-40"
         >
@@ -337,16 +176,16 @@ export default function CustomerApp() {
         userLocation={userLocation}
       />
       <div className="flex justify-center gap-4 py-6 bg-zinc-50/50 dark:bg-white/5">
-        <Button 
-          onClick={() => setTopPage(p => Math.max(p - 1, 0))} 
+        <Button
+          onClick={() => setTopPage(p => Math.max(p - 1, 0))}
           disabled={topPage === 0}
           className="rounded-xl font-bold px-6 disabled:opacity-40"
           variant="outline"
         >
           <i className="fas fa-chevron-left mr-2"></i>Previous
         </Button>
-        <Button 
-          onClick={() => setTopPage(p => (p + 1) * 5 < restaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)} 
+        <Button
+          onClick={() => setTopPage(p => (p + 1) * 5 < restaurantsData.filter(r => r.rating && r.rating >= 4).length ? p + 1 : p)}
           disabled={(topPage + 1) * 5 >= restaurantsData.filter(r => r.rating && r.rating >= 4).length}
           className="rounded-xl font-bold px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/20 disabled:opacity-40"
         >
@@ -382,15 +221,15 @@ export default function CustomerApp() {
         userLocation={userLocation}
       />
 
-      <OrderTracking 
-        order={activeOrder} 
-        isOpen={isTrackingOpen} 
-        onClose={() => setIsTrackingOpen(false)} 
+      <OrderTracking
+        order={activeOrder}
+        isOpen={isTrackingOpen}
+        onClose={() => setIsTrackingOpen(false)}
       />
-      
-      <OrderTrackingButton 
-        order={activeOrder} 
-        onClick={() => setIsTrackingOpen(true)} 
+
+      <OrderTrackingButton
+        order={activeOrder}
+        onClick={() => setIsTrackingOpen(true)}
       />
 
       <button
@@ -419,6 +258,19 @@ export default function CustomerApp() {
         closing={aiRecommendations.closing}
         onViewRestaurant={handleSelectRestaurantFromSearch}
       />
+
+      {/* Rating dialog — shown automatically when an order transitions to "delivered" */}
+      {deliveredOrder && (
+        <RatingDialog
+          isOpen={!!deliveredOrder}
+          onClose={clearDeliveredOrder}
+          orderId={deliveredOrder.orderId}
+          restaurantId={deliveredOrder.restaurantId}
+          restaurantName={deliveredOrder.restaurantName}
+          driverName={deliveredOrder.driverName}
+          driverId={deliveredOrder.driverId}
+        />
+      )}
     </div>
   );
 }

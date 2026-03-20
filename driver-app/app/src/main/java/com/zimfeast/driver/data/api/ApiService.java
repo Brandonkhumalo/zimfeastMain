@@ -1,5 +1,6 @@
 package com.zimfeast.driver.data.api;
 
+import com.zimfeast.driver.data.model.DailyFinance;
 import com.zimfeast.driver.data.model.DriverProfile;
 import com.zimfeast.driver.data.model.LoginRequest;
 import com.zimfeast.driver.data.model.LoginResponse;
@@ -56,4 +57,10 @@ public interface ApiService {
 
     @GET("api/orders/order/{id}/")
     Call<Order> getOrder(@Path("id") String orderId);
+
+    @GET("api/drivers/daily/finances/")
+    Call<DailyFinance> getDailyFinances();
+
+    @GET("api/drivers/ratings/recent/")
+    Call<Map<String, Object>> getRecentRatings();
 }

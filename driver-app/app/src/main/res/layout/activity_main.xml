@@ -99,6 +99,36 @@
                     android:fontFamily="sans-serif-medium"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
+
+            <!-- Rating badge in header (Task 14) -->
+            <LinearLayout
+                android:id="@+id/layout_header_rating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_avatar_circle"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@android:drawable/btn_star_big_on"
+                    android:tint="@color/rating_star"
+                    android:layout_marginEnd="4dp"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/tv_header_rating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.0"
+                    android:textSize="14sp"
+                    android:textColor="@color/primary"
+                    android:fontFamily="sans-serif-black" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
@@ -622,6 +652,150 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
+
+                <!-- Second stats row: Hours Online + Average Rating (Task 11 + 14) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <!-- Hours Online -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/surface"
+                        app:strokeColor="@color/divider"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:src="@android:drawable/ic_menu_recent_history"
+                                android:tint="@color/primary"
+                                android:layout_marginBottom="8dp"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:id="@+id/tv_hours_online"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0.0 hrs"
+                                android:textSize="22sp"
+                                android:textColor="@color/text_primary"
+                                android:fontFamily="sans-serif-black" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Hours Online"
+                                android:textSize="11sp"
+                                android:textColor="@color/text_tertiary"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Average Rating -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/surface"
+                        app:strokeColor="@color/divider"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:src="@android:drawable/btn_star_big_on"
+                                android:tint="@color/rating_star"
+                                android:layout_marginBottom="8dp"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:id="@+id/tv_average_rating"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0.0"
+                                android:textSize="22sp"
+                                android:textColor="@color/text_primary"
+                                android:fontFamily="sans-serif-black" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Avg Rating"
+                                android:textSize="11sp"
+                                android:textColor="@color/text_tertiary"
+                                android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Recent Reviews section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Recent Reviews"
+                    android:textSize="18sp"
+                    android:textColor="@color/text_primary"
+                    android:fontFamily="sans-serif-black"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:id="@+id/layout_recent_reviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Placeholder shown when there are no reviews yet -->
+                    <TextView
+                        android:id="@+id/tv_no_reviews"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No reviews yet"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_tertiary"
+                        android:textAlignment="center"
+                        android:fontFamily="sans-serif-medium"
+                        android:paddingVertical="16dp" />
+                </LinearLayout>
+
+                <!-- View History button (Task 13) -->
+                <Button
+                    android:id="@+id/btn_view_history"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="20dp"
+                    android:text="View Order History"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textAllCaps="false"
+                    android:background="@drawable/bg_button_orange_gradient"
+                    android:stateListAnimator="@null" />
             </LinearLayout>
         </ScrollView>
 
@@ -797,6 +971,20 @@
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- Edit Profile button (Task 12) -->
+                <Button
+                    android:id="@+id/btn_edit_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="Edit Profile"
+                    android:textColor="@color/primary"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textAllCaps="false"
+                    android:background="@drawable/bg_decline_button"
+                    android:stateListAnimator="@null" />
 
                 <!-- Connection Status -->
                 <com.google.android.material.card.MaterialCardView

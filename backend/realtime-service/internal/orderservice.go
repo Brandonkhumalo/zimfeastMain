@@ -52,6 +52,54 @@ func NewOrderService(pub *redispub.Publisher, drvSvc *DriverService, cfg *config
 	}
 }
 
+// RestoreFromRedis rebuilds in-memory active order state from Redis after a restart.
+// Only restores orders that are still in active delivery states.
+func (os *OrderService) RestoreFromRedis(ctx context.Context) (int, error) {
+	os.mu.Lock()
+	defer os.mu.Unlock()
+
+	// Scan for all order keys in Redis
+	var cursor uint64
+	restored := 0
+	activeStatuses := map[string]bool{
+		"finding_driver":  true,
+		"driver_assigned": true,
+		"out_for_delivery": true,
+	}
+
+	for {
+		keys, nextCursor, err := os.pub.Client().Scan(ctx, cursor, "order:*", 100).Result()
+		if err != nil {
+			return restored, fmt.Errorf("failed to scan order keys: %w", err)
+		}
+
+		for _, key := range keys {
+			data, err := os.pub.Client().HGet(ctx, key, "data").Result()
+			if err != nil || data == "" {
+				continue
+			}
+
+			var order ActiveOrder
+			if err := json.Unmarshal([]byte(data), &order); err != nil {
+				continue
+			}
+
+			// Only restore orders in active delivery states
+			if activeStatuses[order.Status] {
+				os.orders[order.OrderID] = &order
+				restored++
+			}
+		}
+
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return restored, nil
+}
+
 func (os *OrderService) HandleNewDeliveryOrder(data map[string]interface{}, sio *socketio.Server) {
 	orderID := getString(data, "orderId")
 	if orderID == "" {

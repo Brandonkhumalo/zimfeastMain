@@ -3,7 +3,14 @@
     "allow": [
       "Bash(grep -r \"TODO\\\\|FIXME\\\\|BUG\\\\|HACK\" 'd:/Tishanyq Digital/zimfeastMain/webapp' --include=*.tsx --include=*.ts)",
       "Bash(npx update-browserslist-db@latest --update-db)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(xargs cat:*)",
+      "Bash(xargs grep:*)",
+      "Bash(go vet:*)",
+      "Bash(find 'd:/Tishanyq Digital/zimfeastMain/customer-app/app/src/main/java' -type f -name *.java -o -name *.kt)",
+      "Bash(grep -A2 '\"\"wouter\"\"' package.json)",
+      "Bash(npx tsc:*)",
+      "Bash(xargs ls:*)"
     ]
   }
 }

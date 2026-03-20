@@ -105,6 +105,32 @@
     <string name="call_driver">Call Driver</string>
     <string name="view_on_map">View on Map</string>
 
+    <!-- Address Book -->
+    <string name="address_book">My Addresses</string>
+    <string name="no_saved_addresses">No saved addresses</string>
+    <string name="add_address_hint">Tap + to add a delivery address for faster checkout</string>
+    <string name="use_current_location">Use Current Location</string>
+    <string name="saved_addresses">Saved Addresses</string>
+
+    <!-- Schedule Order -->
+    <string name="order_now">Order Now</string>
+    <string name="schedule_for_later">Schedule for Later</string>
+    <string name="select_date">Select Date</string>
+    <string name="select_time">Select Time</string>
+    <string name="scheduled_for">Scheduled for %1$s</string>
+    <string name="schedule_order">Schedule Order</string>
+
+    <!-- Referral & Promo -->
+    <string name="referral_code">Referral Code</string>
+    <string name="share_referral">Share Referral Code</string>
+    <string name="copy_code">Copy Code</string>
+    <string name="referral_title">Refer Friends, Get Rewards</string>
+    <string name="referral_description">Share your referral code with friends. When they sign up and spend $20+ on their first order, you earn a 15%% discount credit.</string>
+    <string name="credits_available">%d credit(s) available</string>
+    <string name="promo_code">Promo Code</string>
+    <string name="apply">Apply</string>
+    <string name="remove">Remove</string>
+
     <!-- Errors -->
     <string name="error_login">Login failed. Please check your credentials.</string>
     <string name="error_register">Registration failed. Please try again.</string>

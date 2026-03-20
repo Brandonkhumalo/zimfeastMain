@@ -20,6 +20,7 @@ resource "aws_cloudfront_distribution" "main" {
   default_root_object = "index.html"
   aliases             = [var.domain, "www.${var.domain}"]
   price_class         = "PriceClass_200" # Includes Africa
+  web_acl_id          = aws_wafv2_web_acl.cloudfront.arn
 
   # Origin: S3 frontend
   origin {

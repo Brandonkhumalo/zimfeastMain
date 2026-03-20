@@ -87,6 +87,8 @@ export default function RestaurantDashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
 
+  const [isRestaurantOpen, setIsRestaurantOpen] = useState(true);
+
   const [dashboardData, setDashboardData] = useState({
     restaurantName: "",
     todayOrders: 0,
@@ -135,6 +137,17 @@ export default function RestaurantDashboard() {
 
     const loadDashboardData = async () => {
       try {
+        // Fetch restaurant info (including is_open status)
+        const restaurantRes = await fetch("/api/restaurants/my-restaurant/", {
+          headers: getAuthHeaders(),
+        });
+        if (restaurantRes.ok) {
+          const restaurantData = await restaurantRes.json();
+          if (restaurantData.is_open !== undefined) {
+            setIsRestaurantOpen(restaurantData.is_open);
+          }
+        }
+
         // initial orders page (use a dedicated endpoint)
         const ordersResponse = await fetchOrdersPage("/api/orders/list/");
         setOrdersData(ordersResponse);
@@ -304,7 +317,11 @@ export default function RestaurantDashboard() {
 
   return (
     <DashboardLayout>
-      <DashboardHeader restaurantName={dashboardData.restaurantName} />
+      <DashboardHeader
+        restaurantName={dashboardData.restaurantName}
+        isOpen={isRestaurantOpen}
+        onToggleOpen={(newIsOpen) => setIsRestaurantOpen(newIsOpen)}
+      />
 
       <main className="max-w-7xl mx-auto p-4 space-y-6">
         <Tabs defaultValue="dashboard" className="w-full">

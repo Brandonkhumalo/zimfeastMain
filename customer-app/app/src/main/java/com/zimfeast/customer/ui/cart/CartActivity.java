@@ -24,14 +24,25 @@ import com.zimfeast.customer.data.model.CartItem;
 import com.zimfeast.customer.data.model.CreateOrderResponse;
 import com.zimfeast.customer.data.model.Order;
 import com.zimfeast.customer.databinding.ActivityCartBinding;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.DateValidatorPointForward;
+import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.timepicker.MaterialTimePicker;
+import com.google.android.material.timepicker.TimeFormat;
+import com.zimfeast.customer.ui.address.AddressBookActivity;
 import com.zimfeast.customer.ui.address.AddressPickerActivity;
 import com.zimfeast.customer.ui.checkout.CheckoutActivity;
 import com.zimfeast.customer.util.DeliveryUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
 import retrofit2.Call;
@@ -43,6 +54,7 @@ public class CartActivity extends AppCompatActivity
 
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
     private static final int ADDRESS_PICKER_REQUEST = 1002;
+    private static final int ADDRESS_BOOK_REQUEST = 1003;
     private static final int MAX_LOCATION_ATTEMPTS = 3;
 
     private ActivityCartBinding binding;
@@ -58,6 +70,10 @@ public class CartActivity extends AppCompatActivity
     private Double userLat = null;
     private Double userLng = null;
     private String selectedAddress = null;
+
+    // Schedule order state
+    private boolean isScheduled = false;
+    private Calendar scheduledCalendar = null;
 
     private FusedLocationProviderClient fusedLocationClient;
 
@@ -85,34 +101,133 @@ public class CartActivity extends AppCompatActivity
     private void setupClickListeners() {
         binding.btnBack.setOnClickListener(v -> finish());
         binding.btnCheckout.setOnClickListener(v -> createOrder());
-        
+
         binding.layoutAddressPicker.setOnClickListener(v -> openAddressPicker());
+
+        // "Saved Addresses" button opens the address book in select mode
+        binding.btnSavedAddresses.setOnClickListener(v -> {
+            Intent intent = new Intent(this, AddressBookActivity.class);
+            intent.putExtra(AddressBookActivity.EXTRA_SELECT_MODE, true);
+            startActivityForResult(intent, ADDRESS_BOOK_REQUEST);
+        });
+
+        // Schedule order toggle
+        binding.btnScheduleLater.setOnClickListener(v -> showSchedulePickers());
+        binding.btnOrderNow.setOnClickListener(v -> {
+            isScheduled = false;
+            scheduledCalendar = null;
+            binding.tvScheduledTime.setVisibility(View.GONE);
+            binding.btnOrderNow.setEnabled(false);
+            binding.btnScheduleLater.setEnabled(true);
+            binding.btnCheckout.setText(R.string.checkout);
+        });
     }
-    
+
     private void openAddressPicker() {
         Intent intent = new Intent(this, AddressPickerActivity.class);
         startActivityForResult(intent, ADDRESS_PICKER_REQUEST);
+    }
+
+    /**
+     * Shows a MaterialDatePicker followed by a MaterialTimePicker to let
+     * the user schedule an order for a future date and time.
+     */
+    private void showSchedulePickers() {
+        // Build a date picker that only allows future dates
+        CalendarConstraints constraints = new CalendarConstraints.Builder()
+                .setValidator(DateValidatorPointForward.now())
+                .build();
+
+        MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(getString(R.string.select_date))
+                .setCalendarConstraints(constraints)
+                .build();
+
+        datePicker.addOnPositiveButtonClickListener(selection -> {
+            // selection is epoch millis in UTC for the selected day
+            Calendar selectedDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            selectedDate.setTimeInMillis(selection);
+
+            // Now show the time picker
+            MaterialTimePicker timePicker = new MaterialTimePicker.Builder()
+                    .setTimeFormat(TimeFormat.CLOCK_12H)
+                    .setTitleText(getString(R.string.select_time))
+                    .setHour(Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
+                    .setMinute(0)
+                    .build();
+
+            timePicker.addOnPositiveButtonClickListener(v -> {
+                // Combine date + time into a single Calendar
+                scheduledCalendar = Calendar.getInstance();
+                scheduledCalendar.set(Calendar.YEAR, selectedDate.get(Calendar.YEAR));
+                scheduledCalendar.set(Calendar.MONTH, selectedDate.get(Calendar.MONTH));
+                scheduledCalendar.set(Calendar.DAY_OF_MONTH, selectedDate.get(Calendar.DAY_OF_MONTH));
+                scheduledCalendar.set(Calendar.HOUR_OF_DAY, timePicker.getHour());
+                scheduledCalendar.set(Calendar.MINUTE, timePicker.getMinute());
+                scheduledCalendar.set(Calendar.SECOND, 0);
+
+                if (scheduledCalendar.before(Calendar.getInstance())) {
+                    Toast.makeText(this, "Please select a future time", Toast.LENGTH_SHORT).show();
+                    scheduledCalendar = null;
+                    return;
+                }
+
+                isScheduled = true;
+                SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy h:mm a", Locale.US);
+                String formatted = sdf.format(scheduledCalendar.getTime());
+                binding.tvScheduledTime.setText(getString(R.string.scheduled_for, formatted));
+                binding.tvScheduledTime.setVisibility(View.VISIBLE);
+                binding.btnOrderNow.setEnabled(true);
+                binding.btnScheduleLater.setEnabled(false);
+                binding.btnCheckout.setText(R.string.schedule_order);
+            });
+
+            timePicker.show(getSupportFragmentManager(), "TIME_PICKER");
+        });
+
+        datePicker.show(getSupportFragmentManager(), "DATE_PICKER");
     }
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        
+
         if (requestCode == ADDRESS_PICKER_REQUEST && resultCode == RESULT_OK && data != null) {
             double lat = data.getDoubleExtra(AddressPickerActivity.EXTRA_LATITUDE, 0);
             double lng = data.getDoubleExtra(AddressPickerActivity.EXTRA_LONGITUDE, 0);
             String address = data.getStringExtra(AddressPickerActivity.EXTRA_ADDRESS);
-            
+
             if (lat != 0 && lng != 0) {
                 userLat = lat;
                 userLng = lng;
                 selectedAddress = address;
-                
-                binding.tvSelectedAddress.setText(address != null && !address.isEmpty() 
-                        ? address 
+
+                binding.tvSelectedAddress.setText(address != null && !address.isEmpty()
+                        ? address
                         : String.format("%.4f, %.4f", lat, lng));
                 binding.etAddress.setText(selectedAddress);
-                
+
+                updateTotals();
+            }
+        }
+
+        // Handle result from saved address book selector
+        if (requestCode == ADDRESS_BOOK_REQUEST && resultCode == RESULT_OK && data != null) {
+            double lat = data.getDoubleExtra(AddressBookActivity.EXTRA_SELECTED_LAT, 0);
+            double lng = data.getDoubleExtra(AddressBookActivity.EXTRA_SELECTED_LNG, 0);
+            String address = data.getStringExtra(AddressBookActivity.EXTRA_SELECTED_ADDRESS_TEXT);
+            String label = data.getStringExtra(AddressBookActivity.EXTRA_SELECTED_LABEL);
+
+            if (lat != 0 && lng != 0) {
+                userLat = lat;
+                userLng = lng;
+                selectedAddress = address;
+
+                String displayText = (label != null ? label + " - " : "") +
+                        (address != null && !address.isEmpty() ? address : String.format("%.4f, %.4f", lat, lng));
+                binding.tvSelectedAddress.setText(displayText);
+                binding.etAddress.setText(selectedAddress);
+
                 updateTotals();
             }
         }
@@ -369,12 +484,19 @@ public class CartActivity extends AppCompatActivity
         orderData.put("tip", String.format(java.util.Locale.US, "%.2f", tipAmount));
         
         if (isDelivery) {
-            String address = selectedAddress != null && !selectedAddress.isEmpty() 
-                    ? selectedAddress 
+            String address = selectedAddress != null && !selectedAddress.isEmpty()
+                    ? selectedAddress
                     : binding.etAddress.getText().toString();
             orderData.put("delivery_address", address);
             orderData.put("delivery_lat", userLat);
             orderData.put("delivery_lng", userLng);
+        }
+
+        // If scheduled, include scheduled_for as an ISO 8601 datetime string
+        if (isScheduled && scheduledCalendar != null) {
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            orderData.put("scheduled_for", isoFormat.format(scheduledCalendar.getTime()));
         }
 
         ApiClient.getInstance().getApiService()

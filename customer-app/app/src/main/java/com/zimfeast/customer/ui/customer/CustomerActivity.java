@@ -31,6 +31,7 @@ import com.zimfeast.customer.ui.auth.LoginActivity;
 import com.zimfeast.customer.ui.cart.CartActivity;
 import com.zimfeast.customer.ui.history.OrderHistoryActivity;
 import com.zimfeast.customer.ui.menu.MenuActivity;
+import com.zimfeast.customer.ui.referral.ReferralActivity;
 import com.zimfeast.customer.util.TokenManager;
 
 import java.util.ArrayList;
@@ -393,6 +394,8 @@ public class CustomerActivity extends AppCompatActivity implements
             startActivity(new Intent(this, OrderHistoryActivity.class));
         } else if (id == R.id.nav_favorites) {
             Toast.makeText(this, "Favorites coming soon", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.nav_referrals) {
+            startActivity(new Intent(this, ReferralActivity.class));
         } else if (id == R.id.nav_settings) {
             Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_help) {

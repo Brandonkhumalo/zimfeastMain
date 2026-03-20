@@ -8,20 +8,25 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 
+from math import cos, radians
 from geopy.distance import geodesic
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
+from django.db import connection
+from django.db.models import Avg, Q, Count
+
 from .models import (
     Restaurant, MenuItem, RestaurantDashboard, CuisineType, CategoryType,
     Branch, RestaurantEarning, RestaurantFinanceSummary, RestaurantDebt,
+    RestaurantReview,
 )
 from .serializers import (
     RestaurantSerializer, RestaurantCreateSerializer,
     RestaurantExternalAPISerializer, MenuItemSerializer, MenuItemWriteSerializer,
     BranchSerializer, RestaurantEarningSerializer, RestaurantFinanceSummarySerializer,
-    RestaurantDebtSerializer,
+    RestaurantDebtSerializer, RestaurantReviewSerializer,
 )
 
 from shared.redis_publisher import publisher
@@ -65,9 +70,9 @@ def update_restaurant(request, restaurant_id):
 def create_cuisine(request):
     name = request.data.get('name')
     if not name:
-        return Response({"error": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
     if CuisineType.objects.filter(name=name).exists():
-        return Response({"error": "Cuisine already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Cuisine already exists."}, status=status.HTTP_400_BAD_REQUEST)
     cuisine = CuisineType.objects.create(name=name)
     return Response({"id": cuisine.id, "name": cuisine.name}, status=status.HTTP_201_CREATED)
 
@@ -86,9 +91,9 @@ def list_cuisines(request):
 def create_category(request):
     name = request.data.get('name')
     if not name:
-        return Response({"error": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
     if CategoryType.objects.filter(name=name).exists():
-        return Response({"error": "Category already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Category already exists."}, status=status.HTTP_400_BAD_REQUEST)
     category = CategoryType.objects.create(name=name)
     return Response({"id": category.id, "name": category.name}, status=status.HTTP_201_CREATED)
 
@@ -178,7 +183,7 @@ def list_nearby_restaurants(request):
         user_lat = float(lat_param) if lat_param else None
         user_lng = float(lng_param) if lng_param else None
     except ValueError:
-        return Response({"error": "lat and lng must be floats"}, status=400)
+        return Response({"detail": "lat and lng must be floats"}, status=400)
 
     radius_km = float(request.query_params.get("radius_km", 10.0))
     page_size = int(request.query_params.get("page_size", 10))
@@ -191,6 +196,17 @@ def list_nearby_restaurants(request):
 
     nearby = []
     if user_lat is not None and user_lng is not None:
+        # Approximate bounding box pre-filter (1 degree ~ 111km)
+        lat_delta = radius_km / 111.0
+        lng_delta = radius_km / (111.0 * cos(radians(user_lat)))
+        restaurants = restaurants.filter(
+            lat__gte=user_lat - lat_delta,
+            lat__lte=user_lat + lat_delta,
+            lng__gte=user_lng - lng_delta,
+            lng__lte=user_lng + lng_delta,
+        )
+
+        # Precise geodesic distance on the pre-filtered set
         user_point = (user_lat, user_lng)
         for r in restaurants:
             try:
@@ -518,7 +534,316 @@ def record_order_earning(restaurant, order_id, order_total, delivery_fee, paid_d
     dashboard.save()
 
 
+## --- Toggle Open/Closed ---
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def toggle_restaurant_open(request):
+    """
+    POST /api/restaurants/toggle-open/
+    Toggle a restaurant's open/closed status via is_open_override.
+
+    Body (optional):
+        { "is_open": true|false|null }
+    - true  = force open
+    - false = force closed
+    - null  = revert to schedule-based hours
+
+    If no body is provided, the override flips:
+        None -> False (close), True -> False, False -> True
+    """
+    restaurant = get_object_or_404(Restaurant, owner_id=request.user.id)
+
+    requested = request.data.get("is_open", "__absent__")
+
+    if requested == "__absent__":
+        # Cycle: None -> False, True -> False, False -> True
+        if restaurant.is_open_override is None or restaurant.is_open_override is True:
+            restaurant.is_open_override = False
+        else:
+            restaurant.is_open_override = True
+    elif requested is None:
+        # Explicitly revert to schedule
+        restaurant.is_open_override = None
+    else:
+        restaurant.is_open_override = bool(requested)
+
+    restaurant.save(update_fields=["is_open_override"])
+
+    return Response({
+        "is_open": restaurant.is_currently_open,
+        "is_open_override": restaurant.is_open_override,
+        "detail": "Restaurant status updated.",
+    })
+
+
+## --- Restaurant Reviews ---
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def submit_restaurant_review(request, restaurant_id):
+    """
+    POST /api/restaurants/<restaurant_id>/review/
+    Create a review for a restaurant. One review per order enforced by
+    the unique constraint on order_id.
+    Expects JSON: { "order_id": "...", "rating": 1-5, "comment": "optional" }
+    """
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+
+    serializer = RestaurantReviewSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    rating_value = serializer.validated_data.get("rating")
+    if rating_value is None or rating_value < 1 or rating_value > 5:
+        return Response(
+            {"detail": "Rating must be between 1 and 5."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    order_id = serializer.validated_data.get("order_id")
+    if RestaurantReview.objects.filter(order_id=order_id).exists():
+        return Response(
+            {"detail": "You have already reviewed this order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Save the review
+    review = serializer.save(restaurant=restaurant, user_id=request.user.id)
+
+    # Recalculate denormalized average_rating and total_reviews on Restaurant
+    agg = RestaurantReview.objects.filter(restaurant=restaurant).aggregate(
+        avg=Avg("rating")
+    )
+    restaurant.total_reviews = RestaurantReview.objects.filter(restaurant=restaurant).count()
+    restaurant.average_rating = round(agg["avg"] or 0, 2)
+    restaurant.save(update_fields=["average_rating", "total_reviews"])
+
+    return Response(RestaurantReviewSerializer(review).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def list_restaurant_reviews(request, restaurant_id):
+    """
+    GET /api/restaurants/<restaurant_id>/reviews/
+    Public endpoint — lists reviews for a restaurant, newest first, with
+    simple offset pagination via ?page=1&page_size=10 query params.
+    """
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    page_size = int(request.query_params.get("page_size", 10))
+    page = int(request.query_params.get("page", 1))
+
+    reviews = RestaurantReview.objects.filter(restaurant=restaurant).order_by("-created")
+    total = reviews.count()
+
+    start = (page - 1) * page_size
+    paginated = reviews[start:start + page_size]
+
+    return Response({
+        "count": total,
+        "page": page,
+        "page_size": page_size,
+        "average_rating": round(restaurant.average_rating, 1),
+        "total_reviews": restaurant.total_reviews,
+        "results": RestaurantReviewSerializer(paginated, many=True).data,
+    })
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_check(request):
-    return Response({"status": "ok"})
+    """Enhanced health check with DB connection status."""
+    db_status = "ok"
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
+    overall = "ok" if db_status == "ok" else "degraded"
+
+    return Response({
+        "status": overall,
+        "service": "restaurant-service",
+        "database": db_status,
+    })
+
+
+# ─── Admin Endpoints ────────────────────────────────────────────────
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def admin_list_restaurants(request):
+    """
+    GET /api/restaurants/admin/list/
+    All restaurants with admin info: id, name, owner_id, is_currently_open,
+    average_rating, total_reviews, order count from dashboard, created date.
+    Supports q search, is_open filter, and pagination.
+    """
+    params = request.query_params
+    page = int(params.get("page", 1))
+    page_size = int(params.get("page_size", 20))
+    if page_size > 100:
+        page_size = 100
+
+    restaurants = Restaurant.objects.all()
+
+    # Text search on name
+    q = params.get("q", "").strip()
+    if q:
+        restaurants = restaurants.filter(name__icontains=q)
+
+    # Filter by open status
+    is_open = params.get("is_open")
+    if is_open is not None:
+        # We cannot filter by the property directly in the queryset,
+        # so we filter in Python after fetching. For performance, we
+        # limit to a reasonable set and then apply the property filter.
+        pass  # Applied after fetching below
+
+    restaurants = restaurants.order_by("-created")
+    total_unfiltered = restaurants.count()
+
+    # Fetch all for property-based filtering if needed
+    if is_open is not None:
+        is_open_bool = is_open.lower() in ("true", "1")
+        all_restaurants = list(restaurants)
+        filtered = [r for r in all_restaurants if r.is_currently_open == is_open_bool]
+        total = len(filtered)
+        start = (page - 1) * page_size
+        paginated = filtered[start:start + page_size]
+    else:
+        total = total_unfiltered
+        start = (page - 1) * page_size
+        paginated = restaurants[start:start + page_size]
+
+    results = []
+    for r in paginated:
+        # Get dashboard order count if available
+        dashboard_orders = 0
+        try:
+            dashboard = RestaurantDashboard.objects.get(restaurant=r)
+            dashboard_orders = dashboard.today_orders
+        except RestaurantDashboard.DoesNotExist:
+            pass
+
+        results.append({
+            "id": str(r.id),
+            "name": r.name,
+            "owner_id": str(r.owner_id),
+            "is_currently_open": r.is_currently_open,
+            "is_open_override": r.is_open_override,
+            "average_rating": r.average_rating,
+            "total_reviews": r.total_reviews,
+            "today_orders": dashboard_orders,
+            "phone_number": r.phone_number,
+            "full_address": r.full_address,
+            "created": r.created.isoformat() if r.created else None,
+        })
+
+    return Response({
+        "results": results,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    })
+
+
+@api_view(['PATCH'])
+@permission_classes([AllowAny])
+def admin_suspend_restaurant(request, restaurant_id):
+    """
+    PATCH /api/restaurants/admin/{restaurant_id}/suspend/
+    Suspend or unsuspend a restaurant by setting is_open_override = False
+    and recording a note.
+    Body: {"suspended": true/false, "reason": "..."}
+    """
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+
+    suspended = request.data.get("suspended", True)
+    reason = request.data.get("reason", "")
+
+    if suspended:
+        restaurant.is_open_override = False
+    else:
+        # Unsuspend: revert to schedule-based hours
+        restaurant.is_open_override = None
+
+    restaurant.save(update_fields=["is_open_override"])
+
+    action = "suspended" if suspended else "unsuspended"
+    logger.info(
+        f"Admin {action} restaurant {restaurant.id} ({restaurant.name}). Reason: {reason}"
+    )
+
+    return Response({
+        "id": str(restaurant.id),
+        "name": restaurant.name,
+        "is_currently_open": restaurant.is_currently_open,
+        "is_open_override": restaurant.is_open_override,
+        "action": action,
+        "reason": reason,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def admin_all_reviews(request):
+    """
+    GET /api/restaurants/admin/reviews/
+    All reviews across all restaurants, paginated, sortable by rating and date.
+    Includes restaurant name and user_id.
+    """
+    params = request.query_params
+    page = int(params.get("page", 1))
+    page_size = int(params.get("page_size", 20))
+    if page_size > 100:
+        page_size = 100
+
+    sort_by = params.get("sort_by", "date")  # "date" or "rating"
+    sort_order = params.get("sort_order", "desc")  # "asc" or "desc"
+
+    reviews = RestaurantReview.objects.select_related("restaurant").all()
+
+    # Filter by minimum rating
+    min_rating = params.get("min_rating")
+    if min_rating:
+        reviews = reviews.filter(rating__gte=int(min_rating))
+
+    max_rating = params.get("max_rating")
+    if max_rating:
+        reviews = reviews.filter(rating__lte=int(max_rating))
+
+    # Sorting
+    if sort_by == "rating":
+        order_field = "rating" if sort_order == "asc" else "-rating"
+    else:
+        order_field = "created" if sort_order == "asc" else "-created"
+
+    reviews = reviews.order_by(order_field)
+    total = reviews.count()
+
+    start = (page - 1) * page_size
+    paginated = reviews[start:start + page_size]
+
+    results = []
+    for review in paginated:
+        results.append({
+            "id": str(review.id),
+            "restaurant_id": str(review.restaurant_id),
+            "restaurant_name": review.restaurant.name,
+            "user_id": str(review.user_id),
+            "order_id": str(review.order_id),
+            "rating": review.rating,
+            "comment": review.comment,
+            "created": review.created.isoformat() if review.created else None,
+        })
+
+    return Response({
+        "results": results,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    })

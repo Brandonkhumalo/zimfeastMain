@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DriverLocationMap from "./DriverLocationMap";
+import TrackingMap from "./TrackingMap";
 import { MapPin, Phone, Package, Clock, Truck, CheckCircle, ChefHat } from "lucide-react";
 import { useOrderSocket } from "@/hooks/useOrderSocket";
 
@@ -16,6 +17,13 @@ interface OrderData {
   driver_vehicle?: string;
   created: string;
   delivery_address?: string;
+  scheduled_for?: string;
+  /** Restaurant (pickup) coordinates */
+  restaurant_lat?: number;
+  restaurant_lng?: number;
+  /** Customer delivery coordinates */
+  delivery_lat?: number;
+  delivery_lng?: number;
 }
 
 interface OrderTrackingProps {
@@ -25,6 +33,8 @@ interface OrderTrackingProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  scheduled: { label: "Scheduled", icon: <Clock className="w-4 h-4" />, color: "bg-purple-500" },
+  pending_payment: { label: "Awaiting Payment", icon: <Clock className="w-4 h-4" />, color: "bg-amber-500" },
   paid: { label: "Order Confirmed", icon: <CheckCircle className="w-4 h-4" />, color: "bg-green-500" },
   pending: { label: "Order Placed", icon: <Package className="w-4 h-4" />, color: "bg-gray-400" },
   preparing: { label: "Preparing", icon: <ChefHat className="w-4 h-4" />, color: "bg-yellow-500" },
@@ -42,24 +52,28 @@ const COLLECTION_FLOW = ['paid', 'preparing', 'ready', 'collected'];
 
 export default function OrderTracking({ order, isOpen, onClose }: OrderTrackingProps) {
   const [isDriverMapOpen, setIsDriverMapOpen] = useState(false);
-  
+
   const orderMethod = order?.method === 'delivery' ? 'delivery' : 'collection';
-  
-  const { 
-    connected, 
-    status: socketStatus, 
-    driver: socketDriver, 
-    driverLocation, 
-    eta 
+
+  const {
+    connected,
+    status: socketStatus,
+    driver: socketDriver,
+    driverLocation,
+    eta
   } = useOrderSocket(order?.id || null, orderMethod);
 
   const currentStatus = socketStatus || order?.status || 'pending';
   const isDelivery = order?.method === 'delivery';
   const statusFlow = isDelivery ? DELIVERY_FLOW : COLLECTION_FLOW;
-  
+
   const driverName = socketDriver?.name || order?.driver_name;
   const driverPhone = socketDriver?.phone || order?.driver_phone;
   const driverVehicle = socketDriver?.vehicle || order?.driver_vehicle;
+
+  // Determine whether to show the inline live tracking map.
+  // Show it when the order is out_for_delivery or assigned (delivery method only).
+  const showLiveMap = isDelivery && ['assigned', 'out_for_delivery'].includes(currentStatus);
 
   const getStatusIndex = (status: string) => {
     const normalizedStatus = status === 'finding_driver' ? 'assigned' : status;
@@ -74,7 +88,7 @@ export default function OrderTracking({ order, isOpen, onClose }: OrderTrackingP
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <Card className="m-4 max-w-md w-full max-h-[90vh] overflow-auto">
+      <Card className="m-4 max-w-lg w-full max-h-[90vh] overflow-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -101,16 +115,58 @@ export default function OrderTracking({ order, isOpen, onClose }: OrderTrackingP
             <Badge variant="outline" className="capitalize">
               {isDelivery ? "Delivery" : "Collection"}
             </Badge>
+            {currentStatus === "scheduled" && (
+              <Badge variant="outline" className="text-purple-600 border-purple-600">
+                <Clock className="w-3 h-3 mr-1" />Scheduled
+              </Badge>
+            )}
           </div>
+          {/* Show scheduled time banner for scheduled orders */}
+          {order.scheduled_for && (
+            <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  Scheduled for {new Date(order.scheduled_for).toLocaleString()}
+                </span>
+              </div>
+              {currentStatus === "scheduled" && (
+                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                  You will be notified when it is time to pay.
+                </p>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
+          {/* Live Delivery Tracking Map — shown inline when driver is active */}
+          {showLiveMap && (
+            <div className="mb-6" data-testid="inline-tracking-map">
+              <TrackingMap
+                driverLat={driverLocation?.lat ?? null}
+                driverLng={driverLocation?.lng ?? null}
+                restaurantLat={order.restaurant_lat ?? null}
+                restaurantLng={order.restaurant_lng ?? null}
+                deliveryLat={order.delivery_lat ?? null}
+                deliveryLng={order.delivery_lng ?? null}
+                isVisible={true}
+              />
+              {eta && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-blue-600 font-medium">
+                  <Clock className="w-4 h-4" />
+                  <span>ETA: ~{eta} min</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-4">
             {statusFlow.map((status, index) => {
               const config = STATUS_CONFIG[status] || { label: status, icon: <Package className="w-4 h-4" />, color: "bg-gray-400" };
               const isCompleted = index < currentStatusIndex;
               const isCurrent = index === currentStatusIndex;
               const isPending = index > currentStatusIndex;
-              
+
               return (
                 <div key={status} className="flex items-center space-x-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
@@ -141,7 +197,7 @@ export default function OrderTracking({ order, isOpen, onClose }: OrderTrackingP
               );
             })}
           </div>
-          
+
           {isDelivery && driverName && ['assigned', 'out_for_delivery'].includes(currentStatus) && (
             <Card className="mt-6 p-4 bg-muted">
               <div className="flex items-start gap-3">
@@ -163,8 +219,8 @@ export default function OrderTracking({ order, isOpen, onClose }: OrderTrackingP
               </div>
               <div className="flex gap-2 mt-4">
                 {driverPhone && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className="flex-1"
                     onClick={() => window.open(`tel:${driverPhone}`)}
@@ -175,15 +231,15 @@ export default function OrderTracking({ order, isOpen, onClose }: OrderTrackingP
                   </Button>
                 )}
                 {currentStatus === "out_for_delivery" && (
-                  <Button 
-                    variant="default" 
+                  <Button
+                    variant="default"
                     size="sm"
                     className="flex-1"
                     onClick={() => setIsDriverMapOpen(true)}
                     data-testid="button-track-driver"
                   >
                     <MapPin className="w-4 h-4 mr-1" />
-                    Track Driver
+                    Full Map
                   </Button>
                 )}
               </div>
@@ -220,9 +276,9 @@ export default function OrderTracking({ order, isOpen, onClose }: OrderTrackingP
 export function OrderTrackingButton({ order, onClick }: { order: OrderData | null; onClick: () => void }) {
   const { status: socketStatus } = useOrderSocket(order?.id || null);
   const currentStatus = socketStatus || order?.status;
-  
+
   const isActiveOrder = currentStatus && !['delivered', 'collected', 'cancelled'].includes(currentStatus);
-  
+
   if (!order || !isActiveOrder) {
     return null;
   }

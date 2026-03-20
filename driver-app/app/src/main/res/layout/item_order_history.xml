@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/surface"
+    app:strokeColor="@color/divider"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top row: Order ID + Status -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/tv_order_id"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="#ABC12345"
+                android:textSize="12sp"
+                android:textColor="@color/text_tertiary"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/tv_order_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delivered"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-bold"
+                android:textColor="@color/success" />
+        </LinearLayout>
+
+        <!-- Restaurant name -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_pickup"
+                android:tint="@color/primary"
+                android:layout_marginEnd="10dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/tv_order_restaurant"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Restaurant Name"
+                android:textSize="15sp"
+                android:textColor="@color/text_primary"
+                android:fontFamily="sans-serif-bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Delivery address -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_dropoff"
+                android:tint="@color/text_tertiary"
+                android:layout_marginEnd="10dp"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/tv_order_address"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Delivery Address"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="2"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Bottom row: Date/Time + Earnings -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Date and time -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@android:drawable/ic_menu_recent_history"
+                    android:tint="@color/text_tertiary"
+                    android:layout_marginEnd="6dp"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/tv_order_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mar 15, 2026"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:fontFamily="sans-serif-medium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" \u2022 "
+                    android:textSize="12sp"
+                    android:textColor="@color/text_tertiary" />
+
+                <TextView
+                    android:id="@+id/tv_order_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="02:30 PM"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <!-- Earnings amount -->
+            <TextView
+                android:id="@+id/tv_order_earnings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$5.50"
+                android:textSize="16sp"
+                android:textColor="@color/success"
+                android:fontFamily="sans-serif-black" />
+        </LinearLayout>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

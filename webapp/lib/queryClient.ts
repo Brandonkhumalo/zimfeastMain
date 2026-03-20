@@ -1,31 +1,13 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/apiRequest";
+
+export { apiRequest };
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
-}
-
-// Generic API request with JWT auth
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown
-): Promise<any> {
-  const token = localStorage.getItem("token");
-
-  const res = await fetch(url, {
-    method,
-    headers: {
-      ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: data ? JSON.stringify(data) : undefined,
-  });
-
-  await throwIfResNotOk(res);
-  return res.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

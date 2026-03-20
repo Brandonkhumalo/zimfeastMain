@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import {
@@ -25,6 +25,16 @@ export default function RegisterPage() {
   const [role, setRole] = useState<"customer" | "restaurant" | "driver">(
     "customer"
   );
+  const [referralCode, setReferralCode] = useState("");
+
+  // Pre-fill referral code from URL query param (e.g., /register?ref=ZF-ABCD12)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+    }
+  }, []);
 
   const registerMutation = useMutation({
     mutationFn: async (): Promise<RegisterResponse> => {
@@ -38,6 +48,7 @@ export default function RegisterPage() {
           last_name: lastName,
           phone_number: phoneNumber,
           role,
+          ...(referralCode.trim() ? { referral_code: referralCode.trim() } : {}),
         }),
       });
 
@@ -132,6 +143,14 @@ export default function RegisterPage() {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+263 77 123 4567"
+              className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
+            />
+
+            <input
+              type="text"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+              placeholder="Referral Code (optional)"
               className="glass px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/10"
             />
 

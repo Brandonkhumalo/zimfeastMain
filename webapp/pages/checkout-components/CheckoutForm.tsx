@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Tag, Gift } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -42,6 +42,22 @@ interface CheckoutFormProps {
   orderId: string;
 }
 
+interface PromoValidation {
+  code: string;
+  discount_type: string;
+  discount_value: string;
+  discount_amount: string | null;
+  min_order_amount: string;
+  message: string;
+}
+
+interface ReferralCreditsResponse {
+  available_credits: number;
+  used_credits: number;
+  total_credits: number;
+  discount_pct: string;
+}
+
 export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -54,6 +70,16 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [useVoucher, setUseVoucher] = useState(false);
   const [isDirectPayment, setIsDirectPayment] = useState(false);
+
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [promoValidation, setPromoValidation] = useState<PromoValidation | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+
+  // Referral credit state
+  const [useReferralCredit, setUseReferralCredit] = useState(false);
+  const [referralCredits, setReferralCredits] = useState<ReferralCreditsResponse | null>(null);
 
   // --- Fetch order details ---
   const { data: currentOrder, isLoading } = useQuery<Order>({
@@ -106,6 +132,65 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
     }
   }, [paymentMethod, useVoucher, isDirectPayment]);
 
+  // --- Fetch referral credits ---
+  useEffect(() => {
+    const fetchCredits = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await fetch("/api/payments/referral/credits/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setReferralCredits(data);
+        }
+      } catch {
+        // Silently fail
+      }
+    };
+    fetchCredits();
+  }, []);
+
+  // --- Validate promo code ---
+  const handleValidatePromo = async () => {
+    if (!promoCode.trim()) return;
+    setIsValidatingPromo(true);
+    setPromoError(null);
+    setPromoValidation(null);
+
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch("/api/payments/promo/validate/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: promoCode.trim(),
+          order_amount: totalAmount,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setPromoValidation(data);
+        toast({ title: "Promo Applied", description: data.message });
+      } else {
+        setPromoError(data.detail || "Invalid promo code.");
+      }
+    } catch {
+      setPromoError("Failed to validate promo code.");
+    }
+    setIsValidatingPromo(false);
+  };
+
+  const handleRemovePromo = () => {
+    setPromoCode("");
+    setPromoValidation(null);
+    setPromoError(null);
+  };
+
   // --- Normalize mobile phone ---
   const normalizePhone = (phone: string) => {
     const clean = phone.replace(/\D/g, "");
@@ -126,6 +211,16 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
         use_voucher: useVoucher && paymentMethod !== "voucher",
       };
 
+      // Include promo code if validated
+      if (promoValidation) {
+        body.promo_code = promoValidation.code;
+      }
+
+      // Include referral credit flag
+      if (useReferralCredit) {
+        body.use_referral_credit = true;
+      }
+
       if (paymentMethod === "mobile") {
         body.phone = normalizePhone(phoneNumber);
         body.provider = mobileProvider;
@@ -139,7 +234,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
-        throw new Error(errData?.error || "Payment failed");
+        throw new Error(errData?.detail || errData?.error || "Payment failed");
       }
       return res.json();
     },
@@ -149,10 +244,15 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
         setPaymentReference(data.reference);
       }
 
+      // Build discount message for toast notifications
+      const discountMsg = data.discount_amount
+        ? ` (Discount: $${data.discount_amount})`
+        : "";
+
       if (data.status === "paid_with_voucher") {
         const msg = data.voucher_used
-          ? `Voucher covered the order ($${data.voucher_used} used).`
-          : "Your voucher covered the order.";
+          ? `Voucher covered the order ($${data.voucher_used} used).${discountMsg}`
+          : `Your voucher covered the order.${discountMsg}`;
         toast({ title: "Paid with Voucher", description: msg });
         queryClient.invalidateQueries({ queryKey: [`/api/orders/order/${orderId}`] });
         setTimeout(() => setLocation("/home"), 1000);
@@ -162,7 +262,7 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
       if (data.status === "partial_voucher" && data.paynow_url) {
         toast({
           title: "Voucher Applied",
-          description: `$${data.voucher_used} from voucher. Pay $${data.paynow_amount} via PayNow.`,
+          description: `$${data.voucher_used} from voucher. Pay $${data.paynow_amount} via PayNow.${discountMsg}`,
         });
         window.open(data.paynow_url, "_blank");
         return;
@@ -170,8 +270,8 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
 
       if (data.paynow_url) {
         const desc = data.direct_payment
-          ? "Payment goes directly to the restaurant."
-          : "Complete payment in the new tab.";
+          ? `Payment goes directly to the restaurant.${discountMsg}`
+          : `Complete payment in the new tab.${discountMsg}`;
         toast({ title: "Opening PayNow...", description: desc });
         window.open(data.paynow_url, "_blank");
         return;
@@ -272,9 +372,25 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
   const tip = parseFloat(currentOrder.tip) || 0;
   const totalAmount = itemsSubtotal + deliveryFee + tip;
 
+  // Calculate promo discount
+  const promoDiscount = promoValidation && promoValidation.discount_amount
+    ? parseFloat(promoValidation.discount_amount)
+    : 0;
+
+  // Calculate referral discount (15% off amount after promo)
+  const referralDiscount = useReferralCredit && referralCredits && referralCredits.available_credits > 0
+    ? (totalAmount - promoDiscount) * 0.15
+    : 0;
+
+  const totalDiscount = promoDiscount + referralDiscount;
+  const amountAfterDiscounts = Math.max(totalAmount - totalDiscount, 0);
+
   const voucherApplied = useVoucher && voucherBalance !== null && voucherBalance > 0;
-  const voucherDeduction = voucherApplied ? Math.min(voucherBalance!, totalAmount) : 0;
-  const paynowAmount = totalAmount - voucherDeduction;
+  const voucherDeduction = voucherApplied ? Math.min(voucherBalance!, amountAfterDiscounts) : 0;
+  const paynowAmount = amountAfterDiscounts - voucherDeduction;
+
+  // Final display amount for the pay button
+  const finalPayAmount = paymentMethod === "voucher" ? amountAfterDiscounts : paynowAmount;
 
   return (
     <Card className="max-w-md mx-auto">
@@ -325,7 +441,25 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
             <span className="text-xs text-gray-400 ml-1">(${DELIVERY_RATE_PER_KM.toFixed(2)}/km)</span>
           </p>
           {tip > 0 && <p className="text-sm text-muted-foreground">Tip: ${tip.toFixed(2)}</p>}
-          <p className="mt-1 font-semibold text-lg">Total: ${totalAmount.toFixed(2)}</p>
+
+          {/* Discount breakdown */}
+          {promoDiscount > 0 && (
+            <p className="text-sm text-green-600">Promo ({promoValidation?.code}): -${promoDiscount.toFixed(2)}</p>
+          )}
+          {referralDiscount > 0 && (
+            <p className="text-sm text-green-600">Referral (15% off): -${referralDiscount.toFixed(2)}</p>
+          )}
+
+          <p className="mt-1 font-semibold text-lg">
+            Total: ${totalDiscount > 0 ? (
+              <>
+                <span className="line-through text-muted-foreground text-base mr-2">${totalAmount.toFixed(2)}</span>
+                ${amountAfterDiscounts.toFixed(2)}
+              </>
+            ) : (
+              `${totalAmount.toFixed(2)}`
+            )}
+          </p>
         </div>
 
         {isDirectPayment && (
@@ -335,6 +469,83 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ─── Promo Code Section ─── */}
+          <div className="border rounded-md p-3 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Tag className="h-4 w-4" />
+              Promo Code
+            </div>
+            {promoValidation ? (
+              <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-md p-2">
+                <div>
+                  <p className="text-sm font-medium text-green-800">{promoValidation.code}</p>
+                  <p className="text-xs text-green-600">{promoValidation.message}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemovePromo}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => {
+                    setPromoCode(e.target.value.toUpperCase());
+                    setPromoError(null);
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleValidatePromo}
+                  disabled={!promoCode.trim() || isValidatingPromo}
+                >
+                  {isValidatingPromo ? "..." : "Apply"}
+                </Button>
+              </div>
+            )}
+            {promoError && (
+              <p className="text-xs text-red-500">{promoError}</p>
+            )}
+          </div>
+
+          {/* ─── Referral Credit Section ─── */}
+          {referralCredits && referralCredits.available_credits > 0 && (
+            <div className="border rounded-md p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="use-referral"
+                  checked={useReferralCredit}
+                  onCheckedChange={(checked) => setUseReferralCredit(checked === true)}
+                />
+                <label htmlFor="use-referral" className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Gift className="h-4 w-4 text-purple-500" />
+                  <span>
+                    Use referral discount (15% off) --
+                    <span className="text-purple-600 font-medium">
+                      {referralCredits.available_credits} credit{referralCredits.available_credits !== 1 ? "s" : ""} available
+                    </span>
+                  </span>
+                </label>
+              </div>
+              {useReferralCredit && (
+                <p className="text-xs text-purple-600 ml-6">
+                  15% discount will be applied. Max 1 credit per order.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ─── Payment Method ─── */}
           <Select
             value={paymentMethod}
             onValueChange={(value) => {
@@ -400,9 +611,9 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
                 Your Feast Voucher Balance: $
                 {voucherBalance !== null ? voucherBalance.toFixed(2) : "Loading..."}
               </p>
-              {voucherBalance !== null && voucherBalance < totalAmount && (
+              {voucherBalance !== null && voucherBalance < amountAfterDiscounts && (
                 <p className="text-sm text-amber-600 mb-2">
-                  Insufficient balance. You need ${(totalAmount - voucherBalance).toFixed(2)} more.
+                  Insufficient balance. You need ${(amountAfterDiscounts - voucherBalance).toFixed(2)} more.
                   Select PayNow Web/Mobile and check "Apply Feast Voucher" to combine both.
                 </p>
               )}
@@ -430,9 +641,9 @@ export const CheckoutForm = ({ orderId }: CheckoutFormProps) => {
           <Button type="submit" disabled={isProcessing} className="w-full">
             {isProcessing
               ? "Processing..."
-              : useVoucher && paynowAmount > 0 && paynowAmount < totalAmount
+              : useVoucher && paynowAmount > 0 && paynowAmount < amountAfterDiscounts
                 ? `Pay $${paynowAmount.toFixed(2)} via PayNow`
-                : `Pay $${totalAmount.toFixed(2)}`}
+                : `Pay $${(totalDiscount > 0 ? amountAfterDiscounts : totalAmount).toFixed(2)}`}
           </Button>
         </form>
       </CardContent>

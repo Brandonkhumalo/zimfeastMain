@@ -18,6 +18,12 @@ public class PaymentRequest {
     @SerializedName("use_voucher")
     private boolean useVoucher;
 
+    @SerializedName("promo_code")
+    private String promoCode;
+
+    @SerializedName("use_referral_credit")
+    private boolean useReferralCredit;
+
     public PaymentRequest(String orderId, String method) {
         this.orderId = orderId;
         this.method = method;
@@ -58,4 +64,10 @@ public class PaymentRequest {
 
     public boolean isUseVoucher() { return useVoucher; }
     public void setUseVoucher(boolean useVoucher) { this.useVoucher = useVoucher; }
+
+    public String getPromoCode() { return promoCode; }
+    public void setPromoCode(String promoCode) { this.promoCode = promoCode; }
+
+    public boolean isUseReferralCredit() { return useReferralCredit; }
+    public void setUseReferralCredit(boolean useReferralCredit) { this.useReferralCredit = useReferralCredit; }
 }

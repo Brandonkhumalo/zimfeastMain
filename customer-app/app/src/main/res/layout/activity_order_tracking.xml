@@ -69,6 +69,124 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- ===== Live Map Card ===== -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_map"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Map header label -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="14dp"
+                        android:paddingBottom="8dp">
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/bg_avatar"
+                            android:backgroundTint="@color/success" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="LIVE DRIVER LOCATION"
+                            android:textSize="11sp"
+                            android:textColor="@color/primary"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.1" />
+
+                        <TextView
+                            android:id="@+id/tv_eta"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="12sp"
+                            android:textColor="@color/link"
+                            android:fontFamily="sans-serif-bold" />
+                    </LinearLayout>
+
+                    <!-- Google MapView -->
+                    <com.google.android.gms.maps.MapView
+                        android:id="@+id/map_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="250dp" />
+
+                    <!-- Map legend -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="8dp"
+                        android:background="@color/surface_variant">
+
+                        <!-- Driver legend -->
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_avatar"
+                            android:backgroundTint="@color/link" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="Driver"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_secondary" />
+
+                        <!-- Restaurant legend -->
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_marginStart="16dp"
+                            android:background="@drawable/bg_avatar"
+                            android:backgroundTint="@color/success" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="Restaurant"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_secondary" />
+
+                        <!-- You legend -->
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_marginStart="16dp"
+                            android:background="@drawable/bg_avatar"
+                            android:backgroundTint="@color/error" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="You"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Order Status Timeline Card -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.ZimFeast.Card"

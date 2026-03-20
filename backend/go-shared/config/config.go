@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -22,6 +23,9 @@ type Config struct {
 	DriverServiceURL     string
 	PaymentServiceURL    string
 	ServiceAPIKey        string
+
+	// Inter-service TLS: when true, ServiceURL() returns https:// URLs
+	ServiceTLSEnabled bool
 
 	// APIs
 	GoogleAPIKey   string
@@ -46,14 +50,48 @@ func Load() *Config {
 		PaymentServiceURL:    envOrDefault("PAYMENT_SERVICE_URL", "http://payment-service:8005"),
 		ServiceAPIKey:        envOrDefault("SERVICE_API_KEY", ""),
 
+		// SERVICE_TLS_ENABLED controls whether inter-service calls use https.
+		// Set to "true" in production (e.g. when services communicate over a
+		// TLS-terminated mesh or through an ALB with HTTPS listeners).
+		ServiceTLSEnabled: strings.EqualFold(envOrDefault("SERVICE_TLS_ENABLED", "false"), "true"),
+
 		GoogleAPIKey:   envOrDefault("GOOGLE_API_KEY", ""),
 		SendgridAPIKey: envOrDefault("SENDGRID_API_KEY", ""),
 	}
 }
 
+// DatabaseURL builds a PostgreSQL connection string for the given database name.
 func (c *Config) DatabaseURL(dbName string) string {
 	return "postgres://" + c.PostgresUser + ":" + c.PostgresPassword +
 		"@" + c.PostgresHost + ":" + c.PostgresPort + "/" + dbName + "?sslmode=disable"
+}
+
+// ServiceURL returns the full base URL for a named service, respecting the
+// ServiceTLSEnabled flag.  Supported service names: "auth", "restaurant",
+// "order", "driver", "payment".  If TLS is enabled, any http:// prefix in
+// the configured URL is upgraded to https://.
+func (c *Config) ServiceURL(service string) string {
+	var raw string
+	switch strings.ToLower(service) {
+	case "auth":
+		raw = c.AuthServiceURL
+	case "restaurant":
+		raw = c.RestaurantServiceURL
+	case "order":
+		raw = c.OrderServiceURL
+	case "driver":
+		raw = c.DriverServiceURL
+	case "payment":
+		raw = c.PaymentServiceURL
+	default:
+		return ""
+	}
+
+	// When TLS is enabled, upgrade http:// to https://
+	if c.ServiceTLSEnabled && strings.HasPrefix(raw, "http://") {
+		raw = "https://" + strings.TrimPrefix(raw, "http://")
+	}
+	return raw
 }
 
 func envOrDefault(key, def string) string {

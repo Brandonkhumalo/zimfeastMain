@@ -190,6 +190,17 @@
 
                     </LinearLayout>
 
+                    <!-- Saved Addresses button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_saved_addresses"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/saved_addresses"
+                        app:icon="@drawable/ic_location"
+                        app:iconGravity="textStart" />
+
                     <!-- Hidden EditText for address storage -->
                     <EditText
                         android:id="@+id/et_address"
@@ -211,6 +222,75 @@
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ================= SCHEDULE ORDER ================= -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="When do you want your order?"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_order_now"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:enabled="false"
+                        android:text="@string/order_now" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_schedule_later"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:text="@string/schedule_for_later"
+                        app:icon="@drawable/ic_schedule"
+                        app:iconGravity="textStart"
+                        app:iconSize="18dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_scheduled_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_address_picker"
+                    android:drawableStart="@drawable/ic_schedule"
+                    android:drawablePadding="8dp"
+                    android:drawableTint="@color/primary"
+                    android:padding="12dp"
+                    android:textColor="@color/primary"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

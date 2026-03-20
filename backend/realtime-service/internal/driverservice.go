@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sort"
 	"sync"
@@ -38,6 +39,45 @@ func NewDriverService(pub *redispub.Publisher) *DriverService {
 		sockets: make(map[string]string),
 		pub:     pub,
 	}
+}
+
+// RestoreFromRedis rebuilds in-memory driver state from Redis after a restart.
+// Drivers must still reconnect via WebSocket to get a new SocketID.
+func (ds *DriverService) RestoreFromRedis(ctx context.Context) (int, error) {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	// Get all online driver IDs from the Redis set
+	driverIDs, err := ds.pub.Client().SMembers(ctx, "drivers:online").Result()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get online drivers: %w", err)
+	}
+
+	restored := 0
+	for _, driverID := range driverIDs {
+		// Fetch driver details from Redis hash
+		data, err := ds.pub.Client().HGetAll(ctx, "driver:"+driverID).Result()
+		if err != nil || len(data) == 0 {
+			continue
+		}
+
+		var lat, lng float64
+		fmt.Sscanf(data["lat"], "%f", &lat)
+		fmt.Sscanf(data["lng"], "%f", &lng)
+
+		ds.drivers[driverID] = &DriverInfo{
+			ID:       driverID,
+			Name:     data["name"],
+			Phone:    data["phone"],
+			Status:   data["status"],
+			Lat:      lat,
+			Lng:      lng,
+			SocketID: "", // Stale — driver must reconnect via WebSocket
+		}
+		restored++
+	}
+
+	return restored, nil
 }
 
 func (ds *DriverService) RegisterDriver(driverID, socketID, name, phone string, lat, lng float64, vehicle map[string]interface{}) {

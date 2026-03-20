@@ -17,5 +17,5 @@ ENV DJANGO_SETTINGS_MODULE=config.settings
 
 EXPOSE 8002
 
-# Use daphne for WebSocket support (restaurant dashboard)
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8002", "config.asgi:application"]
+# Gunicorn + Uvicorn workers handle both HTTP and WebSocket via ASGI
+CMD ["gunicorn", "config.asgi:application", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8002", "--workers", "4"]

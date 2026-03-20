@@ -108,6 +108,8 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
 
     private String formatStatus(String status) {
         switch (status.toLowerCase()) {
+            case "scheduled": return "Scheduled";
+            case "pending_payment": return "Awaiting Payment";
             case "delivered": return "Delivered";
             case "out_for_delivery": return "On the way";
             case "preparing": return "Preparing";
@@ -130,6 +132,12 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
             case "preparing":
             case "ready":
                 color = Color.parseColor("#F59E0B");
+                break;
+            case "scheduled":
+                color = Color.parseColor("#8B5CF6"); // purple for scheduled
+                break;
+            case "pending_payment":
+                color = Color.parseColor("#F59E0B"); // amber for awaiting payment
                 break;
             case "cancelled":
                 color = Color.parseColor("#EF4444");
