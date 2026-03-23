@@ -243,7 +243,8 @@ func (h *Handler) AdminSearchOrders(w http.ResponseWriter, r *http.Request) {
 			total_fee, tip, delivery_fee, each_item_price,
 			restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 			driver_name, driver_phone, driver_vehicle, restaurant_names,
-			external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+			external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+			preparing_started_at, delivery_photo
 		 FROM orders_order %s
 		 ORDER BY created DESC
 		 LIMIT $%d OFFSET $%d`,

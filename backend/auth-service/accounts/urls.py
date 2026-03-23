@@ -23,4 +23,9 @@ urlpatterns = [
     path("admin/user/<str:user_id>/detail/", views.admin_user_detail, name="admin_user_detail"),
     path("admin/user/<str:user_id>/suspend/", views.admin_suspend_user, name="admin_suspend_user"),
     path("health/", views.health_check, name="health_check"),
+    # Corporate account management
+    path("corporate/register/", views.corporate_register, name="corporate_register"),
+    path("corporate/", views.corporate_detail, name="corporate_detail"),
+    path("corporate/employees/", views.corporate_employees, name="corporate_employees"),
+    path("corporate/employees/<str:employee_id>/", views.corporate_employee_detail, name="corporate_employee_detail"),
 ]

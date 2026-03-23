@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -227,7 +230,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order WHERE customer_id = $1 AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -236,7 +240,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order WHERE customer_id = $1
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -248,7 +253,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order WHERE driver_id = $1 AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -257,7 +263,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order WHERE driver_id = $1
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -269,7 +276,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment', 'scheduled') AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -278,7 +286,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment', 'scheduled')
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -367,7 +376,8 @@ func (h *Handler) AllOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order WHERE created < $1 ORDER BY created DESC LIMIT $2`,
 			cursorTime, limit+1)
 	} else {
@@ -376,7 +386,8 @@ func (h *Handler) AllOrders(w http.ResponseWriter, r *http.Request) {
 				total_fee, tip, delivery_fee, each_item_price,
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
-				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+				preparing_started_at, delivery_photo
 				FROM orders_order ORDER BY created DESC LIMIT $1`, limit+1)
 	}
 	if err != nil {
@@ -526,6 +537,8 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	// Set timestamp fields based on status
 	var extraSet string
 	switch body.Status {
+	case "preparing":
+		extraSet = ", preparing_started_at = NOW()"
 	case "out_for_delivery":
 		extraSet = ", delivery_out_time = NOW()"
 	case "delivered":
@@ -553,6 +566,134 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// UploadDeliveryPhoto handles POST /api/orders/order/{id}/delivery-photo/
+// Accepts a multipart form with an image file as proof of delivery.
+func (h *Handler) UploadDeliveryPhoto(w http.ResponseWriter, r *http.Request) {
+	orderID := chi.URLParam(r, "id")
+
+	// Limit upload size to 10MB
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		response.Error(w, http.StatusBadRequest, "File too large (max 10MB)")
+		return
+	}
+
+	file, header, err := r.FormFile("photo")
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "Photo file is required (field: photo)")
+		return
+	}
+	defer file.Close()
+
+	// Validate order exists and is in a valid status
+	var currentStatus string
+	err = h.db.QueryRow(r.Context(),
+		`SELECT status FROM orders_order WHERE id = $1`, orderID).Scan(&currentStatus)
+	if err == pgx.ErrNoRows {
+		response.Error(w, http.StatusNotFound, "Order not found")
+		return
+	}
+	if currentStatus != "out_for_delivery" && currentStatus != "delivered" && currentStatus != "assigned" {
+		response.Error(w, http.StatusBadRequest, "Order must be in delivery status to upload proof photo")
+		return
+	}
+
+	// Save file to media directory
+	mediaDir := os.Getenv("MEDIA_ROOT")
+	if mediaDir == "" {
+		mediaDir = "/app/media"
+	}
+	photoDir := filepath.Join(mediaDir, "delivery_photos")
+	os.MkdirAll(photoDir, 0755)
+
+	ext := filepath.Ext(header.Filename)
+	if ext == "" {
+		ext = ".jpg"
+	}
+	filename := orderID + ext
+	filePath := filepath.Join(photoDir, filename)
+
+	dst, err := os.Create(filePath)
+	if err != nil {
+		log.Printf("[order] create file error: %v", err)
+		response.Error(w, http.StatusInternalServerError, "Failed to save photo")
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		log.Printf("[order] copy file error: %v", err)
+		response.Error(w, http.StatusInternalServerError, "Failed to save photo")
+		return
+	}
+
+	// Update order with photo path
+	photoURL := "/media/delivery_photos/" + filename
+	_, err = h.db.Exec(r.Context(),
+		`UPDATE orders_order SET delivery_photo = $1, delivery_photo_at = NOW() WHERE id = $2`,
+		photoURL, orderID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to update order with photo")
+		return
+	}
+
+	response.OK(w, map[string]interface{}{
+		"order_id":  orderID,
+		"photo_url": photoURL,
+		"status":    "uploaded",
+	})
+}
+
+// GetDeliveryPhoto handles GET /api/orders/order/{id}/delivery-photo/
+func (h *Handler) GetDeliveryPhoto(w http.ResponseWriter, r *http.Request) {
+	orderID := chi.URLParam(r, "id")
+
+	var photo *string
+	err := h.db.QueryRow(r.Context(),
+		`SELECT delivery_photo FROM orders_order WHERE id = $1`, orderID).Scan(&photo)
+	if err == pgx.ErrNoRows {
+		response.Error(w, http.StatusNotFound, "Order not found")
+		return
+	}
+	if photo == nil || *photo == "" {
+		response.Error(w, http.StatusNotFound, "No delivery photo for this order")
+		return
+	}
+
+	response.OK(w, map[string]interface{}{
+		"order_id":  orderID,
+		"photo_url": *photo,
+	})
+}
+
+// RestaurantAOV handles GET /api/orders/restaurant/aov/
+// Returns the average order value for the authenticated restaurant today.
+func (h *Handler) RestaurantAOV(w http.ResponseWriter, r *http.Request) {
+	user := auth.UserFromContext(r.Context())
+	if user == nil {
+		response.Error(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	var avgValue float64
+	var orderCount int
+	var totalRevenue float64
+
+	h.db.QueryRow(r.Context(),
+		`SELECT COALESCE(AVG(total_fee), 0), COALESCE(COUNT(*), 0), COALESCE(SUM(total_fee), 0)
+		 FROM orders_order
+		 WHERE restaurant_id = $1
+		   AND created >= CURRENT_DATE
+		   AND status NOT IN ('cancelled', 'pending_payment', 'scheduled')`,
+		user.ID).Scan(&avgValue, &orderCount, &totalRevenue)
+
+	response.OK(w, map[string]interface{}{
+		"average_order_value": avgValue,
+		"order_count":        orderCount,
+		"total_revenue":      totalRevenue,
+	})
+}
+
 // ──── Helpers ────
 
 func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]interface{} {
@@ -571,6 +712,8 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 		scheduledFor                              *time.Time
 		created                                   time.Time
 		deliveryOutTime, deliveryCompleteTime     *time.Time
+		preparingStartedAt                        *time.Time
+		deliveryPhoto                             *string
 	)
 
 	err := h.db.QueryRow(ctx,
@@ -578,13 +721,15 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 			total_fee, tip, delivery_fee, each_item_price,
 			restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 			driver_name, driver_phone, driver_vehicle, restaurant_names,
-			external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time
+			external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
+			preparing_started_at, delivery_photo
 			FROM orders_order WHERE id = $1`, orderID).
 		Scan(&id, &status, &method, &customerID, &driverID, &restaurantID,
 			&totalFee, &tip, &deliveryFee, &eachItemPrice,
 			&restaurantLat, &restaurantLng, &deliveryLat, &deliveryLng, &deliveryAddress,
 			&driverName, &driverPhone, &driverVehicle, &restaurantNames,
-			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime)
+			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime,
+			&preparingStartedAt, &deliveryPhoto)
 	if err != nil {
 		return nil
 	}
@@ -656,6 +801,12 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 	if deliveryCompleteTime != nil {
 		order["delivery_complete_time"] = deliveryCompleteTime.Format(time.RFC3339)
 	}
+	if preparingStartedAt != nil {
+		order["preparing_started_at"] = preparingStartedAt.Format(time.RFC3339)
+	}
+	if deliveryPhoto != nil {
+		order["delivery_photo"] = *deliveryPhoto
+	}
 
 	// Fetch items
 	itemRows, err := h.db.Query(ctx,
@@ -708,13 +859,16 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 			scheduledFor                              *time.Time
 			created                                   time.Time
 			deliveryOutTime, deliveryCompleteTime     *time.Time
+			preparingStartedAt                        *time.Time
+			deliveryPhoto                             *string
 		)
 
 		if err := rows.Scan(&id, &status, &method, &customerID, &driverID, &restaurantID,
 			&totalFee, &tip, &deliveryFee, &eachItemPrice,
 			&restaurantLat, &restaurantLng, &deliveryLat, &deliveryLng, &deliveryAddress,
 			&driverName, &driverPhone, &driverVehicle, &restaurantNames,
-			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime); err != nil {
+			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime,
+			&preparingStartedAt, &deliveryPhoto); err != nil {
 			log.Printf("[order] scan error: %v", err)
 			continue
 		}
@@ -778,6 +932,12 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 		}
 		if deliveryCompleteTime != nil {
 			order["delivery_complete_time"] = deliveryCompleteTime.Format(time.RFC3339)
+		}
+		if preparingStartedAt != nil {
+			order["preparing_started_at"] = preparingStartedAt.Format(time.RFC3339)
+		}
+		if deliveryPhoto != nil {
+			order["delivery_photo"] = *deliveryPhoto
 		}
 
 		orders = append(orders, order)

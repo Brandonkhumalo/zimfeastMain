@@ -13,6 +13,7 @@ import com.zimfeast.customer.data.api.ApiClient;
 import com.zimfeast.customer.data.model.User;
 import com.zimfeast.customer.ui.customer.CustomerActivity;
 import com.zimfeast.customer.ui.landing.LandingActivity;
+import com.zimfeast.customer.util.BiometricHelper;
 import com.zimfeast.customer.util.TokenManager;
 
 import retrofit2.Call;
@@ -47,7 +48,24 @@ public class SplashActivity extends AppCompatActivity {
             return;
         }
 
-        verifyTokenWithBackend();
+        // If biometric is enabled, require biometric before proceeding
+        if (tokenManager.isBiometricEnabled() && BiometricHelper.canUseBiometrics(this)) {
+            BiometricHelper.showBiometricPrompt(this, new BiometricHelper.AuthCallback() {
+                @Override
+                public void onSuccess() {
+                    verifyTokenWithBackend();
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    Log.d(TAG, "Biometric auth failed: " + error);
+                    // Fall back to login screen
+                    navigateToLanding();
+                }
+            });
+        } else {
+            verifyTokenWithBackend();
+        }
     }
 
     private void verifyTokenWithBackend() {

@@ -25,6 +25,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ("restaurant", "Restaurant"),
         ("driver", "Driver"),
         ("admin", "Admin"),
+        ("corporate_admin", "Corporate Admin"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -63,3 +64,38 @@ class BlacklistedToken(models.Model):
 
     def __str__(self):
         return f"Blacklisted at {self.blacklisted_at}"
+
+
+class CorporateAccount(models.Model):
+    """A company account that can have multiple employee sub-accounts."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company_name = models.CharField(max_length=255)
+    admin_user = models.ForeignKey(CustomUser, related_name='corporate_admin', on_delete=models.CASCADE)
+    billing_email = models.EmailField()
+    billing_address = models.TextField(blank=True)
+    monthly_spending_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    current_month_spending = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    invoice_day = models.IntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.company_name
+
+
+class CorporateEmployee(models.Model):
+    """An employee linked to a corporate account with individual spending limits."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    corporate_account = models.ForeignKey(CorporateAccount, related_name='employees', on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, related_name='corporate_membership', on_delete=models.CASCADE)
+    personal_spending_limit = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    current_month_spending = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    requires_approval = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['corporate_account', 'user']
+
+    def __str__(self):
+        return f"{self.user.email} @ {self.corporate_account.company_name}"

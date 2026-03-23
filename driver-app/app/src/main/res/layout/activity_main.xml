@@ -1031,6 +1031,22 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- WhatsApp Support -->
+                <Button
+                    android:id="@+id/btn_whatsapp_support"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="WhatsApp Support"
+                    android:textColor="#25D366"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textAllCaps="false"
+                    android:backgroundTint="#E8F5E9"
+                    android:stateListAnimator="@null"
+                    android:drawableStart="@android:drawable/sym_action_chat"
+                    android:drawablePadding="8dp"
+                    android:layout_marginBottom="12dp" />
+
                 <!-- Logout -->
                 <Button
                     android:id="@+id/btn_logout"

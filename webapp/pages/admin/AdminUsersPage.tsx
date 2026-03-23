@@ -23,6 +23,7 @@ import PageHeader from "./components/PageHeader";
 import StatCard from "./components/StatCard";
 import StatusBadge from "./components/StatusBadge";
 import DataTable, { type ColumnDef } from "./components/DataTable";
+import ExportButton from "./components/ExportButton";
 import {
   Users,
   ShoppingBag,
@@ -338,6 +339,19 @@ export default function AdminUsersPage() {
                   className="pl-9"
                 />
               </div>
+              <ExportButton
+                data={usersData?.results ?? []}
+                columns={[
+                  { key: "id", header: "User ID" },
+                  { key: "email", header: "Email" },
+                  { key: "first_name", header: "First Name" },
+                  { key: "last_name", header: "Last Name" },
+                  { key: "role", header: "Role" },
+                  { key: "is_active", header: "Active", transform: (v: any) => v ? "Yes" : "No" },
+                  { key: "date_joined", header: "Joined", transform: (v: any) => v ? new Date(v).toLocaleDateString() : "" },
+                ]}
+                filename={`zimfeast-users-${new Date().toISOString().slice(0, 10)}`}
+              />
             </div>
 
             {/* All tab contents share the same DataTable (query is driven by activeRole state) */}

@@ -3,6 +3,7 @@ package com.zimfeast.driver.ui;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.InputType;
@@ -33,6 +34,8 @@ import com.zimfeast.driver.data.model.DriverProfile;
 import com.zimfeast.driver.data.model.StatusUpdateRequest;
 import com.zimfeast.driver.service.LocationService;
 import com.zimfeast.driver.socket.SocketManager;
+import com.zimfeast.driver.util.NetworkUtils;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.HashMap;
 import java.util.List;
@@ -74,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
     private TextView tvConnectionStatus;
     private Button btnLogout;
     private Button btnEditProfile;         // Task 12: Edit Profile button
+    private Button btnWhatsAppSupport;     // WhatsApp Support button
 
     // -- Earnings tab views (Task 11) --
     private TextView tvTotalEarnings;
@@ -123,6 +127,18 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         checkLocationPermission();
         updateSettingsInfo();
 
+        // Initialize network monitoring and show offline banner
+        NetworkUtils.init(this);
+        NetworkUtils.isOnline().observe(this, online -> {
+            if (!online) {
+                View rootView = findViewById(android.R.id.content);
+                Snackbar.make(rootView, "You are offline. Some features may be unavailable.",
+                        Snackbar.LENGTH_INDEFINITE)
+                        .setAction("Dismiss", v -> {})
+                        .show();
+            }
+        });
+
         // Task 14: Fetch driver profile to display rating in header
         fetchDriverProfile();
     }
@@ -155,6 +171,7 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         tvConnectionStatus = findViewById(R.id.tv_connection_status);
         btnLogout = findViewById(R.id.btn_logout);
         btnEditProfile = findViewById(R.id.btn_edit_profile);       // Task 12
+        btnWhatsAppSupport = findViewById(R.id.btn_whatsapp_support); // WhatsApp Support
 
         // Earnings tab views (Task 11)
         tvTotalEarnings = findViewById(R.id.tv_total_earnings);
@@ -650,6 +667,11 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
             btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
         }
 
+        // WhatsApp Support button opens WhatsApp chat with ZimFeast support
+        if (btnWhatsAppSupport != null) {
+            btnWhatsAppSupport.setOnClickListener(v -> openWhatsAppSupport());
+        }
+
         // Task 13: View History button opens the OrderHistoryActivity
         if (btnViewHistory != null) {
             btnViewHistory.setOnClickListener(v -> {
@@ -679,6 +701,27 @@ public class MainActivity extends AppCompatActivity implements SocketManager.Soc
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    // ========================================================================
+    // WhatsApp Support
+    // ========================================================================
+
+    /**
+     * Opens WhatsApp chat with ZimFeast support number (+263781603382).
+     * Uses the wa.me deep link which works whether WhatsApp is installed or not.
+     */
+    private void openWhatsAppSupport() {
+        String url = "https://wa.me/263781603382?text=" + Uri.encode("Hi ZimFeast, I need help with...");
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        try {
+            startActivity(intent);
+        } catch (Exception e) {
+            // Fallback: open in browser if no app can handle the intent
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            browserIntent.setPackage(null);
+            startActivity(browserIntent);
+        }
     }
 
     // ========================================================================

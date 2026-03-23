@@ -16,7 +16,7 @@ from django.conf import settings
 
 from .serializers import UserSerializer, AddressSerializer
 from .token import JWTAuthentication
-from .models import BlacklistedToken, CustomUser, Address
+from .models import BlacklistedToken, CustomUser, Address, CorporateAccount, CorporateEmployee
 from shared.service_client import service_request
 
 logger = logging.getLogger(__name__)
@@ -547,3 +547,147 @@ def health_check(request):
         "service": "auth-service",
         "database": db_status,
     })
+
+
+# ──── Corporate Account Endpoints ────
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def corporate_register(request):
+    """POST /api/accounts/corporate/register/ — Create a corporate account."""
+    user = request.user
+    data = request.data
+
+    if CorporateAccount.objects.filter(admin_user=user).exists():
+        return Response({"error": "You already have a corporate account"}, status=status.HTTP_400_BAD_REQUEST)
+
+    account = CorporateAccount.objects.create(
+        admin_user=user,
+        company_name=data.get("company_name", ""),
+        billing_email=data.get("billing_email", user.email),
+        billing_address=data.get("billing_address", ""),
+        monthly_spending_limit=data.get("monthly_spending_limit", 0),
+        invoice_day=data.get("invoice_day", 1),
+    )
+
+    # Update user role
+    user.role = "corporate_admin"
+    user.save(update_fields=["role"])
+
+    return Response({
+        "id": str(account.id),
+        "company_name": account.company_name,
+        "status": "created",
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def corporate_detail(request):
+    """GET /api/accounts/corporate/ — Get corporate account details."""
+    account = CorporateAccount.objects.filter(admin_user=request.user).first()
+    if not account:
+        return Response({"error": "No corporate account found"}, status=status.HTTP_404_NOT_FOUND)
+
+    employees = CorporateEmployee.objects.filter(corporate_account=account, is_active=True)
+
+    return Response({
+        "id": str(account.id),
+        "company_name": account.company_name,
+        "billing_email": account.billing_email,
+        "billing_address": account.billing_address,
+        "monthly_spending_limit": float(account.monthly_spending_limit),
+        "current_month_spending": float(account.current_month_spending),
+        "invoice_day": account.invoice_day,
+        "is_active": account.is_active,
+        "employee_count": employees.count(),
+        "created": account.created.isoformat(),
+    })
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def corporate_employees(request):
+    """
+    GET  /api/accounts/corporate/employees/ — List employees.
+    POST /api/accounts/corporate/employees/ — Add an employee.
+    """
+    account = CorporateAccount.objects.filter(admin_user=request.user).first()
+    if not account:
+        return Response({"error": "No corporate account found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        employees = CorporateEmployee.objects.filter(corporate_account=account).select_related("user")
+        results = []
+        for emp in employees:
+            results.append({
+                "id": str(emp.id),
+                "user_id": str(emp.user.id),
+                "email": emp.user.email,
+                "name": f"{emp.user.first_name} {emp.user.last_name}".strip(),
+                "personal_spending_limit": float(emp.personal_spending_limit),
+                "current_month_spending": float(emp.current_month_spending),
+                "requires_approval": emp.requires_approval,
+                "is_active": emp.is_active,
+                "created": emp.created.isoformat(),
+            })
+        return Response({"results": results, "total": len(results)})
+
+    # POST — Add employee
+    data = request.data
+    email = data.get("email")
+    if not email:
+        return Response({"error": "email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = CustomUser.objects.get(email=email)
+    except CustomUser.DoesNotExist:
+        return Response({"error": "User not found with this email"}, status=status.HTTP_404_NOT_FOUND)
+
+    if CorporateEmployee.objects.filter(corporate_account=account, user=user).exists():
+        return Response({"error": "Employee already added"}, status=status.HTTP_400_BAD_REQUEST)
+
+    employee = CorporateEmployee.objects.create(
+        corporate_account=account,
+        user=user,
+        personal_spending_limit=data.get("personal_spending_limit", 0),
+        requires_approval=str(data.get("requires_approval", "false")).lower() in ("true", "1"),
+    )
+
+    return Response({
+        "id": str(employee.id),
+        "email": user.email,
+        "status": "added",
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def corporate_employee_detail(request, employee_id):
+    """
+    PATCH  /api/accounts/corporate/employees/<id>/ — Update employee limits.
+    DELETE /api/accounts/corporate/employees/<id>/ — Deactivate employee.
+    """
+    account = CorporateAccount.objects.filter(admin_user=request.user).first()
+    if not account:
+        return Response({"error": "No corporate account found"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        employee = CorporateEmployee.objects.get(id=employee_id, corporate_account=account)
+    except CorporateEmployee.DoesNotExist:
+        return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "DELETE":
+        employee.is_active = False
+        employee.save()
+        return Response({"status": "deactivated"})
+
+    data = request.data
+    if "personal_spending_limit" in data:
+        employee.personal_spending_limit = data["personal_spending_limit"]
+    if "requires_approval" in data:
+        employee.requires_approval = str(data["requires_approval"]).lower() in ("true", "1")
+    employee.save()
+
+    return Response({"id": str(employee.id), "status": "updated"})

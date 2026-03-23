@@ -5,21 +5,24 @@ interface StatsCardsProps {
   todayRevenue: number;
   avgRating: number;
   menuItemsCount: number;
+  avgOrderValue?: number;
 }
 
-export default function StatsCards({ todayOrders, todayRevenue, avgRating, menuItemsCount }: StatsCardsProps) {
+export default function StatsCards({ todayOrders, todayRevenue, avgRating, menuItemsCount, avgOrderValue }: StatsCardsProps) {
   const revenue = Number(todayRevenue) || 0;
   const rating = Number(avgRating) || 0;
-  
+  const aov = Number(avgOrderValue) || 0;
+
   const stats = [
     { label: "Today's Orders", value: todayOrders || 0, icon: "fa-shopping-bag", color: "primary" },
     { label: "Revenue", value: `$${revenue.toFixed(2)}`, icon: "fa-dollar-sign", color: "accent" },
+    { label: "Avg Order Value", value: `$${aov.toFixed(2)}`, icon: "fa-chart-line", color: "purple-500" },
     { label: "Avg Rating", value: rating.toFixed(1), icon: "fa-star", color: "yellow-500" },
     { label: "Menu Items", value: menuItemsCount || 0, icon: "fa-utensils", color: "green-500" },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
       {stats.map((stat) => (
         <Card key={stat.label}>
           <CardContent className="p-6 flex items-center justify-between">

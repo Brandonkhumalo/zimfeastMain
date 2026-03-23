@@ -80,6 +80,8 @@ func main() {
 	r.Get("/api/orders/order/{id}/", h.GetOrder)
 	r.Post("/api/orders/order/{id}/assign-driver/", h.AssignDriver)
 	r.Patch("/api/orders/order/{id}/status/", h.UpdateStatus)
+	r.Post("/api/orders/order/{id}/delivery-photo/", h.UploadDeliveryPhoto)
+	r.Get("/api/orders/order/{id}/delivery-photo/", h.GetDeliveryPhoto)
 	r.Get("/api/orders/admin/analytics/", h.AdminAnalytics)
 	r.Get("/api/orders/admin/order/{id}/", h.AdminOrderDetail)
 	r.Get("/api/orders/admin/search/", h.AdminSearchOrders)
@@ -93,6 +95,7 @@ func main() {
 		r.Post("/api/orders/create/", h.CreateOrder)
 		r.Get("/api/orders/list/", h.ListOrders)
 		r.Post("/api/orders/cancel/{id}/", h.CancelOrder)
+		r.Get("/api/orders/restaurant/aov/", h.RestaurantAOV)
 	})
 
 	port := os.Getenv("ORDER_PORT")

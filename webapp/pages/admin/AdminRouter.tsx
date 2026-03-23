@@ -14,6 +14,9 @@ import AdminPromosPage from "./AdminPromosPage";
 import AdminReviewsPage from "./AdminReviewsPage";
 import AdminSystemPage from "./AdminSystemPage";
 import AdminSettingsPage from "./AdminSettingsPage";
+import AdminPendingDriversPage from "./AdminPendingDriversPage";
+import AdminBannersPage from "./AdminBannersPage";
+import AdminCorporatePage from "./AdminCorporatePage";
 
 /**
  * AdminRouter renders the admin layout shell and switches between
@@ -49,6 +52,7 @@ export default function AdminRouter() {
 
         {/* Drivers */}
         <Route path="/admin/drivers" component={AdminDriversPage} />
+        <Route path="/admin/drivers/pending" component={AdminPendingDriversPage} />
         <Route path="/admin/drivers/:id" component={AdminDriverDetailPage} />
 
         {/* Promos */}
@@ -59,6 +63,12 @@ export default function AdminRouter() {
 
         {/* System */}
         <Route path="/admin/system" component={AdminSystemPage} />
+
+        {/* Banners / Campaigns */}
+        <Route path="/admin/banners" component={AdminBannersPage} />
+
+        {/* Corporate Accounts */}
+        <Route path="/admin/corporate" component={AdminCorporatePage} />
 
         {/* Settings */}
         <Route path="/admin/settings" component={AdminSettingsPage} />

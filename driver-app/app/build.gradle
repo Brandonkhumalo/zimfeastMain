@@ -57,6 +57,9 @@ dependencies {
     // Location Services
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
+
+    // Google Maps Utils (polyline decoding for in-app navigation)
+    implementation 'com.google.maps.android:android-maps-utils:3.8.2'
     
     // Retrofit for REST API calls
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'

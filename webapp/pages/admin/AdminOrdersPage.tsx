@@ -17,6 +17,8 @@ import { Search, Filter, X } from "lucide-react";
 import PageHeader from "./components/PageHeader";
 import StatusBadge from "./components/StatusBadge";
 import DataTable, { type ColumnDef } from "./components/DataTable";
+import ExportButton from "./components/ExportButton";
+import type { ExportColumn } from "@/lib/exportUtils";
 
 // ── Types (matching exact API response) ─────────────────────────────────────
 
@@ -375,7 +377,7 @@ export default function AdminOrdersPage() {
         </CardContent>
       </Card>
 
-      {/* ── Results summary ────────────────────────────────────────────── */}
+      {/* ── Results summary + Export ──────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           {isLoading ? (
@@ -389,6 +391,18 @@ export default function AdminOrdersPage() {
             </>
           )}
         </p>
+        <ExportButton
+          data={orders}
+          columns={[
+            { key: "id", header: "Order ID" },
+            { key: "restaurant_names", header: "Restaurant" },
+            { key: "status", header: "Status" },
+            { key: "method", header: "Method" },
+            { key: "total_fee", header: "Amount", transform: (v) => Number(v).toFixed(2) },
+            { key: "created", header: "Created", transform: (v) => new Date(v).toLocaleString() },
+          ] as ExportColumn[]}
+          filename={`zimfeast-orders-${new Date().toISOString().slice(0, 10)}`}
+        />
       </div>
 
       {/* ── Orders Table ───────────────────────────────────────────────── */}

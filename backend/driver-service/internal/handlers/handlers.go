@@ -88,8 +88,21 @@ func (h *Handler) ToggleStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var isOnline bool
+	// Check approval status before allowing online toggle
+	var approvalStatus string
 	err := h.db.QueryRow(r.Context(),
+		`SELECT COALESCE(approval_status, 'pending') FROM drivers_driver WHERE user_id = $1`, user.ID).Scan(&approvalStatus)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, "Driver profile not found")
+		return
+	}
+	if approvalStatus != "approved" {
+		response.Error(w, http.StatusForbidden, "Your account is not yet approved. Please wait for admin approval.")
+		return
+	}
+
+	var isOnline bool
+	err = h.db.QueryRow(r.Context(),
 		`UPDATE drivers_driver SET is_online = NOT is_online, updated_at = NOW()
 		 WHERE user_id = $1 RETURNING is_online`, user.ID).Scan(&isOnline)
 	if err != nil {
@@ -98,6 +111,169 @@ func (h *Handler) ToggleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.OK(w, map[string]interface{}{"is_online": isOnline})
+}
+
+// GetProfile returns the driver's profile including approval status.
+// GET /api/drivers/profile/
+func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	user := auth.UserFromContext(r.Context())
+	if user == nil {
+		response.Error(w, http.StatusUnauthorized, "Authentication required")
+		return
+	}
+
+	var (
+		id             uuid.UUID
+		licenseNumber  string
+		vehicleDetails *string
+		isOnline       bool
+		lat, lng       *float64
+		approvalStatus string
+		approvalNotes  *string
+		createdAt      time.Time
+	)
+	err := h.db.QueryRow(r.Context(),
+		`SELECT id, license_number, vehicle_details, is_online, lat, lng,
+			COALESCE(approval_status, 'pending'), approval_notes, created_at
+		 FROM drivers_driver WHERE user_id = $1`, user.ID).
+		Scan(&id, &licenseNumber, &vehicleDetails, &isOnline, &lat, &lng,
+			&approvalStatus, &approvalNotes, &createdAt)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, "Driver profile not found")
+		return
+	}
+
+	profile := map[string]interface{}{
+		"id":              id.String(),
+		"user_id":         user.ID,
+		"license_number":  licenseNumber,
+		"is_online":       isOnline,
+		"approval_status": approvalStatus,
+		"created_at":      createdAt.Format(time.RFC3339),
+	}
+	if vehicleDetails != nil {
+		var parsed interface{}
+		if err := json.Unmarshal([]byte(*vehicleDetails), &parsed); err == nil {
+			profile["vehicle_details"] = parsed
+		}
+	}
+	if lat != nil {
+		profile["lat"] = *lat
+	}
+	if lng != nil {
+		profile["lng"] = *lng
+	}
+	if approvalNotes != nil {
+		profile["approval_notes"] = *approvalNotes
+	}
+
+	response.OK(w, profile)
+}
+
+// AdminPendingDrivers handles GET /api/drivers/admin/pending/
+func (h *Handler) AdminPendingDrivers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	page := parseIntParam(r, "page", 1)
+	pageSize := parseIntParam(r, "page_size", 20)
+	offset := (page - 1) * pageSize
+
+	var total int
+	h.db.QueryRow(ctx, `SELECT COUNT(*) FROM drivers_driver WHERE COALESCE(approval_status, 'pending') = 'pending'`).Scan(&total)
+
+	rows, err := h.db.Query(ctx,
+		`SELECT id, user_id, license_number, vehicle_details, lat, lng, created_at
+		 FROM drivers_driver WHERE COALESCE(approval_status, 'pending') = 'pending'
+		 ORDER BY created_at DESC LIMIT $1 OFFSET $2`, pageSize, offset)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to fetch pending drivers")
+		return
+	}
+	defer rows.Close()
+
+	var drivers []map[string]interface{}
+	for rows.Next() {
+		var (
+			id, userID     uuid.UUID
+			licenseNumber  string
+			vehicleDetails *string
+			lat, lng       *float64
+			createdAt      time.Time
+		)
+		if err := rows.Scan(&id, &userID, &licenseNumber, &vehicleDetails, &lat, &lng, &createdAt); err != nil {
+			continue
+		}
+		entry := map[string]interface{}{
+			"id":             id.String(),
+			"user_id":        userID.String(),
+			"license_number": licenseNumber,
+			"created_at":     createdAt.Format(time.RFC3339),
+		}
+		if vehicleDetails != nil {
+			var parsed interface{}
+			if err := json.Unmarshal([]byte(*vehicleDetails), &parsed); err == nil {
+				entry["vehicle_details"] = parsed
+			}
+		}
+		if lat != nil {
+			entry["lat"] = *lat
+		}
+		if lng != nil {
+			entry["lng"] = *lng
+		}
+		drivers = append(drivers, entry)
+	}
+	if drivers == nil {
+		drivers = []map[string]interface{}{}
+	}
+
+	response.OK(w, map[string]interface{}{
+		"results":   drivers,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
+	})
+}
+
+// AdminApproveDriver handles POST /api/drivers/admin/{id}/approve/
+func (h *Handler) AdminApproveDriver(w http.ResponseWriter, r *http.Request) {
+	driverID := chi.URLParam(r, "id")
+
+	_, err := h.db.Exec(r.Context(),
+		`UPDATE drivers_driver SET approval_status = 'approved', approved_at = NOW(), updated_at = NOW()
+		 WHERE id = $1`, driverID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to approve driver")
+		return
+	}
+
+	response.OK(w, map[string]interface{}{
+		"driver_id": driverID,
+		"status":    "approved",
+	})
+}
+
+// AdminRejectDriver handles POST /api/drivers/admin/{id}/reject/
+func (h *Handler) AdminRejectDriver(w http.ResponseWriter, r *http.Request) {
+	driverID := chi.URLParam(r, "id")
+
+	var body struct {
+		Notes string `json:"notes"`
+	}
+	json.NewDecoder(r.Body).Decode(&body)
+
+	_, err := h.db.Exec(r.Context(),
+		`UPDATE drivers_driver SET approval_status = 'rejected', approval_notes = $1, updated_at = NOW()
+		 WHERE id = $2`, body.Notes, driverID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to reject driver")
+		return
+	}
+
+	response.OK(w, map[string]interface{}{
+		"driver_id": driverID,
+		"status":    "rejected",
+		"notes":     body.Notes,
+	})
 }
 
 func (h *Handler) GetStatus(w http.ResponseWriter, r *http.Request) {

@@ -6,7 +6,11 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.zimfeast.customer.util.BiometricHelper;
+import com.zimfeast.customer.ui.settings.SettingsActivity;
 
 import com.zimfeast.customer.R;
 import com.zimfeast.customer.data.api.ApiClient;
@@ -101,8 +105,29 @@ public class RegisterActivity extends AppCompatActivity {
                     }
 
                     Toast.makeText(RegisterActivity.this, "Registration successful!", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(RegisterActivity.this, CustomerActivity.class));
-                    finishAffinity();
+
+                    // Prompt for biometric login setup (first time only)
+                    if (!tokenManager.wasBiometricPrompted() && BiometricHelper.canUseBiometrics(RegisterActivity.this)) {
+                        tokenManager.setBiometricPrompted(true);
+                        new AlertDialog.Builder(RegisterActivity.this)
+                                .setTitle("Enable Biometric Login?")
+                                .setMessage("Would you like to use fingerprint or face recognition for faster sign-in?")
+                                .setPositiveButton("Yes, set up", (d, w) -> {
+                                    startActivity(new Intent(RegisterActivity.this, SettingsActivity.class));
+                                    startActivity(new Intent(RegisterActivity.this, CustomerActivity.class));
+                                    finishAffinity();
+                                })
+                                .setNegativeButton("Not now", (d, w) -> {
+                                    Toast.makeText(RegisterActivity.this, "You can enable biometric login later in Settings", Toast.LENGTH_LONG).show();
+                                    startActivity(new Intent(RegisterActivity.this, CustomerActivity.class));
+                                    finishAffinity();
+                                })
+                                .setCancelable(false)
+                                .show();
+                    } else {
+                        startActivity(new Intent(RegisterActivity.this, CustomerActivity.class));
+                        finishAffinity();
+                    }
                 } else {
                     Toast.makeText(RegisterActivity.this, getString(R.string.error_register), Toast.LENGTH_SHORT).show();
                 }

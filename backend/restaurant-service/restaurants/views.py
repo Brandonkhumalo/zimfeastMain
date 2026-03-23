@@ -20,7 +20,7 @@ from django.db.models import Avg, Q, Count
 from .models import (
     Restaurant, MenuItem, RestaurantDashboard, CuisineType, CategoryType,
     Branch, RestaurantEarning, RestaurantFinanceSummary, RestaurantDebt,
-    RestaurantReview,
+    RestaurantReview, Banner,
 )
 from .serializers import (
     RestaurantSerializer, RestaurantCreateSerializer,
@@ -847,3 +847,119 @@ def admin_all_reviews(request):
         "page": page,
         "page_size": page_size,
     })
+
+
+# ──── Banner / Campaign Management ────
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def active_banners(request):
+    """GET /api/restaurants/banners/active/ — Public: returns currently active banners."""
+    from django.utils import timezone as tz
+    now = tz.now()
+    banners = Banner.objects.filter(is_active=True, start_date__lte=now, end_date__gte=now).order_by("-priority", "-created")
+    results = []
+    for b in banners:
+        results.append({
+            "id": str(b.id),
+            "title": b.title,
+            "description": b.description,
+            "image": b.image.url if b.image else None,
+            "link_url": b.link_url,
+            "campaign_type": b.campaign_type,
+            "target_audience": b.target_audience,
+            "free_delivery_threshold": float(b.free_delivery_threshold) if b.free_delivery_threshold else None,
+            "start_date": b.start_date.isoformat(),
+            "end_date": b.end_date.isoformat(),
+            "priority": b.priority,
+        })
+    return Response(results)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
+@parser_classes([MultiPartParser, FormParser])
+def admin_banners(request):
+    """
+    GET  /api/restaurants/admin/banners/ — List all banners (admin).
+    POST /api/restaurants/admin/banners/ — Create a new banner.
+    """
+    if request.method == "GET":
+        banners = Banner.objects.all().order_by("-created")
+        results = []
+        for b in banners:
+            results.append({
+                "id": str(b.id),
+                "title": b.title,
+                "description": b.description,
+                "image": b.image.url if b.image else None,
+                "link_url": b.link_url,
+                "campaign_type": b.campaign_type,
+                "target_audience": b.target_audience,
+                "free_delivery_threshold": float(b.free_delivery_threshold) if b.free_delivery_threshold else None,
+                "start_date": b.start_date.isoformat(),
+                "end_date": b.end_date.isoformat(),
+                "is_active": b.is_active,
+                "priority": b.priority,
+                "created": b.created.isoformat(),
+            })
+        return Response(results)
+
+    # POST — Create banner
+    data = request.data
+    banner = Banner.objects.create(
+        title=data.get("title", ""),
+        description=data.get("description", ""),
+        image=request.FILES.get("image"),
+        link_url=data.get("link_url", ""),
+        campaign_type=data.get("campaign_type", "info"),
+        target_audience=data.get("target_audience", "all"),
+        free_delivery_threshold=data.get("free_delivery_threshold") or None,
+        start_date=data.get("start_date"),
+        end_date=data.get("end_date"),
+        is_active=str(data.get("is_active", "true")).lower() in ("true", "1", "yes"),
+        priority=int(data.get("priority", 0)),
+    )
+    return Response({
+        "id": str(banner.id),
+        "title": banner.title,
+        "status": "created",
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([AllowAny])
+@parser_classes([MultiPartParser, FormParser])
+def admin_banner_detail(request, banner_id):
+    """
+    PATCH  /api/restaurants/admin/banners/<id>/ — Update a banner.
+    DELETE /api/restaurants/admin/banners/<id>/ — Deactivate a banner.
+    """
+    banner = get_object_or_404(Banner, id=banner_id)
+
+    if request.method == "DELETE":
+        banner.is_active = False
+        banner.save()
+        return Response({"status": "deactivated"})
+
+    # PATCH
+    data = request.data
+    for field in ["title", "description", "link_url", "campaign_type", "target_audience"]:
+        if field in data:
+            setattr(banner, field, data[field])
+    if "free_delivery_threshold" in data:
+        banner.free_delivery_threshold = data["free_delivery_threshold"] or None
+    if "start_date" in data:
+        banner.start_date = data["start_date"]
+    if "end_date" in data:
+        banner.end_date = data["end_date"]
+    if "is_active" in data:
+        banner.is_active = str(data["is_active"]).lower() in ("true", "1", "yes")
+    if "priority" in data:
+        banner.priority = int(data["priority"])
+    if "image" in request.FILES:
+        banner.image = request.FILES["image"]
+    banner.save()
+
+    return Response({"id": str(banner.id), "status": "updated"})

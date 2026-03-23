@@ -23,6 +23,11 @@ urlpatterns = [
     # Finance
     path('finance/', views.restaurant_finance, name='restaurant_finance'),
 
+    # Banner / Campaign management
+    path('banners/active/', views.active_banners, name='active_banners'),
+    path('admin/banners/', views.admin_banners, name='admin_banners'),
+    path('admin/banners/<str:banner_id>/', views.admin_banner_detail, name='admin_banner_detail'),
+
     # Admin endpoints (must come before dynamic restaurant_id patterns)
     path('admin/list/', views.admin_list_restaurants, name='admin_list_restaurants'),
     path('admin/reviews/', views.admin_all_reviews, name='admin_all_reviews'),

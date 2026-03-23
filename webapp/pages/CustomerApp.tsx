@@ -21,6 +21,7 @@ import ChefZimCard from "./customer-components/ChefZimCard";
 import ChefZimDialog from "./customer-components/ChefZimDialog";
 import ChefZimResults from "./customer-components/ChefZimResults";
 import ReferralCard from "@/components/ReferralCard";
+import BannerCarousel from "./customer-components/BannerCarousel";
 import { Restaurant } from "./customer-components/types";
 
 export default function CustomerApp() {
@@ -143,6 +144,9 @@ export default function CustomerApp() {
 
       <QuickFilters selectedCuisine={selectedCuisine} setSelectedCuisine={setSelectedCuisine} />
 
+      {/* Promotional Banners */}
+      <BannerCarousel />
+
       {/* Restaurants Grid */}
       <RestaurantGrid
         restaurants={gridRestaurants}
@@ -231,6 +235,19 @@ export default function CustomerApp() {
         order={activeOrder}
         onClick={() => setIsTrackingOpen(true)}
       />
+
+      {/* WhatsApp Support Button */}
+      <a
+        href="https://wa.me/263781603382?text=Hi%20ZimFeast%2C%20I%20need%20help%20with..."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50"
+        title="Chat with us on WhatsApp"
+      >
+        <svg viewBox="0 0 32 32" fill="currentColor" className="w-7 h-7">
+          <path d="M16.004 0h-.008C7.174 0 0 7.176 0 16c0 3.5 1.129 6.742 3.047 9.379L1.054 31.27l6.124-1.96A15.907 15.907 0 0 0 16.004 32C24.826 32 32 24.822 32 16S24.826 0 16.004 0zm9.335 22.594c-.39 1.1-1.932 2.013-3.178 2.28-.852.18-1.965.324-5.71-1.227-4.8-1.987-7.886-6.857-8.126-7.175-.23-.318-1.932-2.573-1.932-4.907s1.222-3.48 1.657-3.957c.435-.476.95-.596 1.265-.596.316 0 .63.003.906.016.29.014.68-.11 1.064.812.39.938 1.327 3.232 1.443 3.467.117.236.196.51.04.826-.157.317-.236.514-.47.793-.236.278-.497.622-.71.835-.235.236-.48.49-.207.962.275.47 1.22 2.013 2.62 3.262 1.8 1.607 3.317 2.105 3.787 2.34.47.236.745.197 1.02-.118.275-.316 1.18-1.376 1.495-1.85.316-.476.63-.396 1.063-.237.435.158 2.73 1.288 3.2 1.522.47.237.782.356.898.554.117.197.117 1.14-.274 2.24z" />
+        </svg>
+      </a>
 
       <button
         onClick={() => setIsCartOpen(true)}

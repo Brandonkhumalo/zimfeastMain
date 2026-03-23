@@ -1,5 +1,5 @@
 // src/pages/RestaurantDashboard.tsx
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "./restaurant-components/DashboardLayout";
@@ -94,6 +94,7 @@ export default function RestaurantDashboard() {
     todayOrders: 0,
     todayRevenue: 0,
     avgRating: 0,
+    avgOrderValue: 0,
     preparing: 0,
     pending: 0,
     completed: 0,
@@ -109,6 +110,24 @@ export default function RestaurantDashboard() {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isExternalAPIDialogOpen, setIsExternalAPIDialogOpen] = useState(false);
+
+  // Order alert sound + visual flash
+  const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
+
+  // Visual highlight for new orders arriving via WebSocket.
+  // Sound alerts are handled by the LiveOrders component (with mute toggle).
+  const playNewOrderAlert = useCallback((orderId: string) => {
+    // Add to highlighted set for visual flash
+    setHighlightedOrderIds((prev) => new Set(prev).add(orderId));
+    // Remove highlight after 5 seconds
+    setTimeout(() => {
+      setHighlightedOrderIds((prev) => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
+    }, 5000);
+  }, []);
 
   // preserve websocket instance in ref so handlers can access state safely
   const wsRef = useRef<WebSocket | null>(null);
@@ -163,6 +182,18 @@ export default function RestaurantDashboard() {
           todayOrders,
           todayRevenue,
         }));
+
+        // Fetch average order value
+        try {
+          const aovRes = await fetch("/api/orders/restaurant/aov/", { headers: getAuthHeaders() });
+          if (aovRes.ok) {
+            const aovData = await aovRes.json();
+            setDashboardData((prev) => ({
+              ...prev,
+              avgOrderValue: aovData.average_order_value ?? 0,
+            }));
+          }
+        } catch {}
 
         // load menu items
         const menuRes = await fetchMenuItems();
@@ -277,9 +308,10 @@ export default function RestaurantDashboard() {
             }));
           }
 
-          // New order: add to head of list
+          // New order: add to head of list and play alert
           if (payload.new_order) {
             upsertOrder(payload.new_order as Order);
+            playNewOrderAlert((payload.new_order as Order).id);
           }
 
           // Updated order: update inside list
@@ -361,6 +393,7 @@ export default function RestaurantDashboard() {
               todayRevenue={dashboardData.todayRevenue}
               avgRating={dashboardData.avgRating}
               menuItemsCount={menuItems.length}
+              avgOrderValue={dashboardData.avgOrderValue}
             />
 
             <section>
@@ -369,6 +402,7 @@ export default function RestaurantDashboard() {
                 orders={ordersData.results}
                 selectedStatus={selectedStatus}
                 setSelectedStatus={setSelectedStatus}
+                highlightedOrderIds={highlightedOrderIds}
                 updateOrder={(orderId: string, status: string) => {
                   if (status === "preparing") handleUpdateOrder(orderId, "preparing");
                   else if (status === "ready") handleUpdateOrder(orderId, "ready");

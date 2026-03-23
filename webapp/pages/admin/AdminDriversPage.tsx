@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "./components/PageHeader";
 import StatCard from "./components/StatCard";
 import DataTable, { type ColumnDef } from "./components/DataTable";
+import ExportButton from "./components/ExportButton";
 import {
   Truck,
   Wifi,
@@ -231,6 +232,19 @@ export default function AdminDriversPage() {
                 className="pl-9"
               />
             </div>
+            <ExportButton
+              data={data?.results ?? []}
+              columns={[
+                { key: "id", header: "Driver ID" },
+                { key: "user_id", header: "User ID" },
+                { key: "license_number", header: "License" },
+                { key: "is_online", header: "Online", transform: (v: any) => v ? "Yes" : "No" },
+                { key: "total_deliveries", header: "Deliveries" },
+                { key: "average_rating", header: "Rating" },
+                { key: "created_at", header: "Joined", transform: (v: any) => v ? new Date(v).toLocaleDateString() : "" },
+              ]}
+              filename={`zimfeast-drivers-${new Date().toISOString().slice(0, 10)}`}
+            />
           </div>
 
           <DataTable<Driver>

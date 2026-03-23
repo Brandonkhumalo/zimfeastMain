@@ -356,3 +356,45 @@ class RestaurantReview(models.Model):
 
     def __str__(self):
         return f"Review {self.id} - {self.restaurant.name} - {self.rating} stars"
+
+
+class Banner(models.Model):
+    """
+    Promotional banners displayed on the customer home screen.
+    Supports scheduling, targeting, and campaign types like free delivery.
+    """
+    CAMPAIGN_TYPES = [
+        ("info", "Information"),
+        ("free_delivery", "Free Delivery"),
+        ("discount", "Discount"),
+        ("new_restaurant", "New Restaurant"),
+    ]
+    TARGET_CHOICES = [
+        ("all", "All Users"),
+        ("new_users", "New Users"),
+        ("returning", "Returning Users"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to="banners/", blank=True, null=True)
+    link_url = models.CharField(max_length=500, blank=True)
+    campaign_type = models.CharField(max_length=30, choices=CAMPAIGN_TYPES, default="info")
+    target_audience = models.CharField(max_length=30, choices=TARGET_CHOICES, default="all")
+    free_delivery_threshold = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=0)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-priority", "-created"]
+
+    def __str__(self):
+        return f"Banner: {self.title} ({self.campaign_type})"
+
+    def is_currently_active(self):
+        now = timezone.now()
+        return self.is_active and self.start_date <= now <= self.end_date

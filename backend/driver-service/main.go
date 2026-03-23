@@ -69,11 +69,15 @@ func main() {
 	// Admin endpoints (public, admin auth handled by frontend)
 	r.Get("/api/drivers/admin/list/", h.AdminListDrivers)
 	r.Get("/api/drivers/admin/driver/{id}/detail/", h.AdminDriverDetail)
+	r.Get("/api/drivers/admin/pending/", h.AdminPendingDrivers)
+	r.Post("/api/drivers/admin/{id}/approve/", h.AdminApproveDriver)
+	r.Post("/api/drivers/admin/{id}/reject/", h.AdminRejectDriver)
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.JWTMiddleware(cfg.SecretKey))
 
 		r.Post("/api/drivers/profile/create/", h.CreateProfile)
+		r.Get("/api/drivers/profile/", h.GetProfile)
 		r.Put("/api/drivers/status/toggle/", h.ToggleStatus)
 		r.Get("/api/drivers/status/", h.GetStatus)
 		r.Post("/api/drivers/order/{pk}/reject/", h.RejectOrder)

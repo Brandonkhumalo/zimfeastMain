@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import OfflineBanner from "@/components/OfflineBanner";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
@@ -17,6 +18,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminRegister from "@/pages/AdminRegister";
 import AdminAnalytics from "@/pages/AdminAnalytics";
 import AdminRouter from "@/pages/admin/AdminRouter";
+import CorporateDashboard from "@/pages/CorporateDashboard";
 import Checkout from "@/pages/Checkout";
 import PaymentReturn from "@/pages/PaymentReturn";
 import Login from '@/pages/Login';
@@ -62,6 +64,7 @@ function AppRouter() {
       <Route path="/customer" component={() => <PrivateRoute component={CustomerApp} allowedRoles={["customer", "admin"]} />} />
       <Route path="/restaurant" component={() => <PrivateRoute component={RestaurantDashboard} allowedRoles={["restaurant", "admin"]} />} />
       <Route path="/driver" component={() => <PrivateRoute component={DriverApp} allowedRoles={["driver", "admin"]} />} />
+      <Route path="/corporate" component={() => <PrivateRoute component={CorporateDashboard} allowedRoles={["corporate_admin", "admin"]} />} />
       {/* New admin portal with sidebar layout — catches all /admin/* routes */}
       <Route path="/admin/:rest*" component={() => <PrivateRoute component={AdminRouter} allowedRoles={["admin"]} />} />
       <Route path="/checkout" component={Checkout} />
@@ -83,6 +86,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <OfflineBanner />
           <Toaster />
           <AppRouter />
         </TooltipProvider>

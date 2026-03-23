@@ -1,14 +1,34 @@
 package com.zimfeast.driver.ui;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.maps.MapView;
 import com.zimfeast.driver.R;
 import com.zimfeast.driver.data.api.ApiClient;
 import com.zimfeast.driver.data.api.ApiService;
@@ -16,8 +36,16 @@ import com.zimfeast.driver.data.model.StatusUpdateRequest;
 import com.zimfeast.driver.service.LocationService;
 import com.zimfeast.driver.socket.SocketManager;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -41,15 +69,40 @@ public class DeliveryActivity extends AppCompatActivity {
     private TextView tvStatus;
     private TextView tvRestaurant;
     private TextView tvDropoff;
-    private TextView tvCustomerName;
-    private TextView tvCustomerPhone;
-    private TextView tvEarnings;
     private Button btnNavigate;
     private Button btnUpdateStatus;
-    private Button btnCallCustomer;
 
     private SocketManager socketManager;
     private ApiService apiService;
+
+    // In-app navigation
+    private NavigationHelper navigationHelper;
+    private FusedLocationProviderClient fusedLocationClient;
+    private LocationCallback locationCallback;
+
+    // Proof of delivery photo
+    private Uri photoUri;
+    private File photoFile;
+
+    private final ActivityResultLauncher<Uri> takePhotoLauncher =
+            registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
+                if (success && photoFile != null && photoFile.exists()) {
+                    uploadDeliveryPhoto();
+                } else {
+                    Toast.makeText(this, "Photo capture cancelled. Completing delivery without photo.", Toast.LENGTH_SHORT).show();
+                    completeDeliveryStatus();
+                }
+            });
+
+    private final ActivityResultLauncher<String> cameraPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    launchCamera();
+                } else {
+                    Toast.makeText(this, "Camera permission denied. Completing without photo.", Toast.LENGTH_SHORT).show();
+                    completeDeliveryStatus();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +125,12 @@ public class DeliveryActivity extends AppCompatActivity {
         socketManager = SocketManager.getInstance();
         apiService = ApiClient.getClient().create(ApiService.class);
 
+        // Initialize in-app map navigation
+        MapView mapView = findViewById(R.id.map_view);
+        navigationHelper = new NavigationHelper(this, mapView, savedInstanceState);
+
         initViews();
+        setupLocationUpdates();
         updateUI();
     }
 
@@ -86,8 +144,20 @@ public class DeliveryActivity extends AppCompatActivity {
         tvRestaurant.setText(restaurantName);
         tvDropoff.setText(dropoffAddress);
 
+        // Wire up map overlay views for ETA/distance display
+        TextView tvEta = findViewById(R.id.tv_eta);
+        TextView tvDistance = findViewById(R.id.tv_distance);
+        View overlayEta = findViewById(R.id.overlay_eta);
+        navigationHelper.setOverlayViews(tvEta, tvDistance, overlayEta);
+
+        // Re-center map button
+        findViewById(R.id.btn_recenter).setOnClickListener(v -> navigationHelper.recenterMap());
+
         btnNavigate.setOnClickListener(v -> openNavigation());
         btnUpdateStatus.setOnClickListener(v -> advanceStatus());
+
+        // Set initial navigation destination (restaurant for pickup)
+        updateNavigationDestination();
     }
 
     private void updateUI() {
@@ -117,16 +187,13 @@ public class DeliveryActivity extends AppCompatActivity {
                 btnUpdateStatus.setEnabled(false);
                 btnUpdateStatus.setText("Done");
 
-                // Switch location tracking to idle interval
                 Intent idleIntent = new Intent(this, LocationService.class);
                 idleIntent.setAction(LocationService.ACTION_DELIVERY_IDLE);
                 startService(idleIntent);
 
                 Toast.makeText(this, "Delivery completed!", Toast.LENGTH_LONG).show();
 
-                new android.os.Handler().postDelayed(() -> {
-                    finish();
-                }, 2000);
+                new android.os.Handler().postDelayed(this::finish, 2000);
                 break;
         }
     }
@@ -147,14 +214,88 @@ public class DeliveryActivity extends AppCompatActivity {
                 newStatus = "arrived_destination";
                 break;
             case "arrived_destination":
-                newStatus = "delivered";
-                break;
+                // Prompt for delivery proof photo before completing
+                promptForDeliveryPhoto();
+                return;
             default:
                 return;
         }
 
         btnUpdateStatus.setEnabled(false);
         final String statusToSet = newStatus;
+        updateStatusOnServer(statusToSet);
+    }
+
+    private void promptForDeliveryPhoto() {
+        new AlertDialog.Builder(this)
+                .setTitle("Proof of Delivery")
+                .setMessage("Take a photo as proof of delivery?")
+                .setPositiveButton("Take Photo", (d, w) -> {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                            == PackageManager.PERMISSION_GRANTED) {
+                        launchCamera();
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+                    }
+                })
+                .setNegativeButton("Skip", (d, w) -> completeDeliveryStatus())
+                .setCancelable(false)
+                .show();
+    }
+
+    private void launchCamera() {
+        try {
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+            String fileName = "delivery_" + orderId + "_" + timeStamp;
+            File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+            photoFile = File.createTempFile(fileName, ".jpg", storageDir);
+            photoUri = FileProvider.getUriForFile(this,
+                    getPackageName() + ".fileprovider", photoFile);
+            takePhotoLauncher.launch(photoUri);
+        } catch (IOException e) {
+            Toast.makeText(this, "Failed to create photo file", Toast.LENGTH_SHORT).show();
+            completeDeliveryStatus();
+        }
+    }
+
+    private void uploadDeliveryPhoto() {
+        btnUpdateStatus.setEnabled(false);
+        btnUpdateStatus.setText("Uploading photo...");
+
+        RequestBody requestFile = RequestBody.create(
+                MediaType.parse("image/jpeg"), photoFile);
+        MultipartBody.Part photoPart = MultipartBody.Part.createFormData(
+                "photo", photoFile.getName(), requestFile);
+
+        apiService.uploadDeliveryPhoto(orderId, photoPart).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    if (response.isSuccessful()) {
+                        Toast.makeText(DeliveryActivity.this, "Photo uploaded", Toast.LENGTH_SHORT).show();
+                    }
+                    completeDeliveryStatus();
+                });
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    Toast.makeText(DeliveryActivity.this, "Photo upload failed, completing delivery", Toast.LENGTH_SHORT).show();
+                    completeDeliveryStatus();
+                });
+            }
+        });
+    }
+
+    private void completeDeliveryStatus() {
+        updateStatusOnServer("delivered");
+    }
+
+    private void updateStatusOnServer(String statusToSet) {
+        btnUpdateStatus.setEnabled(false);
 
         socketManager.updateDeliveryStatus(orderId, statusToSet);
 
@@ -167,9 +308,8 @@ public class DeliveryActivity extends AppCompatActivity {
                     if (response.isSuccessful()) {
                         currentStatus = statusToSet;
                         updateUI();
-
-                        String message = getStatusMessage(statusToSet);
-                        Toast.makeText(DeliveryActivity.this, message, Toast.LENGTH_SHORT).show();
+                        updateNavigationDestination();
+                        Toast.makeText(DeliveryActivity.this, getStatusMessage(statusToSet), Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(DeliveryActivity.this, "Failed to update status", Toast.LENGTH_SHORT).show();
                         btnUpdateStatus.setEnabled(true);
@@ -191,26 +331,53 @@ public class DeliveryActivity extends AppCompatActivity {
 
     private String getStatusMessage(String status) {
         switch (status) {
-            case "arrived_restaurant":
-                return "Arrived at restaurant";
-            case "picked_up":
-                return "Order picked up - heading to customer";
-            case "out_for_delivery":
-                return "On the way to customer";
-            case "arrived_destination":
-                return "Arrived at destination";
-            case "delivered":
-                return "Delivery completed!";
-            default:
-                return "Status updated";
+            case "arrived_restaurant": return "Arrived at restaurant";
+            case "picked_up": return "Order picked up - heading to customer";
+            case "out_for_delivery": return "On the way to customer";
+            case "arrived_destination": return "Arrived at destination";
+            case "delivered": return "Delivery completed!";
+            default: return "Status updated";
+        }
+    }
+
+    private void setupLocationUpdates() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult == null) return;
+                android.location.Location loc = locationResult.getLastLocation();
+                if (loc != null && navigationHelper != null) {
+                    navigationHelper.updateDriverLocation(loc.getLatitude(), loc.getLongitude());
+                }
+            }
+        };
+        startLocationUpdates();
+    }
+
+    private void startLocationUpdates() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) return;
+        LocationRequest request = new LocationRequest.Builder(
+                Priority.PRIORITY_HIGH_ACCURACY, 10000)
+                .setMinUpdateIntervalMillis(5000)
+                .build();
+        fusedLocationClient.requestLocationUpdates(request, locationCallback, getMainLooper());
+    }
+
+    private void updateNavigationDestination() {
+        if (navigationHelper == null) return;
+        if (currentStatus.equals("picked_up") || currentStatus.equals("out_for_delivery")
+                || currentStatus.equals("arrived_destination")) {
+            navigationHelper.setDestination(dropoffLat, dropoffLng, dropoffAddress);
+        } else {
+            navigationHelper.setDestination(restaurantLat, restaurantLng, "Pickup: " + restaurantName);
         }
     }
 
     private void openNavigation() {
         double lat, lng;
-
-        if (currentStatus.equals("driver_assigned") ||
-                currentStatus.equals("arrived_restaurant")) {
+        if (currentStatus.equals("driver_assigned") || currentStatus.equals("arrived_restaurant")) {
             lat = restaurantLat;
             lng = restaurantLng;
         } else {
@@ -228,6 +395,33 @@ public class DeliveryActivity extends AppCompatActivity {
             Uri webUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng);
             startActivity(new Intent(Intent.ACTION_VIEW, webUri));
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (navigationHelper != null) navigationHelper.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        if (navigationHelper != null) navigationHelper.onPause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (navigationHelper != null) navigationHelper.onDestroy();
+        if (fusedLocationClient != null && locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (navigationHelper != null) navigationHelper.onSaveInstanceState(outState);
     }
 
     @Override

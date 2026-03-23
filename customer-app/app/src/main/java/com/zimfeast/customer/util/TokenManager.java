@@ -157,6 +157,26 @@ public class TokenManager {
         }
     }
 
+    // Biometric login support
+    private static final String KEY_BIOMETRIC_ENABLED = "biometric_enabled";
+    private static final String KEY_BIOMETRIC_PROMPTED = "biometric_prompted";
+
+    public void setBiometricEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply();
+    }
+
+    public boolean isBiometricEnabled() {
+        return prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false);
+    }
+
+    public void setBiometricPrompted(boolean prompted) {
+        prefs.edit().putBoolean(KEY_BIOMETRIC_PROMPTED, prompted).apply();
+    }
+
+    public boolean wasBiometricPrompted() {
+        return prefs.getBoolean(KEY_BIOMETRIC_PROMPTED, false);
+    }
+
     public void clearAll() {
         prefs.edit().clear().apply();
     }

@@ -27,6 +27,9 @@ import {
   ChevronLeft,
   ChevronRight,
   UtensilsCrossed,
+  UserCheck,
+  Image,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -44,6 +47,9 @@ const navItems: NavItem[] = [
   { label: "Users",       icon: Users,            path: "/admin/users" },
   { label: "Restaurants", icon: Store,            path: "/admin/restaurants" },
   { label: "Drivers",     icon: Truck,            path: "/admin/drivers" },
+  { label: "Approvals",   icon: UserCheck,        path: "/admin/drivers/pending" },
+  { label: "Banners",     icon: Image,            path: "/admin/banners" },
+  { label: "Corporate",   icon: Building2,        path: "/admin/corporate" },
   { label: "Promos",      icon: Tag,              path: "/admin/promos" },
   { label: "Reviews",     icon: Star,             path: "/admin/reviews" },
   { label: "System",      icon: Activity,         path: "/admin/system" },
