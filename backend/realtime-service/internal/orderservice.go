@@ -1,54 +1,52 @@
 package internal
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
 	socketio "github.com/googollee/go-socket.io"
 
-	"zimfeast/shared/config"
-	"zimfeast/shared/geo"
+	"zimfeast/shared/eta"
 	"zimfeast/shared/redispub"
 )
 
+// ActiveOrder tracks an order's state in memory for broadcasting to customers.
+// Status updates now come from order-service (which receives them from TumaGo webhooks).
 type ActiveOrder struct {
-	OrderID        string  `json:"orderId"`
-	CustomerID     string  `json:"customerId"`
-	CustomerName   string  `json:"customerName"`
-	RestaurantID   string  `json:"restaurantId"`
-	RestaurantName string  `json:"restaurantName"`
-	RestaurantLat  float64 `json:"restaurantLat"`
-	RestaurantLng  float64 `json:"restaurantLng"`
-	DeliveryLat    float64 `json:"deliveryLat"`
-	DeliveryLng    float64 `json:"deliveryLng"`
-	DeliveryAddr   string  `json:"deliveryAddress"`
-	TotalFee       float64 `json:"totalFee"`
-	DeliveryFee    float64 `json:"deliveryFee"`
-	Status         string  `json:"status"`
-	DriverID       string  `json:"driverId"`
-	OfferIndex     int     `json:"offerIndex"`
+	OrderID       string                 `json:"orderId"`
+	CustomerID    string                 `json:"customerId"`
+	CustomerName  string                 `json:"customerName"`
+	RestaurantID  string                 `json:"restaurantId,omitempty"`
+	RestaurantLat float64                `json:"restaurantLat,omitempty"`
+	RestaurantLng float64                `json:"restaurantLng,omitempty"`
+	DeliveryLat   float64                `json:"deliveryLat"`
+	DeliveryLng   float64                `json:"deliveryLng"`
+	DeliveryAddr  string                 `json:"deliveryAddress"`
+	Status        string                 `json:"status"`
+	DriverInfo    map[string]interface{} `json:"driverInfo,omitempty"`
+	DriverLat     float64                `json:"driverLat,omitempty"`
+	DriverLng     float64                `json:"driverLng,omitempty"`
+	ETA           *eta.ETAResult         `json:"eta,omitempty"`
+	// PaidAt tracks when the order was paid so we can compute actual prep time
+	PaidAt        int64                  `json:"paidAt,omitempty"`
 }
 
 type OrderService struct {
 	mu     sync.RWMutex
 	orders map[string]*ActiveOrder
 	pub    *redispub.Publisher
-	drvSvc *DriverService
-	cfg    *config.Config
+	eta    *eta.Calculator
 }
 
-func NewOrderService(pub *redispub.Publisher, drvSvc *DriverService, cfg *config.Config) *OrderService {
+func NewOrderService(pub *redispub.Publisher, etaCalc *eta.Calculator) *OrderService {
 	return &OrderService{
 		orders: make(map[string]*ActiveOrder),
 		pub:    pub,
-		drvSvc: drvSvc,
-		cfg:    cfg,
+		eta:    etaCalc,
 	}
 }
 
@@ -64,6 +62,7 @@ func (os *OrderService) RestoreFromRedis(ctx context.Context) (int, error) {
 	activeStatuses := map[string]bool{
 		"finding_driver":  true,
 		"driver_assigned": true,
+		"picked_up":       true,
 		"out_for_delivery": true,
 	}
 
@@ -100,203 +99,119 @@ func (os *OrderService) RestoreFromRedis(ctx context.Context) (int, error) {
 	return restored, nil
 }
 
-func (os *OrderService) HandleNewDeliveryOrder(data map[string]interface{}, sio *socketio.Server) {
-	orderID := getString(data, "orderId")
-	if orderID == "" {
-		log.Println("[order] missing orderId in delivery order")
-		return
-	}
-
-	order := &ActiveOrder{
-		OrderID:        orderID,
-		CustomerID:     getString(data, "customerId"),
-		CustomerName:   getString(data, "customerName"),
-		RestaurantID:   getString(data, "restaurantId"),
-		RestaurantName: getString(data, "restaurantName"),
-		RestaurantLat:  getFloat(data, "restaurantLat"),
-		RestaurantLng:  getFloat(data, "restaurantLng"),
-		DeliveryLat:    getFloat(data, "deliveryLat"),
-		DeliveryLng:    getFloat(data, "deliveryLng"),
-		DeliveryAddr:   getString(data, "deliveryAddress"),
-		TotalFee:       getFloat(data, "totalFee"),
-		DeliveryFee:    getFloat(data, "deliveryFee"),
-		Status:         "finding_driver",
-		OfferIndex:     0,
-	}
-
+// HandleStatusUpdate processes a status change from order-service (via Redis pub/sub)
+// and broadcasts it to all customers subscribed to this order's room.
+func (os *OrderService) HandleStatusUpdate(orderID, status string, data map[string]interface{}, sio *socketio.Server) {
 	os.mu.Lock()
-	os.orders[orderID] = order
-	os.mu.Unlock()
-
-	// Store in Redis for crash resilience
-	ctx := context.Background()
-	orderJSON, _ := json.Marshal(order)
-	os.pub.Client().HSet(ctx, "order:"+orderID, "data", string(orderJSON))
-
-	log.Printf("[order] new delivery: %s", orderID)
-	os.findAndOfferToDriver(order, sio)
-}
-
-func (os *OrderService) findAndOfferToDriver(order *ActiveOrder, sio *socketio.Server) {
-	drivers := os.drvSvc.FindNearestAvailableDrivers(order.RestaurantLat, order.RestaurantLng, 5)
-
-	if order.OfferIndex >= len(drivers) {
-		log.Printf("[order] no drivers available for %s", order.OrderID)
-		sio.BroadcastToRoom("/customers", "order:"+order.OrderID, "order:no_drivers", map[string]interface{}{
-			"orderId": order.OrderID,
-			"message": "No drivers available at this time",
-		})
-		return
-	}
-
-	driver := drivers[order.OfferIndex]
-
-	// Atomic lock with Redis SETNX
-	ctx := context.Background()
-	lockKey := "offer:lock:" + order.OrderID
-	ok, err := os.pub.Client().SetNX(ctx, lockKey, driver.ID, 30*time.Second).Result()
-	if err != nil || !ok {
-		log.Printf("[order] offer lock failed for %s", order.OrderID)
-		return
-	}
-
-	distance := geo.HaversineDistance(driver.Lat, driver.Lng, order.RestaurantLat, order.RestaurantLng)
-
-	offerData := map[string]interface{}{
-		"orderId":         order.OrderID,
-		"restaurantName":  order.RestaurantName,
-		"restaurantLat":   order.RestaurantLat,
-		"restaurantLng":   order.RestaurantLng,
-		"deliveryLat":     order.DeliveryLat,
-		"deliveryLng":     order.DeliveryLng,
-		"deliveryAddress": order.DeliveryAddr,
-		"totalFee":        order.TotalFee,
-		"deliveryFee":     order.DeliveryFee,
-		"distance":        fmt.Sprintf("%.1f km", distance),
-	}
-
-	// Send offer to specific driver via their socket
-	sio.BroadcastToRoom("/drivers", "driver:"+driver.ID, "delivery:offer", offerData)
-	log.Printf("[order] offered %s to driver %s (%.1f km away)", order.OrderID, driver.ID, distance)
-
-	// Set offer expiry - auto-reject after 30 seconds
-	go func() {
-		time.Sleep(30 * time.Second)
-		ctx := context.Background()
-		lockVal, _ := os.pub.Client().Get(ctx, lockKey).Result()
-		if lockVal == driver.ID {
-			log.Printf("[order] offer expired for %s, trying next driver", order.OrderID)
-			os.pub.Client().Del(ctx, lockKey)
-			os.mu.Lock()
-			order.OfferIndex++
-			os.mu.Unlock()
-			os.findAndOfferToDriver(order, sio)
+	order, exists := os.orders[orderID]
+	if !exists {
+		// Create a new in-memory order entry from the event data
+		order = &ActiveOrder{
+			OrderID:      orderID,
+			CustomerID:   getString(data, "customerId"),
+			RestaurantID: getString(data, "restaurantId"),
+			Status:       status,
 		}
-	}()
-}
+		// Parse coordinates from the status event if present
+		if v, ok := data["restaurantLat"].(float64); ok {
+			order.RestaurantLat = v
+		}
+		if v, ok := data["restaurantLng"].(float64); ok {
+			order.RestaurantLng = v
+		}
+		if v, ok := data["deliveryLat"].(float64); ok {
+			order.DeliveryLat = v
+		}
+		if v, ok := data["deliveryLng"].(float64); ok {
+			order.DeliveryLng = v
+		}
+		os.orders[orderID] = order
+	}
+	order.Status = status
 
-func (os *OrderService) HandleDriverAccept(driverID, orderID string, sio *socketio.Server) error {
-	ctx := context.Background()
-	lockKey := "offer:lock:" + orderID
-
-	// Verify this driver holds the lock
-	lockVal, err := os.pub.Client().Get(ctx, lockKey).Result()
-	if err != nil || lockVal != driverID {
-		return fmt.Errorf("offer no longer available")
+	// Track when order is paid so we can measure actual prep time later
+	if status == "paid" {
+		order.PaidAt = time.Now().Unix()
 	}
 
-	// Claim it
-	os.pub.Client().Del(ctx, lockKey)
-
-	os.mu.Lock()
-	order, ok := os.orders[orderID]
-	if ok {
-		order.Status = "driver_assigned"
-		order.DriverID = driverID
+	// Record actual prep time when restaurant marks order as ready
+	if status == "ready" && order.PaidAt > 0 && order.RestaurantID != "" {
+		prepMinutes := float64(time.Now().Unix()-order.PaidAt) / 60.0
+		if prepMinutes > 0 && prepMinutes < 120 { // sanity: ignore > 2h
+			os.eta.RecordPrepTime(order.RestaurantID, prepMinutes)
+		}
 	}
+
+	// Capture driver info if provided in the status update
+	if driverInfo, ok := data["driver"].(map[string]interface{}); ok {
+		order.DriverInfo = driverInfo
+	}
+
+	// Compute ETA based on current status and available data
+	os.computeETA(order)
 	os.mu.Unlock()
 
-	if !ok {
-		return fmt.Errorf("order not found")
+	// Attach ETA to the broadcast payload
+	if order.ETA != nil {
+		data["eta"] = order.ETA
 	}
 
-	os.drvSvc.SetDriverOrder(driverID, orderID)
+	// Broadcast the full status payload to customers tracking this order
+	sio.BroadcastToRoom("/customers", "order:"+orderID, "order:status", data)
+	log.Printf("[order] status update: %s → %s", orderID, status)
 
-	driver := os.drvSvc.GetDriver(driverID)
-	if driver == nil {
-		return fmt.Errorf("driver not found")
-	}
-
-	// Notify customer
-	sio.BroadcastToRoom("/customers", "order:"+orderID, "order:driver_assigned", map[string]interface{}{
-		"orderId":     orderID,
-		"driverId":    driverID,
-		"driverName":  driver.Name,
-		"driverPhone": driver.Phone,
-		"vehicle":     driver.Vehicle,
-		"lat":         driver.Lat,
-		"lng":         driver.Lng,
-	})
-
-	// Update order-service via REST
-	go os.notifyOrderService(orderID, driverID, driver)
-
-	log.Printf("[order] driver %s accepted order %s", driverID, orderID)
-	return nil
-}
-
-func (os *OrderService) HandleDriverReject(driverID, orderID, reason string, sio *socketio.Server) {
-	ctx := context.Background()
-	lockKey := "offer:lock:" + orderID
-	os.pub.Client().Del(ctx, lockKey)
-
-	os.mu.Lock()
-	order, ok := os.orders[orderID]
-	if ok {
-		order.OfferIndex++
-	}
-	os.mu.Unlock()
-
-	log.Printf("[order] driver %s rejected order %s: %s", driverID, orderID, reason)
-
-	if ok {
-		os.findAndOfferToDriver(order, sio)
-	}
-}
-
-func (os *OrderService) UpdateOrderStatus(orderID, status string, sio *socketio.Server) {
-	os.mu.Lock()
-	order, ok := os.orders[orderID]
-	if ok {
-		order.Status = status
-	}
-	os.mu.Unlock()
-
-	sio.BroadcastToRoom("/customers", "order:"+orderID, "order:status", map[string]interface{}{
-		"orderId": orderID,
-		"status":  status,
-	})
-
-	if status == "delivered" {
+	// Clean up completed/cancelled orders from memory
+	if status == "delivered" || status == "cancelled" {
 		os.mu.Lock()
-		if order, ok := os.orders[orderID]; ok {
-			if order.DriverID != "" {
-				os.drvSvc.ClearDriverOrder(order.DriverID)
-			}
-		}
+		delete(os.orders, orderID)
 		os.mu.Unlock()
 
-		// Send completion event
-		sio.BroadcastToRoom("/customers", "order:"+orderID, "order:completed", map[string]interface{}{
-			"orderId": orderID,
-			"message": "Your order has been delivered!",
-		})
-	}
+		// Remove from Redis
+		os.pub.Client().Del(context.Background(), "order:"+orderID)
 
-	// Publish to Redis
-	os.pub.PublishOrderStatus(context.Background(), orderID, status)
+		if status == "delivered" {
+			sio.BroadcastToRoom("/customers", "order:"+orderID, "order:completed", map[string]interface{}{
+				"orderId": orderID,
+				"message": "Your order has been delivered!",
+			})
+		}
+	} else {
+		// Persist updated state to Redis for crash resilience
+		orderJSON, _ := json.Marshal(order)
+		os.pub.Client().HSet(context.Background(), "order:"+orderID, "data", string(orderJSON))
+	}
 }
 
+// HandleDriverLocation broadcasts a TumaGo driver's location to customers tracking the order.
+// Data flow: TumaGo webhook → order-service → Redis pub/sub → here → Socket.IO → customer.
+// Also recomputes ETA from the driver's current position to the delivery address.
+func (os *OrderService) HandleDriverLocation(orderID string, data map[string]interface{}, sio *socketio.Server) {
+	driverLat, _ := data["driverLat"].(float64)
+	driverLng, _ := data["driverLng"].(float64)
+
+	os.mu.Lock()
+	if order, ok := os.orders[orderID]; ok && driverLat != 0 && driverLng != 0 {
+		order.DriverLat = driverLat
+		order.DriverLng = driverLng
+
+		// Recompute ETA from driver → delivery address
+		if order.DeliveryLat != 0 && order.DeliveryLng != 0 {
+			etaResult := os.eta.CalculateFromDriver(
+				context.Background(),
+				driverLat, driverLng,
+				order.DeliveryLat, order.DeliveryLng,
+			)
+			etaResult.Source = "tumago"
+			order.ETA = &etaResult
+			data["eta"] = &etaResult
+		}
+	}
+	os.mu.Unlock()
+
+	sio.BroadcastToRoom("/customers", "order:"+orderID, "driver:location", data)
+}
+
+// GetOrder returns a copy of the order for the given ID, or nil if not found.
 func (os *OrderService) GetOrder(orderID string) *ActiveOrder {
 	os.mu.RLock()
 	defer os.mu.RUnlock()
@@ -307,85 +222,48 @@ func (os *OrderService) GetOrder(orderID string) *ActiveOrder {
 	return nil
 }
 
-func (os *OrderService) CalculateETA(orderID string) map[string]interface{} {
-	os.mu.RLock()
-	order, ok := os.orders[orderID]
-	os.mu.RUnlock()
+// computeETA calculates the ETA for an order based on its current status.
+// Must be called with os.mu held (write lock).
+func (os *OrderService) computeETA(order *ActiveOrder) {
+	ctx := context.Background()
 
-	if !ok {
-		return map[string]interface{}{"error": "order not found"}
-	}
-
-	var distance float64
-	if order.DriverID != "" {
-		driver := os.drvSvc.GetDriver(order.DriverID)
-		if driver != nil {
-			if order.Status == "out_for_delivery" {
-				distance = geo.HaversineDistance(driver.Lat, driver.Lng, order.DeliveryLat, order.DeliveryLng)
-			} else {
-				toRestaurant := geo.HaversineDistance(driver.Lat, driver.Lng, order.RestaurantLat, order.RestaurantLng)
-				toCustomer := geo.HaversineDistance(order.RestaurantLat, order.RestaurantLng, order.DeliveryLat, order.DeliveryLng)
-				distance = toRestaurant + toCustomer
-			}
+	switch order.Status {
+	case "paid", "preparing", "ready", "awaiting_driver":
+		// ETA = restaurant prep + driving from restaurant → customer
+		if order.RestaurantLat != 0 && order.DeliveryLat != 0 {
+			result := os.eta.Calculate(ctx, order.RestaurantID,
+				order.RestaurantLat, order.RestaurantLng,
+				order.DeliveryLat, order.DeliveryLng,
+			)
+			order.ETA = &result
 		}
-	} else {
-		distance = geo.HaversineDistance(order.RestaurantLat, order.RestaurantLng, order.DeliveryLat, order.DeliveryLng)
-	}
 
-	// Assume average 30 km/h in city
-	etaMinutes := (distance / 30.0) * 60.0
-	if etaMinutes < 5 {
-		etaMinutes = 5
-	}
+	case "assigned", "out_for_delivery":
+		// If we have the driver's position, compute from driver → customer
+		if order.DriverLat != 0 && order.DeliveryLat != 0 {
+			result := os.eta.CalculateFromDriver(ctx,
+				order.DriverLat, order.DriverLng,
+				order.DeliveryLat, order.DeliveryLng,
+			)
+			result.Source = "tumago"
+			order.ETA = &result
+		} else if order.RestaurantLat != 0 && order.DeliveryLat != 0 {
+			// Fallback: estimate from restaurant if no driver location yet
+			result := os.eta.Calculate(ctx, order.RestaurantID,
+				order.RestaurantLat, order.RestaurantLng,
+				order.DeliveryLat, order.DeliveryLng,
+			)
+			order.ETA = &result
+		}
 
-	return map[string]interface{}{
-		"eta":      int(etaMinutes),
-		"distance": fmt.Sprintf("%.1f", distance),
-		"unit":     "minutes",
+	case "delivered", "cancelled":
+		order.ETA = nil
 	}
 }
 
-func (os *OrderService) SubmitRating(driverID string, rating float64, comment string) error {
-	url := os.cfg.DriverServiceURL + "/api/drivers/rate/driver/"
-	body, _ := json.Marshal(map[string]interface{}{
-		"driver_id": driverID,
-		"rating":    rating,
-		"comment":   comment,
-	})
-
-	resp, err := http.Post(url, "application/json", bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("rating submission failed: %d", resp.StatusCode)
-	}
-	return nil
-}
-
-func (os *OrderService) notifyOrderService(orderID, driverID string, driver *DriverInfo) {
-	url := os.cfg.OrderServiceURL + "/api/orders/order/" + orderID + "/assign-driver/"
-	body, _ := json.Marshal(map[string]interface{}{
-		"driver_id":      driverID,
-		"driver_name":    driver.Name,
-		"driver_phone":   driver.Phone,
-		"driver_vehicle": driver.Vehicle,
-	})
-
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Service-Key", os.cfg.ServiceAPIKey)
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("[order] failed to notify order-service for %s: %v", orderID, err)
-		return
-	}
-	defer resp.Body.Close()
-	log.Printf("[order] notified order-service for %s: %d", orderID, resp.StatusCode)
+// GetETACalculator returns the ETA calculator for external use (e.g. REST endpoints).
+func (os *OrderService) GetETACalculator() *eta.Calculator {
+	return os.eta
 }
 
 // Helpers
@@ -396,16 +274,4 @@ func getString(m map[string]interface{}, key string) string {
 		}
 	}
 	return ""
-}
-
-func getFloat(m map[string]interface{}, key string) float64 {
-	if v, ok := m[key]; ok {
-		switch n := v.(type) {
-		case float64:
-			return n
-		case int:
-			return float64(n)
-		}
-	}
-	return 0
 }

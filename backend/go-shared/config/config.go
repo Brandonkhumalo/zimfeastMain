@@ -20,7 +20,6 @@ type Config struct {
 	AuthServiceURL       string
 	RestaurantServiceURL string
 	OrderServiceURL      string
-	DriverServiceURL     string
 	PaymentServiceURL    string
 	ServiceAPIKey        string
 
@@ -46,7 +45,6 @@ func Load() *Config {
 		AuthServiceURL:       envOrDefault("AUTH_SERVICE_URL", "http://auth-service:8001"),
 		RestaurantServiceURL: envOrDefault("RESTAURANT_SERVICE_URL", "http://restaurant-service:8002"),
 		OrderServiceURL:      envOrDefault("ORDER_SERVICE_URL", "http://order-service:8003"),
-		DriverServiceURL:     envOrDefault("DRIVER_SERVICE_URL", "http://driver-service:8004"),
 		PaymentServiceURL:    envOrDefault("PAYMENT_SERVICE_URL", "http://payment-service:8005"),
 		ServiceAPIKey:        envOrDefault("SERVICE_API_KEY", ""),
 
@@ -68,8 +66,8 @@ func (c *Config) DatabaseURL(dbName string) string {
 
 // ServiceURL returns the full base URL for a named service, respecting the
 // ServiceTLSEnabled flag.  Supported service names: "auth", "restaurant",
-// "order", "driver", "payment".  If TLS is enabled, any http:// prefix in
-// the configured URL is upgraded to https://.
+// "order", "payment".  If TLS is enabled, any http:// prefix in the
+// configured URL is upgraded to https://.
 func (c *Config) ServiceURL(service string) string {
 	var raw string
 	switch strings.ToLower(service) {
@@ -79,8 +77,6 @@ func (c *Config) ServiceURL(service string) string {
 		raw = c.RestaurantServiceURL
 	case "order":
 		raw = c.OrderServiceURL
-	case "driver":
-		raw = c.DriverServiceURL
 	case "payment":
 		raw = c.PaymentServiceURL
 	default:

@@ -10,6 +10,9 @@ from rest_framework import status
 
 from math import cos, radians
 from geopy.distance import geodesic
+from django.contrib.gis.geos import Point
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -189,6 +192,7 @@ def list_nearby_restaurants(request):
     page_size = int(request.query_params.get("page_size", 10))
     page = int(request.query_params.get("page", 1))
     cuisine = request.query_params.get("cuisine", "").strip().lower()
+    sort_by = request.query_params.get("sort", "ranked")  # "ranked" or "distance"
 
     restaurants = Restaurant.objects.all()
     if cuisine:
@@ -196,26 +200,48 @@ def list_nearby_restaurants(request):
 
     nearby = []
     if user_lat is not None and user_lng is not None:
-        # Approximate bounding box pre-filter (1 degree ~ 111km)
-        lat_delta = radius_km / 111.0
-        lng_delta = radius_km / (111.0 * cos(radians(user_lat)))
-        restaurants = restaurants.filter(
-            lat__gte=user_lat - lat_delta,
-            lat__lte=user_lat + lat_delta,
-            lng__gte=user_lng - lng_delta,
-            lng__lte=user_lng + lng_delta,
-        )
+        user_point = Point(user_lng, user_lat, srid=4326)
 
-        # Precise geodesic distance on the pre-filtered set
-        user_point = (user_lat, user_lng)
-        for r in restaurants:
-            try:
-                dist = geodesic(user_point, (r.lat, r.lng)).km
-                if dist <= radius_km:
-                    nearby.append((dist, r))
-            except Exception:
-                continue
-        nearby.sort(key=lambda x: x[0])
+        # Use PostGIS ST_DWithin for spatial filtering if the location column
+        # is populated, otherwise fall back to bounding box + geodesic
+        postgis_available = restaurants.filter(location__isnull=False).exists()
+
+        if postgis_available:
+            # PostGIS: precise geodesic filter using GIST spatial index
+            restaurants = restaurants.filter(
+                location__isnull=False,
+                location__dwithin=(user_point, D(km=radius_km)),
+            ).annotate(
+                distance=Distance('location', user_point),
+            )
+            for r in restaurants:
+                dist_km = r.distance.km
+                nearby.append((dist_km, r))
+        else:
+            # Fallback: bounding box pre-filter + geodesic (for rows missing location)
+            lat_delta = radius_km / 111.0
+            lng_delta = radius_km / (111.0 * cos(radians(user_lat)))
+            restaurants = restaurants.filter(
+                lat__gte=user_lat - lat_delta,
+                lat__lte=user_lat + lat_delta,
+                lng__gte=user_lng - lng_delta,
+                lng__lte=user_lng + lng_delta,
+            )
+            for r in restaurants:
+                try:
+                    dist = geodesic((user_lat, user_lng), (r.lat, r.lng)).km
+                    if dist <= radius_km:
+                        nearby.append((dist, r))
+                except Exception:
+                    continue
+
+        if sort_by == "distance":
+            # Simple distance sort (original behavior)
+            nearby.sort(key=lambda x: x[0])
+        else:
+            # Composite ranking: weighted score from multiple factors
+            nearby = _rank_restaurants(nearby)
+
         restaurant_objs = [r for _, r in nearby]
     else:
         restaurant_objs = list(restaurants)
@@ -232,6 +258,60 @@ def list_nearby_restaurants(request):
         serialized.append(data)
 
     return Response({"count": len(restaurant_objs), "page": page, "page_size": page_size, "results": serialized})
+
+
+def _rank_restaurants(nearby):
+    """
+    Composite ranking for nearby restaurants.
+    Score = (0.30 x proximity) + (0.25 x rating) + (0.20 x prep_speed) + (0.15 x popularity) + (0.10 x is_open)
+
+    Each factor is normalized to 0–1 where 1 is best.
+    """
+    if not nearby:
+        return nearby
+
+    # Collect raw values for normalization
+    distances = [d for d, _ in nearby]
+    max_dist = max(distances) if distances else 1.0
+    ratings = [r.average_rating for _, r in nearby]
+    max_rating = max(ratings) if ratings else 1.0
+    prep_times = [r.avg_prep_time for _, r in nearby]
+    max_prep = max(prep_times) if prep_times else 1.0
+    order_counts = [r.order_count for _, r in nearby]
+    max_orders = max(order_counts) if order_counts else 1.0
+
+    scored = []
+    for dist, r in nearby:
+        # Proximity: closer = better (invert so 0 distance = 1.0 score)
+        proximity = 1.0 - (dist / max_dist) if max_dist > 0 else 1.0
+
+        # Rating: higher = better (normalized 0–1)
+        rating = (r.average_rating / max_rating) if max_rating > 0 else 0.0
+
+        # Prep speed: lower prep time = better (invert)
+        if max_prep > 0 and r.avg_prep_time > 0:
+            prep_speed = 1.0 - (r.avg_prep_time / max_prep)
+        else:
+            prep_speed = 0.5  # no data: neutral score
+
+        # Popularity: more orders = better
+        popularity = (r.order_count / max_orders) if max_orders > 0 else 0.0
+
+        # Open now: binary (1 if open, 0 if closed)
+        is_open = 1.0 if r.is_currently_open else 0.0
+
+        score = (
+            0.30 * proximity
+            + 0.25 * rating
+            + 0.20 * prep_speed
+            + 0.15 * popularity
+            + 0.10 * is_open
+        )
+        scored.append((score, dist, r))
+
+    # Sort by score descending (highest ranked first)
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [(dist, r) for _, dist, r in scored]
 
 
 def _call_external_api(api_obj, params=None):
@@ -415,6 +495,38 @@ def internal_get_restaurant(request, restaurant_id):
         'platform_commission_pct': str(chain.platform_commission_pct) if chain else '15.00',
     }
     return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def internal_order_completed(request, restaurant_id):
+    """
+    Called by order-service when an order is delivered.
+    Updates the restaurant's order_count and avg_prep_time (rolling average).
+    Expects JSON: {"prep_time_minutes": float}
+    Protected by X-Service-Key header.
+    """
+    service_key = request.headers.get('X-Service-Key')
+    if not service_key:
+        return Response({"detail": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        restaurant = Restaurant.objects.get(id=restaurant_id)
+    except Restaurant.DoesNotExist:
+        return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    prep_minutes = request.data.get("prep_time_minutes")
+    restaurant.order_count += 1
+
+    if prep_minutes is not None and isinstance(prep_minutes, (int, float)) and 0 < prep_minutes < 120:
+        if restaurant.avg_prep_time == 0:
+            restaurant.avg_prep_time = prep_minutes
+        else:
+            # Exponential moving average: weight recent orders more
+            restaurant.avg_prep_time = 0.8 * restaurant.avg_prep_time + 0.2 * prep_minutes
+
+    restaurant.save(update_fields=["order_count", "avg_prep_time"])
+    return Response({"order_count": restaurant.order_count, "avg_prep_time": round(restaurant.avg_prep_time, 1)})
 
 
 @api_view(['GET'])

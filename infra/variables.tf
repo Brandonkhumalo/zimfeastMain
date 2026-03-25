@@ -4,11 +4,25 @@ variable "project" {
 }
 
 variable "aws_region" {
-  default = "af-south-1" # Cape Town - closest to Zimbabwe
+  default = "af-south-1" # Cape Town — lowest latency to Zimbabwe
+}
+
+variable "environment" {
+  default = "production"
 }
 
 variable "domain" {
   default = "zimfeast.com"
+}
+
+# ─── Phase Control ──────────────────────────────────────────────────
+variable "phase" {
+  description = "Deployment phase: phase1, phase2, or phase3"
+  default     = "phase1"
+  validation {
+    condition     = contains(["phase1", "phase2", "phase3"], var.phase)
+    error_message = "phase must be one of: phase1, phase2, phase3"
+  }
 }
 
 # ─── Database ────────────────────────────────────────────────────────
@@ -19,6 +33,26 @@ variable "db_username" {
 
 variable "db_password" {
   sensitive = true
+}
+
+variable "db_instance_class" {
+  description = "phase1: db.t3.micro, phase2+: db.t3.small"
+  default     = "db.t3.micro"
+}
+
+variable "db_multi_az" {
+  description = "Enable Multi-AZ failover (phase2+)"
+  default     = false
+}
+
+# ─── EC2 (Phase 1) ──────────────────────────────────────────────────
+variable "ec2_instance_type" {
+  default = "t3.small"
+}
+
+variable "ec2_key_name" {
+  description = "EC2 key pair name (leave empty for EC2 Instance Connect)"
+  default     = ""
 }
 
 # ─── Secrets ─────────────────────────────────────────────────────────
@@ -39,15 +73,6 @@ variable "google_api_key" {
   sensitive = true
 }
 
-variable "vite_google_maps_api_key" {
-  default = ""
-}
-
-variable "openai_api_key" {
-  default   = ""
-  sensitive = true
-}
-
 variable "sendgrid_api_key" {
   default   = ""
   sensitive = true
@@ -63,90 +88,17 @@ variable "paynow_integration_key" {
   sensitive = true
 }
 
-# ─── Database sizing ─────────────────────────────────────────────────
-variable "db_instance_class" {
-  description = "RDS instance class — Phase 1: db.t4g.micro, Phase 2: db.t4g.small, Phase 3: db.t4g.medium"
-  default     = "db.t4g.micro" # Free tier eligible for 12 months
+variable "tumago_api_key" {
+  default   = ""
+  sensitive = true
 }
 
-variable "db_multi_az" {
-  description = "Enable Multi-AZ for RDS high availability (Phase 2+)"
-  default     = false
+variable "tumago_api_secret" {
+  default   = ""
+  sensitive = true
 }
 
-# ─── Service sizing ──────────────────────────────────────────────────
-variable "services" {
-  description = "Fargate service definitions"
-  type = map(object({
-    port       = number
-    cpu        = number
-    memory     = number
-    min_count  = number
-    max_count  = number
-    db_name    = string
-    db_env_var = string
-  }))
-  default = {
-    auth = {
-      port       = 8001
-      cpu        = 256
-      memory     = 512
-      min_count  = 1
-      max_count  = 10
-      db_name    = "zimfeast_auth"
-      db_env_var = "AUTH_DB_NAME"
-    }
-    restaurant = {
-      port       = 8002
-      cpu        = 256
-      memory     = 512
-      min_count  = 1
-      max_count  = 10
-      db_name    = "zimfeast_restaurants"
-      db_env_var = "RESTAURANT_DB_NAME"
-    }
-    order = {
-      port       = 8003
-      cpu        = 256       # Go: reduced from 512 (Django)
-      memory     = 512       # Fargate minimum for 256 CPU
-      min_count  = 1
-      max_count  = 20
-      db_name    = "zimfeast_orders"
-      db_env_var = "ORDER_DB_NAME"
-    }
-    driver = {
-      port       = 8004
-      cpu        = 256
-      memory     = 512       # Fargate minimum for 256 CPU
-      min_count  = 1
-      max_count  = 10
-      db_name    = "zimfeast_drivers"
-      db_env_var = "DRIVER_DB_NAME"
-    }
-    payment = {
-      port       = 8005
-      cpu        = 256
-      memory     = 512
-      min_count  = 1
-      max_count  = 15
-      db_name    = "zimfeast_payments"
-      db_env_var = "PAYMENT_DB_NAME"
-    }
-  }
-}
-
-variable "realtime_cpu" {
-  default = 256
-}
-
-variable "realtime_memory" {
-  default = 512  # Fargate minimum for 256 CPU
-}
-
-variable "realtime_min_count" {
-  default = 1
-}
-
-variable "realtime_max_count" {
-  default = 10
+variable "field_encryption_key" {
+  default   = ""
+  sensitive = true
 }

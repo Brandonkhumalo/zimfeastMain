@@ -18,7 +18,9 @@ import (
 
 	"zimfeast/shared/auth"
 	"zimfeast/shared/config"
+	"zimfeast/shared/fraud"
 	"zimfeast/shared/redispub"
+	"zimfeast/shared/tumago"
 
 	"zimfeast/order/internal/handlers"
 	"zimfeast/order/internal/scheduler"
@@ -46,7 +48,13 @@ func main() {
 	pub := redispub.New(cfg.RedisURL)
 	defer pub.Close()
 
-	h := handlers.New(pool, pub, cfg)
+	// Initialize the TumaGo Partner API client for outsourced delivery
+	tc := tumago.NewClient()
+
+	// Initialize fraud detection (uses Redis for TTL-based counters)
+	fc := fraud.NewChecker(pub.Client())
+
+	h := handlers.New(pool, pub, cfg, tc, fc)
 
 	// Start the scheduled-order dispatcher. It runs every 30 seconds, checking
 	// for orders whose scheduled_for time has arrived and transitioning them
@@ -78,7 +86,6 @@ func main() {
 	r.Get("/api/orders/health/", h.AdminHealthCheck)
 	r.Get("/api/orders/all/orders/", h.AllOrders)
 	r.Get("/api/orders/order/{id}/", h.GetOrder)
-	r.Post("/api/orders/order/{id}/assign-driver/", h.AssignDriver)
 	r.Patch("/api/orders/order/{id}/status/", h.UpdateStatus)
 	r.Post("/api/orders/order/{id}/delivery-photo/", h.UploadDeliveryPhoto)
 	r.Get("/api/orders/order/{id}/delivery-photo/", h.GetDeliveryPhoto)
@@ -88,6 +95,9 @@ func main() {
 	r.Patch("/api/orders/admin/order/{id}/override-status/", h.AdminOverrideStatus)
 	r.Get("/api/orders/admin/live-stats/", h.AdminLiveStats)
 	r.Get("/api/orders/admin/hourly/", h.AdminHourlyOrders)
+
+	// TumaGo webhook — receives delivery status updates from TumaGo's Partner API
+	r.Post("/api/webhooks/tumago/", h.TumaGoWebhook)
 
 	// Authenticated endpoints
 	r.Group(func(r chi.Router) {

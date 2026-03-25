@@ -1,37 +1,33 @@
 # ─── Outputs ─────────────────────────────────────────────────────────
+
 output "nameservers" {
   description = "Point your domain registrar to these nameservers"
   value       = aws_route53_zone.main.name_servers
 }
 
-output "cloudfront_domain" {
-  value = aws_cloudfront_distribution.main.domain_name
-}
-
-output "alb_dns" {
-  value = aws_lb.main.dns_name
-}
-
 output "rds_endpoint" {
-  value = aws_db_instance.main.address
+  description = "RDS PostgreSQL endpoint"
+  value       = aws_db_instance.main.endpoint
 }
 
 output "redis_endpoint" {
-  value = aws_elasticache_replication_group.main.primary_endpoint_address
+  description = "ElastiCache Redis endpoint"
+  value       = aws_elasticache_cluster.redis.cache_nodes[0].address
 }
 
-output "frontend_bucket" {
-  value = aws_s3_bucket.frontend.id
+output "ecr_registry" {
+  description = "ECR registry URL (use in CI/CD)"
+  value       = split("/", values(aws_ecr_repository.services)[0].repository_url)[0]
 }
 
-output "media_bucket" {
-  value = aws_s3_bucket.media.id
+# Phase 1 outputs
+output "ec2_public_ip" {
+  description = "EC2 Elastic IP (Phase 1)"
+  value       = var.phase == "phase1" ? aws_eip.ec2[0].public_ip : "N/A (Phase 2+)"
 }
 
-output "ecr_urls" {
-  value = { for k, v in aws_ecr_repository.services : k => v.repository_url }
-}
-
-output "cloudfront_distribution_id" {
-  value = aws_cloudfront_distribution.main.id
+# Phase 2+ outputs
+output "alb_dns_name" {
+  description = "ALB DNS name (Phase 2+)"
+  value       = var.phase != "phase1" ? aws_lb.main[0].dns_name : "N/A (Phase 1)"
 }

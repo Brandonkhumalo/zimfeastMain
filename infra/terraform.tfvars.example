@@ -1,24 +1,39 @@
-# Copy this to terraform.tfvars and fill in your values
-# NEVER commit terraform.tfvars to git
+# Copy this to terraform.tfvars and fill in your values.
+# NEVER commit terraform.tfvars to git.
 
-aws_region = "af-south-1"
-domain     = "zimfeast.com"
+aws_region  = "af-south-1"
+domain      = "zimfeast.com"
+environment = "production"
+
+# Deployment phase: "phase1", "phase2", or "phase3"
+phase = "phase1"
 
 # Database
-db_username = "zimfeast"
-db_password = "CHANGE_ME_TO_A_STRONG_PASSWORD"
+db_username       = "zimfeast"
+db_password       = "CHANGE_ME_TO_A_STRONG_PASSWORD"
+db_instance_class = "db.t3.micro"  # phase2: "db.t3.small"
+db_multi_az       = false           # phase2: true
 
-# Django
-django_secret_key = "CHANGE_ME_TO_A_RANDOM_50_CHAR_STRING"
-jwt_secret_key    = "CHANGE_ME_TO_A_RANDOM_50_CHAR_STRING"
-service_api_key   = "CHANGE_ME_TO_A_RANDOM_STRING"
+# EC2 (Phase 1 only)
+ec2_instance_type = "t3.small"
+ec2_key_name      = ""  # leave empty for EC2 Instance Connect
 
-# API Keys
-google_api_key           = "your_google_api_key"
-vite_google_maps_api_key = "your_google_maps_api_key"
-openai_api_key           = "your_openai_api_key"
-sendgrid_api_key         = "your_sendgrid_api_key"
+# Django / Go secrets
+django_secret_key = "CHANGE_ME_generate_with_python_secrets"
+jwt_secret_key    = "CHANGE_ME_generate_with_python_secrets"
+service_api_key   = "CHANGE_ME_generate_with_python_secrets"
 
-# Paynow
-paynow_integration_id  = "22041"
-paynow_integration_key = "your_paynow_integration_key"
+# API keys
+google_api_key   = "your_google_maps_api_key"
+sendgrid_api_key = "your_sendgrid_api_key"
+
+# Paynow (Zimbabwe payment gateway)
+paynow_integration_id  = "your_paynow_id"
+paynow_integration_key = "your_paynow_key"
+
+# TumaGo (delivery partner)
+tumago_api_key    = "your_tumago_api_key"
+tumago_api_secret = "your_tumago_api_secret"
+
+# Encryption
+field_encryption_key = "generate_with_fernet"

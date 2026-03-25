@@ -12,12 +12,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY', os.environ.get('JWT_SECRET_KEY', 'chan
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0'
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,zimfeast.com,www.zimfeast.com,api.zimfeast.com'
 ).split(',')
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [
-    o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()
+    o.strip() for o in os.environ.get(
+        'CORS_ALLOWED_ORIGINS',
+        'https://zimfeast.com,https://www.zimfeast.com'
+    ).split(',') if o.strip()
 ]
 CORS_ALLOW_HEADERS = list(default_headers) + ['Authorization']
 

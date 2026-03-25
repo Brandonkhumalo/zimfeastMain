@@ -69,64 +69,29 @@ END
 $$;
 
 -- ============================================================
--- Driver Service Database (zimfeast_drivers)
+-- TumaGo Integration Columns (orders_order)
 -- ============================================================
-\connect zimfeast_drivers;
+ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS tumago_delivery_id UUID;
+ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS tumago_status VARCHAR(32) DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_order_tumago_delivery ON orders_order(tumago_delivery_id) WHERE tumago_delivery_id IS NOT NULL;
 
-CREATE TABLE IF NOT EXISTS drivers_driver (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID UNIQUE NOT NULL,
-    license_number VARCHAR(100),
-    license_photo VARCHAR(255),
-    vehicle_details TEXT,
-    vehicle_photo VARCHAR(255),
-    is_online BOOLEAN NOT NULL DEFAULT false,
-    lat DOUBLE PRECISION,
-    lng DOUBLE PRECISION,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
+-- ============================================================
+-- PostGIS Geography Columns (orders_order)
+-- ============================================================
+-- Enable PostGIS (idempotent, already created by init-db.sql but safe to repeat)
+CREATE EXTENSION IF NOT EXISTS postgis;
 
-CREATE INDEX IF NOT EXISTS idx_driver_user ON drivers_driver(user_id);
-CREATE INDEX IF NOT EXISTS idx_driver_online ON drivers_driver(is_online);
-
-CREATE TABLE IF NOT EXISTS drivers_driverorderstatus (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
-    order_id UUID NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending',
-    assigned_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    completed_at TIMESTAMP WITH TIME ZONE
-);
-
-CREATE INDEX IF NOT EXISTS idx_driveros_driver_status ON drivers_driverorderstatus(driver_id, status);
-CREATE INDEX IF NOT EXISTS idx_driveros_completed ON drivers_driverorderstatus(completed_at DESC);
-
-CREATE TABLE IF NOT EXISTS drivers_driverfinance (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
-    date DATE NOT NULL,
-    today_deliveries INTEGER NOT NULL DEFAULT 0,
-    today_earnings DECIMAL(10,2) NOT NULL DEFAULT 0,
-    hours_online DECIMAL(10,2) NOT NULL DEFAULT 0,
-    rating_sum DECIMAL(10,2) NOT NULL DEFAULT 0,
-    rating_count INTEGER NOT NULL DEFAULT 0,
-    UNIQUE(driver_id, date)
-);
-
-CREATE TABLE IF NOT EXISTS drivers_driverrating (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL,
-    rating DECIMAL(3,2) NOT NULL,
-    comment TEXT,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS drivers_driverreject (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    driver_id UUID NOT NULL REFERENCES drivers_driver(id) ON DELETE CASCADE,
-    order_id VARCHAR(255) NOT NULL,
-    reason TEXT,
-    rejected_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
+-- Geography columns for spatial queries (delivery fee, distance calculations)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'orders_order' AND column_name = 'restaurant_location'
+    ) THEN
+        ALTER TABLE orders_order ADD COLUMN restaurant_location geography(Point, 4326);
+        ALTER TABLE orders_order ADD COLUMN delivery_location geography(Point, 4326);
+        CREATE INDEX IF NOT EXISTS idx_order_restaurant_location ON orders_order USING GIST(restaurant_location);
+        CREATE INDEX IF NOT EXISTS idx_order_delivery_location ON orders_order USING GIST(delivery_location);
+    END IF;
+END
+$$;

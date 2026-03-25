@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It connects customers, restaurants, and drivers through a web app with real-time order tracking. Payment processing uses Paynow (Zimbabwe-specific gateway).
+ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It connects customers and restaurants through a web app with real-time order tracking. Delivery is handled by TumaGo (third-party delivery partner API) — ZimFeast does not manage drivers directly. Payment processing uses Paynow (Zimbabwe-specific gateway).
 
 ## Architecture
 
-**Microservices** - The backend is split into 3 Django services + 3 Go services, orchestrated with Docker Compose behind an Nginx API gateway.
+**Microservices** - The backend is split into 3 Django services + 2 Go services, orchestrated with Docker Compose behind an Nginx API gateway. Driver delivery is outsourced to TumaGo via their Partner API.
 
 ## Tech Stack
 
@@ -15,7 +15,8 @@ ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It co
 | Frontend | React 18 + TypeScript, Vite, Tailwind CSS, Radix UI / shadcn |
 | Data fetching | TanStack Query (React Query) |
 | Backend (Django) | 3 Django 4.2 microservices: auth, restaurant, payment (DRF, Gunicorn/Daphne) |
-| Backend (Go) | 3 Go microservices: order, driver, realtime |
+| Backend (Go) | 2 Go microservices: order, realtime |
+| Delivery | TumaGo Partner API (driver assignment, tracking, webhooks) |
 | Database | PostgreSQL (1 database per service) |
 | Cache/PubSub | Redis 7 |
 | Auth | Stateless JWT (shared secret across services) |
@@ -23,7 +24,7 @@ ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It co
 | Maps | Google Maps API (frontend + backend) |
 | Payments | Paynow (Zimbabwe payment gateway) |
 | Containers | Docker + Docker Compose (auto-scaling) |
-| Mobile | Android apps (Kotlin/Java) in `driver-app/` and `customer-app/` |
+| Mobile | Android customer app (Kotlin/Java) in `customer-app/` |
 
 ## Project Structure
 
@@ -31,12 +32,12 @@ ZimFeast is a full-stack food delivery platform for the Zimbabwean market. It co
 backend/                     # Microservices (Docker)
   shared/                    #   Shared Python utilities (JWT auth, Redis pub, geo, service client)
   go-shared/                 #   Shared Go module (for Go services)
+  go-shared/tumago/          #   TumaGo Partner API client (delivery requests, webhooks)
   auth-service/              #   User auth, registration, profiles - Django (port 8001)
   restaurant-service/        #   Restaurant profiles, menus, dashboard - Django (port 8002)
-  order-service/             #   Order lifecycle - Go (port 8003)
-  driver-service/            #   Driver management, location, ratings - Go (port 8004)
+  order-service/             #   Order lifecycle + TumaGo integration - Go (port 8003)
   payment-service/           #   Paynow + voucher payments - Django (port 8005)
-  realtime-service/          #   WebSocket/real-time - Go (port 3001)
+  realtime-service/          #   WebSocket/real-time (customer-only) - Go (port 3001)
   api-gateway/               #   Nginx reverse proxy config (port 80)
   frontend/                  #   Frontend build Dockerfile
   init-db.sql                #   Creates per-service databases
@@ -55,7 +56,6 @@ webapp/                      # React frontend (self-contained SPA)
   tsconfig.json              #   TypeScript config
   index.html                 #   Entry point
 
-driver-app/                  # Android driver app (Kotlin)
 customer-app/                # Android customer app (Kotlin)
 infra/                       # Terraform AWS infrastructure + scripts
 ```
@@ -80,7 +80,6 @@ cd backend/payment-service && python manage.py runserver 8005
 
 # Go services
 cd backend/order-service && go run .        # Port 8003
-cd backend/driver-service && go run .       # Port 8004
 cd backend/realtime-service && go run .     # Port 3001
 ```
 
@@ -100,6 +99,7 @@ All variables are in [backend/.env](backend/.env). Key sections:
 - **Redis**: `REDIS_URL`
 - **APIs**: `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SENDGRID_API_KEY`
 - **Paynow**: `PAYNOW_*`
+- **TumaGo**: `TUMAGO_API_URL`, `TUMAGO_API_KEY`, `TUMAGO_API_SECRET`
 - **Inter-service**: `*_SERVICE_URL`, `SERVICE_API_KEY`
 - **Frontend**: `VITE_*`
 
@@ -109,10 +109,9 @@ All variables are in [backend/.env](backend/.env). Key sections:
 |---------|------|----------|------|-----------------|
 | auth-service | 8001 | Django | Users, Addresses, Tokens | JWT tokens (stateless) |
 | restaurant-service | 8002 | Django | Restaurants, Menus, Dashboard | Redis pub/sub, WebSocket |
-| order-service | 8003 | Go | Orders, OrderItems | Redis pub/sub, REST |
-| driver-service | 8004 | Go | Drivers, Finance, Ratings | Redis pub/sub, WebSocket |
+| order-service | 8003 | Go | Orders, OrderItems, TumaGo webhooks | Redis pub/sub, REST, TumaGo API |
 | payment-service | 8005 | Django | Payments, Vouchers | REST to order-service |
-| realtime-service | 3001 | Go | None (stateless) | Redis sub, WebSocket |
+| realtime-service | 3001 | Go | None (stateless, customer-only) | Redis sub, WebSocket |
 | api-gateway | 80 | Nginx | None | Reverse proxy |
 
 ### Inter-Service Communication
@@ -121,6 +120,7 @@ All variables are in [backend/.env](backend/.env). Key sections:
 - **Async**: Redis pub/sub (Django via `backend/shared/redis_publisher.py`, Go via `backend/go-shared/`)
 - **Auth**: Stateless JWT - each service validates tokens independently (Django: `backend/shared/jwt_auth.py`, Go: `backend/go-shared/`)
 - **Data refs**: Services reference entities in other services by UUID (no cross-service FKs)
+- **TumaGo**: order-service calls TumaGo Partner API via `backend/go-shared/tumago/client.go`; TumaGo sends webhooks to `POST /api/webhooks/tumago/` (HMAC-SHA256 signed)
 
 ## Key Entry Points
 
@@ -130,6 +130,8 @@ All variables are in [backend/.env](backend/.env). Key sections:
 - Shared JWT auth (Django): [backend/shared/jwt_auth.py](backend/shared/jwt_auth.py)
 - Shared settings (Django): [backend/shared/base_settings.py](backend/shared/base_settings.py)
 - Go shared module: [backend/go-shared/](backend/go-shared/)
+- TumaGo API client: [backend/go-shared/tumago/client.go](backend/go-shared/tumago/client.go)
+- TumaGo webhook handler: [backend/order-service/internal/handlers/webhook.go](backend/order-service/internal/handlers/webhook.go)
 - Real-time service: [backend/realtime-service/](backend/realtime-service/)
 
 ## Additional Documentation
@@ -143,7 +145,8 @@ All variables are in [backend/.env](backend/.env). Key sections:
 ## Quick Reference
 
 - **User roles**: customer, restaurant, driver, admin
-- **Order flow**: pending_payment -> paid -> preparing -> ready -> collected -> assigned -> out_for_delivery -> delivered
+- **Order flow**: pending_payment -> paid -> preparing -> ready -> awaiting_driver -> assigned -> out_for_delivery -> delivered
+- **Delivery flow**: When order hits `ready`, order-service calls TumaGo API → `awaiting_driver`. All subsequent transitions (`assigned`, `out_for_delivery`, `delivered`) are driven by TumaGo webhooks.
 - **API pattern**: `/api/{service}/{action}/` with trailing slash, JWT Bearer token auth
 - **API Gateway**: Nginx on port 80 routes to the correct microservice
 - **Scaling**: `cd backend && docker compose up --scale order-service=5` to scale any service

@@ -244,7 +244,7 @@ func (h *Handler) AdminSearchOrders(w http.ResponseWriter, r *http.Request) {
 			restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 			driver_name, driver_phone, driver_vehicle, restaurant_names,
 			external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-			preparing_started_at, delivery_photo
+			preparing_started_at, delivery_photo, tumago_delivery_id
 		 FROM orders_order %s
 		 ORDER BY created DESC
 		 LIMIT $%d OFFSET $%d`,
@@ -297,7 +297,7 @@ func (h *Handler) AdminOverrideStatus(w http.ResponseWriter, r *http.Request) {
 	// Validate the target status is a known status
 	validStatuses := map[string]bool{
 		"pending_payment": true, "paid": true, "preparing": true, "ready": true,
-		"collected": true, "assigned": true, "out_for_delivery": true,
+		"collected": true, "awaiting_driver": true, "assigned": true, "out_for_delivery": true,
 		"delivered": true, "cancelled": true, "scheduled": true,
 	}
 	if !validStatuses[body.Status] {
@@ -366,7 +366,7 @@ func (h *Handler) AdminLiveStats(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Active orders count by status (only active statuses)
-	activeStatuses := []string{"paid", "preparing", "ready", "collected", "assigned", "out_for_delivery"}
+	activeStatuses := []string{"paid", "preparing", "ready", "awaiting_driver", "assigned", "out_for_delivery"}
 	activeRows, err := h.db.Query(ctx,
 		`SELECT status, COUNT(*) FROM orders_order
 		 WHERE status = ANY($1)

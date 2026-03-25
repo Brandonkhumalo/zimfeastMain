@@ -1,25 +1,34 @@
 # ─── ECR Repositories ────────────────────────────────────────────────
+# Docker image registry for all microservices. Created in all phases.
+
 locals {
-  ecr_repos = toset(["auth", "restaurant", "order", "driver", "payment", "realtime"])
+  ecr_repos = toset([
+    "api-gateway",
+    "auth-service",
+    "restaurant-service",
+    "order-service",
+    "payment-service",
+    "realtime-service",
+    "frontend",
+  ])
 }
 
 resource "aws_ecr_repository" "services" {
-  for_each             = local.ecr_repos
-  name                 = "${var.project}/${each.key}"
+  for_each = local.ecr_repos
+
+  name                 = "${var.project}-${each.key}"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false
   }
-
-  tags = { Name = "${var.project}-${each.key}" }
 }
 
-# Lifecycle policy: keep last 10 images
-resource "aws_ecr_lifecycle_policy" "services" {
-  for_each   = local.ecr_repos
-  repository = aws_ecr_repository.services[each.key].name
+# Keep only the last 10 images to save storage cost
+resource "aws_ecr_lifecycle_policy" "cleanup" {
+  for_each   = aws_ecr_repository.services
+  repository = each.value.name
 
   policy = jsonencode({
     rules = [{

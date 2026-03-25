@@ -23,6 +23,7 @@ import (
 	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 
 	"zimfeast/shared/config"
+	"zimfeast/shared/eta"
 	"zimfeast/shared/redispub"
 	"zimfeast/realtime/internal"
 )
@@ -32,19 +33,15 @@ func main() {
 	pub := redispub.New(cfg.RedisURL)
 	defer pub.Close()
 
-	driverSvc := internal.NewDriverService(pub)
-	orderSvc := internal.NewOrderService(pub, driverSvc, cfg)
+	etaCalc := eta.NewCalculator(cfg.GoogleAPIKey)
+	orderSvc := internal.NewOrderService(pub, etaCalc)
 
 	// Restore in-memory state from Redis (crash recovery)
-	driversRestored, err := driverSvc.RestoreFromRedis(context.Background())
-	if err != nil {
-		log.Printf("[startup] warning: failed to restore drivers from Redis: %v", err)
-	}
 	ordersRestored, err := orderSvc.RestoreFromRedis(context.Background())
 	if err != nil {
 		log.Printf("[startup] warning: failed to restore orders from Redis: %v", err)
 	}
-	log.Printf("[startup] restored %d drivers, %d active orders from Redis", driversRestored, ordersRestored)
+	log.Printf("[startup] restored %d active orders from Redis", ordersRestored)
 
 	// Socket.IO server
 	sio := socketio.NewServer(&engineio.Options{
@@ -54,45 +51,7 @@ func main() {
 		},
 	})
 
-	// Driver namespace
-	sio.OnConnect("/drivers", func(s socketio.Conn) error {
-		log.Printf("[drivers] connected: %s", s.ID())
-		return nil
-	})
-
-	sio.OnEvent("/drivers", "driver:register", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDriverRegister(s, data, driverSvc)
-	})
-
-	sio.OnEvent("/drivers", "driver:location_update", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDriverLocationUpdate(s, data, driverSvc, sio)
-	})
-
-	sio.OnEvent("/drivers", "delivery:accept", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDeliveryAccept(s, data, orderSvc, sio)
-	})
-
-	sio.OnEvent("/drivers", "delivery:reject", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDeliveryReject(s, data, orderSvc, sio)
-	})
-
-	sio.OnEvent("/drivers", "delivery:status", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDeliveryStatus(s, data, orderSvc, sio)
-	})
-
-	sio.OnEvent("/drivers", "driver:go_offline", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDriverGoOffline(s, driverSvc)
-	})
-
-	sio.OnEvent("/drivers", "driver:go_online", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDriverGoOnline(s, driverSvc)
-	})
-
-	sio.OnDisconnect("/drivers", func(s socketio.Conn, reason string) {
-		internal.HandleDriverDisconnect(s, driverSvc)
-	})
-
-	// Customer namespace
+	// Customer namespace — customers track order status and driver location in real time
 	sio.OnConnect("/customers", func(s socketio.Conn) error {
 		log.Printf("[customers] connected: %s", s.ID())
 		return nil
@@ -114,10 +73,6 @@ func main() {
 		internal.HandleGetETA(s, data, orderSvc)
 	})
 
-	sio.OnEvent("/customers", "driver:rate", func(s socketio.Conn, data map[string]interface{}) {
-		internal.HandleDriverRate(s, data, orderSvc)
-	})
-
 	sio.OnDisconnect("/customers", func(s socketio.Conn, reason string) {
 		log.Printf("[customers] disconnected: %s reason: %s", s.ID(), reason)
 	})
@@ -129,7 +84,7 @@ func main() {
 	}()
 	defer sio.Close()
 
-	// Redis subscriptions for order events
+	// Redis subscriptions for order events from order-service (which receives TumaGo webhooks)
 	go subscribeRedisEvents(pub, orderSvc, sio)
 
 	// HTTP router
@@ -164,59 +119,32 @@ func main() {
 			overallStatus = "degraded"
 		}
 
-		// Count connected drivers and active orders for ops visibility
-		onlineDrivers := len(driverSvc.GetOnlineDrivers())
-
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":         overallStatus,
-			"service":        "realtime-service",
-			"redis":          redisStatus,
-			"online_drivers": onlineDrivers,
-			"timestamp":      time.Now().UTC().Format(time.RFC3339),
+			"status":    overallStatus,
+			"service":   "realtime-service",
+			"redis":     redisStatus,
+			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
-	})
-
-	r.Get("/api/drivers/online", func(w http.ResponseWriter, r *http.Request) {
-		drivers := driverSvc.GetOnlineDrivers()
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(drivers)
-	})
-
-	r.Post("/api/drivers/{driverId}/location", func(w http.ResponseWriter, r *http.Request) {
-		driverID := chi.URLParam(r, "driverId")
-		var body struct {
-			Lat float64 `json:"lat"`
-			Lng float64 `json:"lng"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			http.Error(w, `{"error":"invalid body"}`, 400)
-			return
-		}
-		driverSvc.UpdateLocation(driverID, body.Lat, body.Lng)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "updated"})
 	})
 
 	r.Get("/api/orders/{orderId}/eta", func(w http.ResponseWriter, r *http.Request) {
 		orderID := chi.URLParam(r, "orderId")
-		eta := orderSvc.CalculateETA(orderID)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(eta)
-	})
-
-	r.Post("/api/orders/new-delivery", func(w http.ResponseWriter, r *http.Request) {
-		var orderData map[string]interface{}
-		if err := json.NewDecoder(r.Body).Decode(&orderData); err != nil {
-			http.Error(w, `{"error":"invalid body"}`, 400)
+		order := orderSvc.GetOrder(orderID)
+		if order == nil {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{"error": "order not found"})
 			return
 		}
-		go orderSvc.HandleNewDeliveryOrder(orderData, sio)
+		resp := map[string]interface{}{
+			"orderId": orderID,
+			"status":  order.Status,
+		}
+		if order.ETA != nil {
+			resp["eta"] = order.ETA
+		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":  "processing",
-			"orderId": orderData["orderId"],
-		})
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	port := os.Getenv("REALTIME_PORT")
@@ -247,13 +175,19 @@ func main() {
 	srv.Shutdown(ctx)
 }
 
+// subscribeRedisEvents listens for order events published by order-service
+// (which receives status updates from TumaGo via webhooks) and forwards them
+// to connected customers via Socket.IO.
 func subscribeRedisEvents(pub *redispub.Publisher, orderSvc *internal.OrderService, sio *socketio.Server) {
 	backoff := time.Second // Start with 1s backoff
 	maxBackoff := 30 * time.Second
 
 	for {
 		ctx := context.Background()
-		sub := pub.Subscribe(ctx, "orders.delivery.created", "orders.status.changed")
+		sub := pub.Subscribe(ctx,
+			"orders.status.changed",       // Order status updates from order-service
+			"orders.driver.location",      // Driver location forwarded from TumaGo webhooks
+		)
 
 		ch := sub.Channel()
 		for msg := range ch {
@@ -267,12 +201,18 @@ func subscribeRedisEvents(pub *redispub.Publisher, orderSvc *internal.OrderServi
 			}
 
 			switch msg.Channel {
-			case "orders.delivery.created":
-				go orderSvc.HandleNewDeliveryOrder(data, sio)
 			case "orders.status.changed":
 				orderID, _ := data["orderId"].(string)
+				status, _ := data["status"].(string)
+				if orderID != "" && status != "" {
+					orderSvc.HandleStatusUpdate(orderID, status, data, sio)
+				}
+
+			case "orders.driver.location":
+				// Driver location from TumaGo → order-service → Redis → here → customer
+				orderID, _ := data["orderId"].(string)
 				if orderID != "" {
-					sio.BroadcastToRoom("/customers", "order:"+orderID, "order:status", data)
+					orderSvc.HandleDriverLocation(orderID, data, sio)
 				}
 			}
 		}

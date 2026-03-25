@@ -18,27 +18,35 @@ import (
 
 	"zimfeast/shared/auth"
 	"zimfeast/shared/config"
+	"zimfeast/shared/fraud"
 	"zimfeast/shared/geo"
 	"zimfeast/shared/redispub"
 	"zimfeast/shared/response"
+	"zimfeast/shared/tumago"
 )
 
 type Handler struct {
-	db  *pgxpool.Pool
-	pub *redispub.Publisher
-	cfg *config.Config
+	db     *pgxpool.Pool
+	pub    *redispub.Publisher
+	cfg    *config.Config
+	tumago *tumago.Client
+	fraud  *fraud.Checker
 }
 
 // validTransitions defines the allowed order status state machine.
 // Each key maps to the set of statuses it can transition to.
+// The "ready" → "awaiting_driver" transition is automatic: when an order
+// reaches "ready", the UpdateStatus handler calls TumaGo to request a driver,
+// stores the tumago_delivery_id, and moves the order to "awaiting_driver".
+// From there, TumaGo webhooks drive the remaining transitions.
 var validTransitions = map[string][]string{
 	"scheduled":        {"pending_payment", "cancelled"},
 	"pending_payment":  {"paid", "cancelled"},
 	"paid":             {"preparing", "cancelled"},
 	"preparing":        {"ready"},
-	"ready":            {"collected"},
-	"collected":        {"assigned"},
-	"assigned":         {"out_for_delivery"},
+	"ready":            {"awaiting_driver"},
+	"awaiting_driver":  {"assigned", "cancelled"},
+	"assigned":         {"out_for_delivery", "cancelled"},
 	"out_for_delivery": {"delivered"},
 }
 
@@ -56,8 +64,8 @@ func isValidTransition(from, to string) bool {
 	return false
 }
 
-func New(db *pgxpool.Pool, pub *redispub.Publisher, cfg *config.Config) *Handler {
-	return &Handler{db: db, pub: pub, cfg: cfg}
+func New(db *pgxpool.Pool, pub *redispub.Publisher, cfg *config.Config, tc *tumago.Client, fc *fraud.Checker) *Handler {
+	return &Handler{db: db, pub: pub, cfg: cfg, tumago: tc, fraud: fc}
 }
 
 func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +162,15 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		initialStatus = "scheduled"
 	}
 
+	// Run fraud checks (non-blocking: flags suspicious orders but doesn't prevent them)
+	var fraudResult *fraud.CheckResult
+	if h.fraud != nil {
+		fr := h.fraud.CheckOrder(r.Context(), user.ID, body.DeliveryLat, body.DeliveryLng)
+		if fr.Flagged {
+			fraudResult = &fr
+		}
+	}
+
 	orderID := uuid.New()
 
 	tx, err := h.db.Begin(r.Context())
@@ -198,6 +215,21 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Record order for fraud velocity tracking and store delivery location
+	if h.fraud != nil {
+		h.fraud.RecordOrder(r.Context(), user.ID)
+		h.fraud.RecordLocation(r.Context(), user.ID, body.DeliveryLat, body.DeliveryLng)
+
+		// Publish fraud alert to Redis for admin notification
+		if fraudResult != nil {
+			h.pub.Publish(r.Context(), "orders.fraud.flagged", map[string]interface{}{
+				"orderId":    orderID.String(),
+				"customerId": user.ID,
+				"signals":    fraudResult.Signals,
+			})
+		}
+	}
+
 	// Return created order
 	order := h.fetchOrder(r.Context(), orderID.String())
 	response.Created(w, order)
@@ -231,7 +263,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order WHERE customer_id = $1 AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -241,7 +273,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order WHERE customer_id = $1
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -254,7 +286,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order WHERE driver_id = $1 AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -264,7 +296,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order WHERE driver_id = $1
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -277,7 +309,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment', 'scheduled') AND created < $2
 				ORDER BY created DESC LIMIT $3`
 			args = []interface{}{user.ID, cursorTime, limit + 1}
@@ -287,7 +319,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order WHERE restaurant_id = $1 AND status NOT IN ('pending_payment', 'scheduled')
 				ORDER BY created DESC LIMIT $2`
 			args = []interface{}{user.ID, limit + 1}
@@ -354,6 +386,11 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Record cancellation for fraud detection
+	if h.fraud != nil {
+		h.fraud.RecordCancel(r.Context(), user.ID)
+	}
+
 	// Publish status change
 	ctx := context.Background()
 	h.pub.PublishOrderStatus(ctx, orderID, "cancelled")
@@ -377,7 +414,7 @@ func (h *Handler) AllOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order WHERE created < $1 ORDER BY created DESC LIMIT $2`,
 			cursorTime, limit+1)
 	} else {
@@ -387,7 +424,7 @@ func (h *Handler) AllOrders(w http.ResponseWriter, r *http.Request) {
 				restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 				driver_name, driver_phone, driver_vehicle, restaurant_names,
 				external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-				preparing_started_at, delivery_photo
+				preparing_started_at, delivery_photo, tumago_delivery_id
 				FROM orders_order ORDER BY created DESC LIMIT $1`, limit+1)
 	}
 	if err != nil {
@@ -509,7 +546,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	validStatuses := map[string]bool{
 		"pending_payment": true, "assigned": true, "out_for_delivery": true, "delivered": true,
 		"cancelled": true, "preparing": true, "ready": true,
-		"collected": true, "paid": true, "scheduled": true,
+		"awaiting_driver": true, "paid": true, "scheduled": true,
 	}
 	if !validStatuses[body.Status] {
 		response.Error(w, http.StatusBadRequest, "Invalid status: "+body.Status)
@@ -526,6 +563,24 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	} else if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to fetch order")
 		return
+	}
+
+	// When status is set to "ready" for a delivery order, automatically trigger
+	// TumaGo delivery request and transition to "awaiting_driver" instead.
+	if body.Status == "ready" && currentStatus == "preparing" {
+		if err := h.requestTumaGoDelivery(r.Context(), orderID); err != nil {
+			log.Printf("[order] TumaGo delivery request failed for order %s: %v", orderID, err)
+			// Still mark as "ready" so the restaurant knows, but log the error.
+			// The admin can manually retry or override later.
+		} else {
+			// TumaGo request succeeded — the order was already transitioned to
+			// "awaiting_driver" inside requestTumaGoDelivery, so return early.
+			response.OK(w, map[string]interface{}{
+				"order_id": orderID,
+				"status":   "awaiting_driver",
+			})
+			return
+		}
 	}
 
 	if !isValidTransition(currentStatus, body.Status) {
@@ -694,6 +749,76 @@ func (h *Handler) RestaurantAOV(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// requestTumaGoDelivery fetches the order details, calls TumaGo's Partner API
+// to request a delivery, stores the returned tumago_delivery_id, and transitions
+// the order to "awaiting_driver".
+func (h *Handler) requestTumaGoDelivery(ctx context.Context, orderID string) error {
+	// Fetch the fields we need to build the TumaGo delivery request
+	var (
+		restaurantLat, restaurantLng *float64
+		deliveryLat, deliveryLng     *float64
+		deliveryFee                  float64
+		restaurantNames              *string
+		method                       string
+	)
+	err := h.db.QueryRow(ctx,
+		`SELECT restaurant_lat, restaurant_lng, delivery_lat, delivery_lng,
+		        delivery_fee, restaurant_names, method
+		 FROM orders_order WHERE id = $1`, orderID).
+		Scan(&restaurantLat, &restaurantLng, &deliveryLat, &deliveryLng,
+			&deliveryFee, &restaurantNames, &method)
+	if err != nil {
+		return fmt.Errorf("fetch order data: %w", err)
+	}
+
+	// Only request a TumaGo delivery for delivery orders (not pickup)
+	if method != "delivery" {
+		return fmt.Errorf("order %s is method=%s, not delivery", orderID, method)
+	}
+
+	// Ensure we have coordinates
+	if restaurantLat == nil || restaurantLng == nil || deliveryLat == nil || deliveryLng == nil {
+		return fmt.Errorf("order %s missing coordinates", orderID)
+	}
+
+	// Build the package description from restaurant name
+	pkgDesc := "ZimFeast food delivery"
+	if restaurantNames != nil && *restaurantNames != "" {
+		pkgDesc = "ZimFeast order from " + *restaurantNames
+	}
+
+	req := tumago.DeliveryRequest{
+		OriginLat:          *restaurantLat,
+		OriginLng:          *restaurantLng,
+		DestinationLat:     *deliveryLat,
+		DestinationLng:     *deliveryLng,
+		Vehicle:            "motorcycle",
+		Fare:               deliveryFee,
+		PartnerReference:   orderID,
+		PickupContact:      "", // restaurant contact could be added later
+		DropoffContact:     "", // customer contact could be added later
+		PackageDescription: pkgDesc,
+	}
+
+	resp, err := h.tumago.RequestDelivery(req)
+	if err != nil {
+		return fmt.Errorf("tumago API call: %w", err)
+	}
+
+	log.Printf("[order] TumaGo delivery requested for order %s → tumago_id=%s", orderID, resp.ID)
+
+	// Store the tumago_delivery_id and transition to awaiting_driver
+	_, err = h.db.Exec(ctx,
+		`UPDATE orders_order SET status = 'awaiting_driver', tumago_delivery_id = $1 WHERE id = $2`,
+		resp.ID, orderID)
+	if err != nil {
+		return fmt.Errorf("update order with tumago_delivery_id: %w", err)
+	}
+
+	h.pub.PublishOrderStatus(ctx, orderID, "awaiting_driver")
+	return nil
+}
+
 // ──── Helpers ────
 
 func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]interface{} {
@@ -714,6 +839,7 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 		deliveryOutTime, deliveryCompleteTime     *time.Time
 		preparingStartedAt                        *time.Time
 		deliveryPhoto                             *string
+		tumagoDeliveryID                          *string
 	)
 
 	err := h.db.QueryRow(ctx,
@@ -722,14 +848,14 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 			restaurant_lat, restaurant_lng, delivery_lat, delivery_lng, delivery_address,
 			driver_name, driver_phone, driver_vehicle, restaurant_names,
 			external_order_numbers, scheduled_for, created, delivery_out_time, delivery_complete_time,
-			preparing_started_at, delivery_photo
+			preparing_started_at, delivery_photo, tumago_delivery_id
 			FROM orders_order WHERE id = $1`, orderID).
 		Scan(&id, &status, &method, &customerID, &driverID, &restaurantID,
 			&totalFee, &tip, &deliveryFee, &eachItemPrice,
 			&restaurantLat, &restaurantLng, &deliveryLat, &deliveryLng, &deliveryAddress,
 			&driverName, &driverPhone, &driverVehicle, &restaurantNames,
 			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime,
-			&preparingStartedAt, &deliveryPhoto)
+			&preparingStartedAt, &deliveryPhoto, &tumagoDeliveryID)
 	if err != nil {
 		return nil
 	}
@@ -807,6 +933,9 @@ func (h *Handler) fetchOrder(ctx context.Context, orderID string) map[string]int
 	if deliveryPhoto != nil {
 		order["delivery_photo"] = *deliveryPhoto
 	}
+	if tumagoDeliveryID != nil {
+		order["tumago_delivery_id"] = *tumagoDeliveryID
+	}
 
 	// Fetch items
 	itemRows, err := h.db.Query(ctx,
@@ -861,6 +990,7 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 			deliveryOutTime, deliveryCompleteTime     *time.Time
 			preparingStartedAt                        *time.Time
 			deliveryPhoto                             *string
+			tumagoDeliveryID                          *string
 		)
 
 		if err := rows.Scan(&id, &status, &method, &customerID, &driverID, &restaurantID,
@@ -868,7 +998,7 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 			&restaurantLat, &restaurantLng, &deliveryLat, &deliveryLng, &deliveryAddress,
 			&driverName, &driverPhone, &driverVehicle, &restaurantNames,
 			&externalOrderNumbers, &scheduledFor, &created, &deliveryOutTime, &deliveryCompleteTime,
-			&preparingStartedAt, &deliveryPhoto); err != nil {
+			&preparingStartedAt, &deliveryPhoto, &tumagoDeliveryID); err != nil {
 			log.Printf("[order] scan error: %v", err)
 			continue
 		}
@@ -938,6 +1068,9 @@ func (h *Handler) scanOrders(rows pgx.Rows) []map[string]interface{} {
 		}
 		if deliveryPhoto != nil {
 			order["delivery_photo"] = *deliveryPhoto
+		}
+		if tumagoDeliveryID != nil {
+			order["tumago_delivery_id"] = *tumagoDeliveryID
 		}
 
 		orders = append(orders, order)

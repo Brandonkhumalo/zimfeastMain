@@ -14,7 +14,6 @@ SERVICE_URLS = {
     'auth': os.environ.get('AUTH_SERVICE_URL', 'http://auth-service:8001'),
     'restaurant': os.environ.get('RESTAURANT_SERVICE_URL', 'http://restaurant-service:8002'),
     'order': os.environ.get('ORDER_SERVICE_URL', 'http://order-service:8003'),
-    'driver': os.environ.get('DRIVER_SERVICE_URL', 'http://driver-service:8004'),
     'payment': os.environ.get('PAYMENT_SERVICE_URL', 'http://payment-service:8005'),
 }
 

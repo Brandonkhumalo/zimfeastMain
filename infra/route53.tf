@@ -4,41 +4,32 @@ resource "aws_route53_zone" "main" {
   tags = { Name = "${var.project}-dns" }
 }
 
-# Root domain -> CloudFront
+# Phase 1: A record → EC2 Elastic IP
+# Phase 2+: A record → ALB (alias)
 resource "aws_route53_record" "root" {
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain
   type    = "A"
 
-  alias {
-    name                   = aws_cloudfront_distribution.main.domain_name
-    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
-    evaluate_target_health = false
+  # Phase 1: point to EC2 Elastic IP
+  dynamic "alias" {
+    for_each = var.phase != "phase1" ? [1] : []
+    content {
+      name                   = aws_lb.main[0].dns_name
+      zone_id                = aws_lb.main[0].zone_id
+      evaluate_target_health = true
+    }
   }
+
+  # Phase 1: direct IP
+  ttl     = var.phase == "phase1" ? 300 : null
+  records = var.phase == "phase1" ? [aws_eip.ec2[0].public_ip] : null
 }
 
-# www -> CloudFront
 resource "aws_route53_record" "www" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "www.${var.domain}"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.main.domain_name
-    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-# media.zimfeast.com -> CloudFront media distribution
-resource "aws_route53_record" "media" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "media.${var.domain}"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.media.domain_name
-    zone_id                = aws_cloudfront_distribution.media.hosted_zone_id
-    evaluate_target_health = false
-  }
+  type    = "CNAME"
+  ttl     = 300
+  records = [var.domain]
 }

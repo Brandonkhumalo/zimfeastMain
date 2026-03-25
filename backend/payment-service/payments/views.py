@@ -20,6 +20,7 @@ from .models import (
 from .paynow_utils import paynow, create_paynow_payment
 from shared.redis_publisher import publisher
 from shared.service_client import service_request
+from shared import fraud as fraud_checker
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,16 @@ def create_payment(request):
     promo_discount = Decimal('0')
     applied_promo = None
     if promo_code:
+        # Fraud check: promo abuse from same IP
+        client_ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', ''))
+        if client_ip and ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+        promo_signal = fraud_checker.check_promo_abuse(promo_code, client_ip)
+        if promo_signal and promo_signal.get('score', 0) >= 3:
+            fraud_checker.publish_fraud_alert(user_id, order_id, [promo_signal])
+            return Response({"detail": "Promo code usage limit reached."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        fraud_checker.record_promo_attempt(promo_code, client_ip)
+
         try:
             promo = PromoCode.objects.get(code=promo_code)
         except PromoCode.DoesNotExist:
@@ -464,6 +475,18 @@ def _process_payment_callback(reference, status_pay):
         if status_pay.lower() == "paid":
             payment.processed_at = timezone.now()
         payment.save()
+
+    # Fraud detection: record failures and check patterns on success
+    if status_pay.lower() != "paid":
+        fraud_checker.record_payment_failure(str(payment.user_id))
+    else:
+        # Check for suspicious payment pattern (multiple failures then success)
+        pay_signal = fraud_checker.check_payment_pattern(str(payment.user_id))
+        if pay_signal:
+            fraud_checker.publish_fraud_alert(
+                payment.user_id, payment.order_id, [pay_signal]
+            )
+        fraud_checker.record_payment_success(str(payment.user_id))
 
     # Side effects run outside the transaction so we don't hold the lock
     if status_pay.lower() == "paid" and payment.order_id:

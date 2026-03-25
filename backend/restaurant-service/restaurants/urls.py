@@ -56,6 +56,7 @@ urlpatterns = [
 
     # Internal
     path('internal/restaurant/<str:restaurant_id>/', views.internal_get_restaurant, name='internal_get_restaurant'),
+    path('internal/restaurant/<str:restaurant_id>/order-completed/', views.internal_order_completed, name='internal_order_completed'),
 
     # Public payment info for checkout
     path('<str:restaurant_id>/payment-info/', views.public_restaurant_payment_info, name='restaurant_payment_info'),

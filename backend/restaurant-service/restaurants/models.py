@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
 from django.utils import timezone
 import uuid
 import os
@@ -134,6 +136,9 @@ class Restaurant(models.Model):
     full_address = models.CharField(max_length=500)
     lat = models.FloatField()
     lng = models.FloatField()
+    # PostGIS geography point for spatial queries (ST_DWithin, KNN)
+    # Auto-populated from lat/lng on save via the overridden save() method
+    location = gis_models.PointField(geography=True, srid=4326, null=True, blank=True)
     minimum_order_price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     est_delivery_time = models.CharField(max_length=50, blank=True)
     cuisines = models.ManyToManyField(CuisineType, blank=True)
@@ -141,6 +146,9 @@ class Restaurant(models.Model):
     # Denormalized rating fields — updated whenever a new review is submitted
     average_rating = models.FloatField(default=0)
     total_reviews = models.IntegerField(default=0)
+    # Denormalized ranking fields — updated by background tasks or on order completion
+    avg_prep_time = models.FloatField(default=0, help_text="Rolling average prep time in minutes")
+    order_count = models.IntegerField(default=0, help_text="Total completed orders")
     # Operating hours
     opening_time = models.TimeField(null=True, blank=True, help_text="Daily opening time")
     closing_time = models.TimeField(null=True, blank=True, help_text="Daily closing time")
@@ -178,6 +186,12 @@ class Restaurant(models.Model):
 
         # No hours configured: default to open
         return True
+
+    def save(self, *args, **kwargs):
+        # Auto-populate the PostGIS geography point from lat/lng
+        if self.lat is not None and self.lng is not None:
+            self.location = Point(self.lng, self.lat, srid=4326)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

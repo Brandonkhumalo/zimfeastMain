@@ -61,11 +61,6 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
-      '/drivers': {
-        target: 'http://0.0.0.0:3001',
-        changeOrigin: true,
-        ws: true,
-      },
     },
   },
 });

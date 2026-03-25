@@ -2,7 +2,6 @@
 # Start the entire ZimFeast microservices stack
 set -e
 
-# Ensure we run from the backend/ directory (where docker-compose.yml lives)
 cd "$(dirname "$0")/../../backend"
 
 echo "=== ZimFeast Microservices Stack ==="
@@ -29,7 +28,6 @@ docker compose up -d \
   auth-service \
   restaurant-service \
   order-service \
-  driver-service \
   payment-service \
   realtime-service \
   frontend \
@@ -37,11 +35,10 @@ docker compose up -d \
 
 echo ""
 echo "=== ZimFeast is running! ==="
-echo "  API Gateway:  http://localhost:80"
+echo "  API Gateway:   http://localhost:80"
 echo "  Auth Service:  http://localhost:8001 (internal)"
 echo "  Restaurant:    http://localhost:8002 (internal)"
 echo "  Orders:        http://localhost:8003 (internal)"
-echo "  Drivers:       http://localhost:8004 (internal)"
 echo "  Payments:      http://localhost:8005 (internal)"
 echo "  Real-time:     http://localhost:3001 (internal)"
 echo ""
