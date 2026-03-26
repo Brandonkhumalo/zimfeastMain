@@ -30,8 +30,8 @@ android {
             buildConfigField "String", "SOCKET_URL", "\"https://zimfeast.com\""
         }
         debug {
-            buildConfigField "String", "BASE_URL", "\"http://10.0.2.2:8000/\""
-            buildConfigField "String", "SOCKET_URL", "\"http://10.0.2.2:3001\""
+            buildConfigField "String", "BASE_URL", "\"http://10.0.2.2/\""
+            buildConfigField "String", "SOCKET_URL", "\"http://10.0.2.2\""
         }
     }
 

@@ -48,21 +48,11 @@ build/
 .DS_Store
 Thumbs.db
 
-# Replit specific (remove these lines if not using Replit)
-.cache/
-.upm/
-.local/
-dump.rdb
-
 # Android build outputs
-zimfeast-customer/app/build/
-zimfeast-customer/build/
-zimfeast-customer/.gradle/
-zimfeast-customer/local.properties
-driver-app/app/build/
-driver-app/build/
-driver-app/.gradle/
-driver-app/local.properties
+customer-app/app/build/
+customer-app/build/
+customer-app/.gradle/
+customer-app/local.properties
 *.apk
 *.aab
 

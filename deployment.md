@@ -12,18 +12,21 @@ Three-phase deployment: start cheap on a single EC2, scale to ECS with auto-scal
 2. [Phase 2 — Growth (ECS + ALB)](#phase-2--growth-500-to-5000-users)
 3. [Phase 3 — Scale (auto-scaling + DB split)](#phase-3--scale-5000-users)
 4. [Change Summary](#change-summary-across-phases)
+5. [Credentials Reference](#credentials-reference)
 
 ---
 
 ## Prerequisites (All Phases)
 
-- AWS account with `af-south-1` enabled (opt-in region)
+- AWS account with `af-south-1` enabled (opt-in region — go to **Account Settings → Regions** to enable)
 - Domain: `zimfeast.com` (registered, DNS accessible)
-- Google Maps API key
-- Paynow integration credentials (Zimbabwe payment gateway)
-- TumaGo Partner API key + secret (delivery partner)
+- Google Maps API key (from Google Cloud Console)
+- Paynow integration credentials (from paynow.co.zw merchant dashboard)
+- TumaGo Partner API key + secret (from TumaGo partner dashboard)
 - GitHub repo access
-- SendGrid API key (email)
+- SendGrid API key (from sendgrid.com)
+
+> **Important:** Every credential you create during deployment must be saved in `backend/.env`. See the [Credentials Reference](#credentials-reference) at the bottom for the full mapping of where to get each credential and which `.env` variable it goes into.
 
 ---
 
@@ -87,20 +90,38 @@ Single EC2 instance + managed RDS (PostGIS) + ElastiCache. ~$35-50/month.
 | Name | `zimfeast-backend` |
 | AMI | Ubuntu 24.04 LTS |
 | Instance type | t3.small (2 vCPU, 2GB RAM) |
-| Key pair | Create one or proceed without (if using browser SSH) |
+| Key pair | Create one (download the `.pem` file and save it securely — you need this for SSH and CI/CD) or proceed without (if using browser SSH only) |
 | Storage | 25 GB gp3 |
 
-3. **Network Settings** → Default VPC, add security group rules:
+3. **Network Settings** — VPC and Security Group:
 
-| Type | Port | Source | Purpose |
-|------|------|--------|---------|
-| SSH | 22 | 0.0.0.0/0 | EC2 Instance Connect |
-| HTTP | 80 | 0.0.0.0/0 | Nginx gateway |
-| HTTPS | 443 | 0.0.0.0/0 | TLS termination |
+   **Which VPC to use:** Use the **Default VPC**. Every AWS region comes with a Default VPC already created. You do NOT need to create a new VPC for Phase 1.
+   - In the "Network settings" section, click **Edit**
+   - **VPC**: select the one labeled `default` (there's usually only one)
+   - **Subnet**: select `No preference` (AWS picks an availability zone for you)
+   - **Auto-assign public IP**: `Enable`
+
+   **Security Group:** Select **Create security group** and name it `zimfeast-ec2-sg`. Add these inbound rules:
+
+   | Type | Port | Source | Purpose |
+   |------|------|--------|---------|
+   | SSH | 22 | 0.0.0.0/0 | EC2 Instance Connect / SSH access |
+   | HTTP | 80 | 0.0.0.0/0 | Nginx gateway (web + API traffic) |
+   | HTTPS | 443 | 0.0.0.0/0 | TLS termination (Let's Encrypt) |
+
+   > The Default VPC already has an internet gateway and route table configured, so your instance will have internet access out of the box. RDS and ElastiCache will go in this same VPC so they can talk to EC2 on the private network.
 
 4. Click **Launch Instance**
-5. Go to **Elastic IPs** → **Allocate** → **Associate** to this instance
-6. Note the **Security Group ID** (e.g., `sg-0abc123`) — needed for RDS and ElastiCache
+
+5. **Allocate an Elastic IP:**
+   - Go to **EC2 → Elastic IPs** → **Allocate Elastic IP address** → **Allocate**
+   - Select the new IP → **Actions → Associate Elastic IP address**
+   - Choose your `zimfeast-backend` instance → **Associate**
+   - **Save this IP** — it's your server's permanent public address and goes into Route 53 DNS records later
+
+6. **Note the Security Group ID:**
+   - Go to **EC2 → Instances** → click `zimfeast-backend` → scroll to **Security** tab
+   - Copy the **Security group ID** (e.g., `sg-0abc123def456`) — you need this when creating RDS and ElastiCache security groups so they only accept connections from your EC2
 
 ### Step 2: Create RDS PostgreSQL (PostGIS)
 
@@ -109,19 +130,31 @@ Single EC2 instance + managed RDS (PostGIS) + ElastiCache. ~$35-50/month.
 
 | Setting | Value |
 |---------|-------|
+| Creation method | Standard create |
 | Engine | PostgreSQL 16 |
-| Template | Free tier |
+| Template | **Free tier** (gives you 12 months free on db.t3.micro) |
 | DB instance class | db.t3.micro |
 | Storage | 20 GB gp3 |
 | DB instance identifier | `zimfeast-db` |
 | Master username | `zimfeast` |
-| Master password | (generate a strong password, save it) |
-| Public access | No |
-| VPC | Default VPC (**same as EC2**) |
-| VPC security group | Create new → allow port **5432** from EC2 security group |
+| Master password | Generate a strong password — **save this immediately, you need it for `.env` → `POSTGRES_PASSWORD`** |
+| Public access | **No** (only EC2 connects to it, not the internet) |
+| VPC | **Default VPC** (same VPC as your EC2 instance — this is critical) |
 | Backup retention | 7 days |
 
-3. Wait 5-10 minutes, copy the **Endpoint** (e.g., `zimfeast-db.xxxxx.af-south-1.rds.amazonaws.com`)
+3. **Security Group for RDS:**
+   - In the "Connectivity" section, under "VPC security group", select **Create new**
+   - Name it `zimfeast-rds-sg`
+   - After the database is created, go to **EC2 → Security Groups** → find `zimfeast-rds-sg` → **Edit inbound rules**:
+
+   | Type | Port | Source | Purpose |
+   |------|------|--------|---------|
+   | PostgreSQL | 5432 | **Custom** → paste your EC2 security group ID (`sg-0abc123...`) | Only allow EC2 to connect to the database |
+
+   > Do NOT use `0.0.0.0/0` as the source — that would expose your database to the entire internet. By using the EC2 security group ID as the source, only your EC2 instance can reach the database.
+
+4. Wait 5-10 minutes for the database to be created
+5. Go to **RDS → Databases → zimfeast-db** and copy the **Endpoint** (e.g., `zimfeast-db.xxxxx.af-south-1.rds.amazonaws.com`) — this goes into `.env` → `POSTGRES_HOST`
 
 ### Step 3: Create ElastiCache Redis
 
@@ -134,10 +167,22 @@ Single EC2 instance + managed RDS (PostGIS) + ElastiCache. ~$35-50/month.
 | Node type | cache.t3.micro |
 | Number of replicas | 0 |
 | Name | `zimfeast-redis` |
-| Subnet group | Default |
-| Security group | Create new → allow port **6379** from EC2 security group |
+| Subnet group | **Default** (same VPC as EC2 and RDS) |
 
-3. Copy the **Primary Endpoint** (e.g., `zimfeast-redis.xxxxx.af-south-1.cache.amazonaws.com`)
+3. **Security Group for ElastiCache:**
+   - In the "Security" section, select **Create new** security group or manage after creation
+   - Name it `zimfeast-redis-sg`
+   - Go to **EC2 → Security Groups** → find `zimfeast-redis-sg` → **Edit inbound rules**:
+
+   | Type | Port | Source | Purpose |
+   |------|------|--------|---------|
+   | Custom TCP | 6379 | **Custom** → paste your EC2 security group ID (`sg-0abc123...`) | Only allow EC2 to connect to Redis |
+
+   > Same principle as RDS — never use `0.0.0.0/0`. Only your EC2 instance needs Redis access.
+
+4. Copy the **Primary Endpoint** (e.g., `zimfeast-redis.xxxxx.af-south-1.cache.amazonaws.com`) — this goes into `.env` → `REDIS_URL` as `redis://<endpoint>:6379`
+
+> **VPC Summary:** At this point you have 3 resources all in the **Default VPC**: EC2, RDS, and ElastiCache. They communicate over the private network using security group rules. Only EC2 is exposed to the internet (ports 80/443). RDS and ElastiCache are private.
 
 ### Step 4: Create ECR Repositories
 
@@ -205,7 +250,7 @@ cp .env.example .env
 nano .env
 ```
 
-Fill in the `.env`:
+Fill in the `.env` (see [Credentials Reference](#credentials-reference) for where to get each value):
 
 ```env
 # Production settings
@@ -856,3 +901,67 @@ All traffic goes through `zimfeast.com`. The Nginx api-gateway routes:
 | `zimfeast.com/api/webhooks/tumago/` | order-service | TumaGo delivery webhooks |
 | `zimfeast.com/socket.io/*` | realtime-service | WebSocket (customer tracking) |
 | `zimfeast.com/ws/restaurant/*` | restaurant-service | WebSocket (restaurant dashboard) |
+
+---
+
+## Credentials Reference
+
+Every credential you create during setup must go into `backend/.env`. This table maps each credential to where you obtain it and which `.env` variable(s) it maps to.
+
+### Credentials You Generate Yourself
+
+These are secrets you generate locally. Run the commands on your machine or on the EC2 instance.
+
+| `.env` Variable | How to Generate | Notes |
+|-----------------|----------------|-------|
+| `SECRET_KEY` | `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` | Django secret key. Must be unique, never reuse. |
+| `JWT_SECRET_KEY` | `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` | Shared JWT signing key. Generate a **different** value from SECRET_KEY. |
+| `SERVICE_API_KEY` | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` | Used for inter-service REST calls (X-Service-Key header). |
+| `FIELD_ENCRYPTION_KEY` | `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` | Encrypts sensitive DB fields (e.g., Paynow keys in restaurant-service). |
+| `ADMIN_SETUP_TOKEN` | `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` | One-time token to create the first admin user. Can be changed after first use. |
+
+### Credentials from AWS (created during deployment)
+
+| `.env` Variable | Where to Find | Created in Step |
+|-----------------|--------------|-----------------|
+| `POSTGRES_PASSWORD` | You set this when creating RDS | Step 2 (RDS) |
+| `POSTGRES_HOST` | RDS → Databases → `zimfeast-db` → **Endpoint** | Step 2 (RDS) |
+| `REDIS_URL` | ElastiCache → `zimfeast-redis` → **Primary Endpoint** → use as `redis://<endpoint>:6379` | Step 3 (ElastiCache) |
+| `AWS_ACCESS_KEY_ID` | IAM → Users → Create user → Security credentials → Create access key | Step 14 (CI/CD) |
+| `AWS_SECRET_ACCESS_KEY` | Same as above — **save immediately, shown only once** | Step 14 (CI/CD) |
+
+### Credentials from Third-Party Services
+
+| `.env` Variable | Where to Get It | Sign Up URL |
+|-----------------|----------------|-------------|
+| `GOOGLE_API_KEY` | Google Cloud Console → APIs & Services → Credentials → Create API Key. Enable "Maps JavaScript API", "Geocoding API", "Directions API". | console.cloud.google.com |
+| `VITE_GOOGLE_MAPS_API_KEY` | **Same value** as `GOOGLE_API_KEY` (used by the frontend build) | — |
+| `SENDGRID_API_KEY` | SendGrid → Settings → API Keys → Create API Key (Full Access) | sendgrid.com |
+| `PAYNOW_INTEGRATION_ID` | Paynow merchant dashboard → Integration Settings → Integration ID | paynow.co.zw |
+| `PAYNOW_INTEGRATION_KEY` | Paynow merchant dashboard → Integration Settings → Integration Key | paynow.co.zw |
+| `TUMAGO_API_KEY` | TumaGo partner dashboard → API Settings → API Key | Contact TumaGo |
+| `TUMAGO_API_SECRET` | TumaGo partner dashboard → API Settings → API Secret | Contact TumaGo |
+
+### Variables That Change Between Dev and Production
+
+| `.env` Variable | Local Dev Value | Production Value |
+|-----------------|----------------|-----------------|
+| `DEBUG` | `True` | `False` |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1,0.0.0.0` | `zimfeast.com,www.zimfeast.com` |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5000,http://localhost:3000` | `https://zimfeast.com,https://www.zimfeast.com` |
+| `POSTGRES_HOST` | `postgres` (Docker container name) | RDS endpoint (e.g., `zimfeast-db.xxxxx.af-south-1.rds.amazonaws.com`) |
+| `REDIS_URL` | `redis://redis:6379` (Docker container) | `redis://<elasticache-endpoint>:6379` |
+| `PAYNOW_RETURN_URL` | `http://localhost/payment-return` | `https://zimfeast.com/payment-return` |
+| `PAYNOW_RESULT_URL` | `http://localhost/api/payments/callback/` | `https://zimfeast.com/api/payments/callback/` |
+
+### Security Group Summary
+
+All resources live in the **Default VPC**. Here's what each security group allows:
+
+| Security Group | Attached To | Inbound Rules |
+|---------------|-------------|---------------|
+| `zimfeast-ec2-sg` | EC2 instance | SSH (22) from `0.0.0.0/0`, HTTP (80) from `0.0.0.0/0`, HTTPS (443) from `0.0.0.0/0` |
+| `zimfeast-rds-sg` | RDS database | PostgreSQL (5432) from `zimfeast-ec2-sg` only |
+| `zimfeast-redis-sg` | ElastiCache | TCP (6379) from `zimfeast-ec2-sg` only |
+
+> **Rule of thumb:** Only EC2 faces the internet. RDS and ElastiCache are private — they only accept traffic from EC2's security group. Never open database/cache ports to `0.0.0.0/0`.

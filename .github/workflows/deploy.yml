@@ -1,0 +1,53 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'webapp/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: af-south-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        run: aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+      - name: Build all services (including frontend)
+        run: cd backend && docker compose build
+
+      - name: Tag and push images to ECR
+        run: |
+          cd backend
+          for svc in api-gateway auth-service restaurant-service order-service payment-service realtime-service frontend; do
+            docker tag backend-$svc:latest ${{ secrets.ECR_REGISTRY }}/zimfeast-$svc:latest
+            docker push ${{ secrets.ECR_REGISTRY }}/zimfeast-$svc:latest
+          done
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/zimfeastMain/backend
+            aws ecr get-login-password --region af-south-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+            docker compose pull
+            docker compose up -d --remove-orphans
