@@ -75,5 +75,12 @@ ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS tumago_delivery_id UUID;
 ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS tumago_status VARCHAR(32) DEFAULT '';
 CREATE INDEX IF NOT EXISTS idx_order_tumago_delivery ON orders_order(tumago_delivery_id) WHERE tumago_delivery_id IS NOT NULL;
 
+-- ============================================================
+-- Preparation timer and delivery proof columns (orders_order)
+-- ============================================================
+ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS preparing_started_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS delivery_photo VARCHAR(500);
+ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS delivery_photo_at TIMESTAMP WITH TIME ZONE;
+
 -- Distance calculations use the lat/lng columns above so this schema works on
 -- plain PostgreSQL services that do not include PostGIS.
