@@ -4,6 +4,38 @@ set -eu
 : "${PORT:=8080}"
 export PORT
 
+cat > /etc/nginx/conf.d/default.conf <<EOF
+server {
+    listen ${PORT};
+    server_name _;
+
+    location = /health {
+        default_type application/json;
+        return 200 '{"status":"starting"}';
+    }
+
+    location / {
+        default_type application/json;
+        return 503 '{"status":"starting"}';
+    }
+}
+EOF
+
+# Railway health checks should confirm the container is alive and listening.
+# Start Nginx before dependency waits and migrations so GET /health can return
+# 200 while the internal services finish bootstrapping.
+/usr/sbin/nginx
+
+stop_bootstrap_nginx() {
+  nginx -s quit >/dev/null 2>&1 || true
+  i=0
+  while [ -f /run/nginx.pid ] && [ "$i" -lt 10 ]; do
+    i=$((i + 1))
+    sleep 1
+  done
+}
+trap stop_bootstrap_nginx EXIT INT TERM
+
 # Railway's PostgreSQL service exposes DATABASE_URL. Using one database is
 # intentional: the services use separate tables and migration app labels.
 if [ -z "${DATABASE_URL:-}" ]; then
@@ -44,4 +76,6 @@ done
 (cd /app/payment-service && python manage.py migrate --noinput)
 
 envsubst '${PORT}' < /app/nginx.conf.template > /etc/nginx/conf.d/default.conf
+stop_bootstrap_nginx
+trap - EXIT INT TERM
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
