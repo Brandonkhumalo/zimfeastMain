@@ -12,17 +12,30 @@ SECRET_KEY = os.environ.get('SECRET_KEY', os.environ.get('JWT_SECRET_KEY', 'chan
 
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,zimfeast.com,www.zimfeast.com,api.zimfeast.com'
-).split(',')
+ALLOWED_HOSTS = [
+    host.strip() for host in os.environ.get(
+        'ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,zimfeast.com,www.zimfeast.com,api.zimfeast.com'
+    ).split(',') if host.strip()
+]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
-CORS_ALLOWED_ORIGINS = [
-    o.strip() for o in os.environ.get(
-        'CORS_ALLOWED_ORIGINS',
-        'https://zimfeast.com,https://www.zimfeast.com'
-    ).split(',') if o.strip()
-]
+
+
+def _parse_cors_allowed_origins(value):
+    """Ignore empty Railway template expansions such as "https://"."""
+    origins = []
+    for origin in value.split(','):
+        origin = origin.strip()
+        parsed = urlparse(origin)
+        if origin and parsed.scheme in ('http', 'https') and parsed.netloc:
+            origins.append(origin)
+    return origins
+
+
+CORS_ALLOWED_ORIGINS = _parse_cors_allowed_origins(os.environ.get(
+    'CORS_ALLOWED_ORIGINS',
+    'https://zimfeast.com,https://www.zimfeast.com'
+))
 CORS_ALLOW_HEADERS = list(default_headers) + ['Authorization']
 
 # Shared middleware

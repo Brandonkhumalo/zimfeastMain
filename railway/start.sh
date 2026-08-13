@@ -4,6 +4,23 @@ set -eu
 : "${PORT:=8080}"
 export PORT
 
+if [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
+  if [ -z "${ALLOWED_HOSTS:-}" ]; then
+    export ALLOWED_HOSTS="$RAILWAY_PUBLIC_DOMAIN"
+  fi
+
+  case ",$ALLOWED_HOSTS," in
+    *",$RAILWAY_PUBLIC_DOMAIN,"*) ;;
+    *) export ALLOWED_HOSTS="$ALLOWED_HOSTS,$RAILWAY_PUBLIC_DOMAIN" ;;
+  esac
+
+  case "${CORS_ALLOWED_ORIGINS:-}" in
+    ""|"https://"|"http://")
+      export CORS_ALLOWED_ORIGINS="https://$RAILWAY_PUBLIC_DOMAIN"
+      ;;
+  esac
+fi
+
 cat > /etc/nginx/conf.d/default.conf <<EOF
 server {
     listen ${PORT};

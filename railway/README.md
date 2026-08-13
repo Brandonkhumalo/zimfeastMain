@@ -37,10 +37,10 @@ SERVICE_API_KEY=<strong-random-value>
 FIELD_ENCRYPTION_KEY=<Fernet-key>
 ADMIN_SETUP_TOKEN=<strong-random-value>
 DEBUG=False
-ALLOWED_HOSTS=${{RAILWAY_PUBLIC_DOMAIN}}
-CORS_ALLOWED_ORIGINS=https://${{RAILWAY_PUBLIC_DOMAIN}}
-PAYNOW_RETURN_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}/payment-return
-PAYNOW_RESULT_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}/api/payments/callback/
+ALLOWED_HOSTS=zimfeastmain-production.up.railway.app
+CORS_ALLOWED_ORIGINS=https://zimfeastmain-production.up.railway.app
+PAYNOW_RETURN_URL=https://zimfeastmain-production.up.railway.app/payment-return
+PAYNOW_RESULT_URL=https://zimfeastmain-production.up.railway.app/api/payments/callback/
 ```
 
 Set these as well when their feature is enabled:
