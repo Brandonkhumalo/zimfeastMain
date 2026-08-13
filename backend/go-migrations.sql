@@ -75,23 +75,5 @@ ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS tumago_delivery_id UUID;
 ALTER TABLE orders_order ADD COLUMN IF NOT EXISTS tumago_status VARCHAR(32) DEFAULT '';
 CREATE INDEX IF NOT EXISTS idx_order_tumago_delivery ON orders_order(tumago_delivery_id) WHERE tumago_delivery_id IS NOT NULL;
 
--- ============================================================
--- PostGIS Geography Columns (orders_order)
--- ============================================================
--- Enable PostGIS (idempotent, already created by init-db.sql but safe to repeat)
-CREATE EXTENSION IF NOT EXISTS postgis;
-
--- Geography columns for spatial queries (delivery fee, distance calculations)
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'orders_order' AND column_name = 'restaurant_location'
-    ) THEN
-        ALTER TABLE orders_order ADD COLUMN restaurant_location geography(Point, 4326);
-        ALTER TABLE orders_order ADD COLUMN delivery_location geography(Point, 4326);
-        CREATE INDEX IF NOT EXISTS idx_order_restaurant_location ON orders_order USING GIST(restaurant_location);
-        CREATE INDEX IF NOT EXISTS idx_order_delivery_location ON orders_order USING GIST(delivery_location);
-    END IF;
-END
-$$;
+-- Distance calculations use the lat/lng columns above so this schema works on
+-- plain PostgreSQL services that do not include PostGIS.

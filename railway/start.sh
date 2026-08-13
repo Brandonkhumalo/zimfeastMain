@@ -60,9 +60,7 @@ until psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null 2>&1; do
   sleep 2
 done
 
-# The PostGIS Railway template includes PostGIS. pgcrypto supplies
-# gen_random_uuid(), used by the Go order-service schema.
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
+# pgcrypto supplies gen_random_uuid(), used by the Go order-service schema.
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /app/go-migrations.sql
 

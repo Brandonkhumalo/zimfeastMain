@@ -1,6 +1,4 @@
 from django.db import models
-from django.contrib.gis.db import models as gis_models
-from django.contrib.gis.geos import Point
 from django.utils import timezone
 import uuid
 import os
@@ -136,9 +134,6 @@ class Restaurant(models.Model):
     full_address = models.CharField(max_length=500)
     lat = models.FloatField()
     lng = models.FloatField()
-    # PostGIS geography point for spatial queries (ST_DWithin, KNN)
-    # Auto-populated from lat/lng on save via the overridden save() method
-    location = gis_models.PointField(geography=True, srid=4326, null=True, blank=True)
     minimum_order_price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     est_delivery_time = models.CharField(max_length=50, blank=True)
     cuisines = models.ManyToManyField(CuisineType, blank=True)
@@ -186,12 +181,6 @@ class Restaurant(models.Model):
 
         # No hours configured: default to open
         return True
-
-    def save(self, *args, **kwargs):
-        # Auto-populate the PostGIS geography point from lat/lng
-        if self.lat is not None and self.lng is not None:
-            self.location = Point(self.lng, self.lat, srid=4326)
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

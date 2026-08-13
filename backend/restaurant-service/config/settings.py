@@ -19,7 +19,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.gis',
     'rest_framework',
     'channels',
     'corsheaders',
@@ -30,8 +29,6 @@ ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = get_db_config('RESTAURANT_DB_NAME')
-# Override engine to PostGIS for spatial queries (ST_DWithin, KNN, geography columns)
-DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 
 # WebSocket channels for restaurant dashboard live updates
 CHANNEL_LAYERS = {

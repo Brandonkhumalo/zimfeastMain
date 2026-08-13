@@ -10,10 +10,6 @@ from rest_framework import status
 
 from math import cos, radians
 from geopy.distance import geodesic
-from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.measure import D
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
@@ -200,40 +196,21 @@ def list_nearby_restaurants(request):
 
     nearby = []
     if user_lat is not None and user_lng is not None:
-        user_point = Point(user_lng, user_lat, srid=4326)
-
-        # Use PostGIS ST_DWithin for spatial filtering if the location column
-        # is populated, otherwise fall back to bounding box + geodesic
-        postgis_available = restaurants.filter(location__isnull=False).exists()
-
-        if postgis_available:
-            # PostGIS: precise geodesic filter using GIST spatial index
-            restaurants = restaurants.filter(
-                location__isnull=False,
-                location__dwithin=(user_point, D(km=radius_km)),
-            ).annotate(
-                distance=Distance('location', user_point),
-            )
-            for r in restaurants:
-                dist_km = r.distance.km
-                nearby.append((dist_km, r))
-        else:
-            # Fallback: bounding box pre-filter + geodesic (for rows missing location)
-            lat_delta = radius_km / 111.0
-            lng_delta = radius_km / (111.0 * cos(radians(user_lat)))
-            restaurants = restaurants.filter(
-                lat__gte=user_lat - lat_delta,
-                lat__lte=user_lat + lat_delta,
-                lng__gte=user_lng - lng_delta,
-                lng__lte=user_lng + lng_delta,
-            )
-            for r in restaurants:
-                try:
-                    dist = geodesic((user_lat, user_lng), (r.lat, r.lng)).km
-                    if dist <= radius_km:
-                        nearby.append((dist, r))
-                except Exception:
-                    continue
+        lat_delta = radius_km / 111.0
+        lng_delta = radius_km / (111.0 * cos(radians(user_lat)))
+        restaurants = restaurants.filter(
+            lat__gte=user_lat - lat_delta,
+            lat__lte=user_lat + lat_delta,
+            lng__gte=user_lng - lng_delta,
+            lng__lte=user_lng + lng_delta,
+        )
+        for r in restaurants:
+            try:
+                dist = geodesic((user_lat, user_lng), (r.lat, r.lng)).km
+                if dist <= radius_km:
+                    nearby.append((dist, r))
+            except Exception:
+                continue
 
         if sort_by == "distance":
             # Simple distance sort (original behavior)

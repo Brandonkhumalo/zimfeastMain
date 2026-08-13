@@ -4,9 +4,5 @@ CREATE DATABASE zimfeast_restaurants;
 CREATE DATABASE zimfeast_orders;
 CREATE DATABASE zimfeast_payments;
 
--- Enable PostGIS extension on databases that use geospatial queries
-\connect zimfeast_restaurants;
-CREATE EXTENSION IF NOT EXISTS postgis;
-
-\connect zimfeast_orders;
-CREATE EXTENSION IF NOT EXISTS postgis;
+-- Plain PostgreSQL is enough for the current schema. Distance calculations use
+-- latitude/longitude columns in application code.
