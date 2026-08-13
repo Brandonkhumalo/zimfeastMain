@@ -1,0 +1,73 @@
+server {
+    listen ${PORT};
+    server_name _;
+
+    client_max_body_size 20M;
+
+    location = /health {
+        default_type application/json;
+        return 200 '{"status":"ok"}';
+    }
+
+    location /api/accounts/ {
+        proxy_pass http://127.0.0.1:8001;
+        include /etc/nginx/proxy_params;
+    }
+
+    location /api/restaurants/ {
+        proxy_pass http://127.0.0.1:8002;
+        include /etc/nginx/proxy_params;
+    }
+
+    location /api/orders/ {
+        proxy_pass http://127.0.0.1:8003;
+        include /etc/nginx/proxy_params;
+    }
+
+    location /api/webhooks/tumago/ {
+        proxy_pass http://127.0.0.1:8003;
+        include /etc/nginx/proxy_params;
+    }
+
+    location /api/payments/ {
+        proxy_pass http://127.0.0.1:8005;
+        include /etc/nginx/proxy_params;
+    }
+
+    location /ws/restaurant/ {
+        proxy_pass http://127.0.0.1:8002;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        include /etc/nginx/proxy_params;
+        proxy_read_timeout 86400;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        include /etc/nginx/proxy_params;
+        proxy_read_timeout 86400;
+    }
+
+    location /media/ {
+        alias /data/media/;
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /assets/ {
+        root /app/frontend;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        root /app/frontend;
+        try_files $uri $uri/ /index.html;
+        expires 1d;
+        add_header Cache-Control "public";
+    }
+}

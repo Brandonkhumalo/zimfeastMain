@@ -35,6 +35,7 @@ dist/
 # Android apps (not needed in Docker)
 driver-app/
 zimfeast-customer/
+customer-app
 
 # Gradle cache
 .gradle
@@ -45,3 +46,12 @@ zimfeast-customer/
 
 # Claude config
 .claude/
+
+# Repository directories not required by the Railway image
+.agents
+.codex
+.tools
+infra
+*.pdf
+backend/.env
+webapp/.env

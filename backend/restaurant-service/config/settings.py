@@ -41,5 +41,5 @@ CHANNEL_LAYERS = {
     },
 }
 
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = MEDIA_ROOT_OVERRIDE or BASE_DIR / 'media'
 STATIC_ROOT = BASE_DIR / 'staticfiles'

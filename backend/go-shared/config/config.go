@@ -60,6 +60,9 @@ func Load() *Config {
 
 // DatabaseURL builds a PostgreSQL connection string for the given database name.
 func (c *Config) DatabaseURL(dbName string) string {
+	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+		return databaseURL
+	}
 	return "postgres://" + c.PostgresUser + ":" + c.PostgresPassword +
 		"@" + c.PostgresHost + ":" + c.PostgresPort + "/" + dbName + "?sslmode=disable"
 }

@@ -4,6 +4,7 @@ Each service imports this and overrides what it needs.
 """
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 from corsheaders.defaults import default_headers
 
 # Shared secret key for JWT validation across all services
@@ -123,11 +124,34 @@ if AWS_STORAGE_BUCKET_NAME:
 else:
     MEDIA_URL = '/media/'
 
+# A Railway volume can be mounted at /data so uploaded media survives deploys.
+# Keeping the default preserves the existing local Docker behavior.
+MEDIA_ROOT_OVERRIDE = os.environ.get('MEDIA_ROOT', '')
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 def get_db_config(db_name_env):
     """Generate PostgreSQL database config from environment variables."""
+    # Railway provides a single DATABASE_URL.  The monolith container uses that
+    # one database for all services, while local Docker Compose can continue to
+    # use the per-service database variables below.
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        parsed = urlparse(database_url)
+        config = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote(parsed.path.lstrip('/')),
+            'USER': unquote(parsed.username or ''),
+            'PASSWORD': unquote(parsed.password or ''),
+            'HOST': parsed.hostname or 'localhost',
+            'PORT': str(parsed.port or 5432),
+        }
+        sslmode = parse_qs(parsed.query).get('sslmode', [None])[0]
+        if sslmode:
+            config['OPTIONS'] = {'sslmode': sslmode}
+        return {'default': config}
+
     return {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',

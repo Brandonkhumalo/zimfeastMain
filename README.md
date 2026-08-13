@@ -15,6 +15,7 @@ This README is the onboarding index. Deep technical docs are split by area.
 3. Read [mobileDocumentation.md](./mobileDocumentation.md)
 4. Review [deployment.md](./deployment.md) for infrastructure/deployment workflow
 5. Review [MVP.md](./MVP.md) for product scope and behavior expectations
+6. For the single-service Railway deployment, use [railway/README.md](./railway/README.md)
 
 ## Repo Structure
 
