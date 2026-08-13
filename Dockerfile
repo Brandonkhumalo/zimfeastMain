@@ -38,7 +38,7 @@ WORKDIR /app
 # nginx is the public listener. supervisor owns nginx plus all five backend
 # processes; PostgreSQL and Redis are Railway managed services.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx supervisor gettext-base postgresql-client libpq5 libgdal32 libgeos-c1v5 \
+    nginx supervisor gettext-base postgresql-client redis-tools libpq5 libgdal32 libgeos-c1v5 \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/nginx/sites-enabled/default
 

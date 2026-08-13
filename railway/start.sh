@@ -19,15 +19,25 @@ export RESTAURANT_SERVICE_URL="${RESTAURANT_SERVICE_URL:-http://127.0.0.1:8002}"
 export ORDER_SERVICE_URL="${ORDER_SERVICE_URL:-http://127.0.0.1:8003}"
 export PAYMENT_SERVICE_URL="${PAYMENT_SERVICE_URL:-http://127.0.0.1:8005}"
 export MEDIA_ROOT="${MEDIA_ROOT:-/data/media}"
+mkdir -p "$MEDIA_ROOT"
+
+: "${REDIS_URL:?Set REDIS_URL from the Railway Redis service}"
 
 until psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null 2>&1; do
   echo "Waiting for PostgreSQL..."
   sleep 2
 done
 
-# PostGIS is required by restaurant locations and the order-distance columns.
+# The PostGIS Railway template includes PostGIS. pgcrypto supplies
+# gen_random_uuid(), used by the Go order-service schema.
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f /app/go-migrations.sql
+
+until redis-cli -u "$REDIS_URL" ping >/dev/null 2>&1; do
+  echo "Waiting for Redis..."
+  sleep 2
+done
 
 (cd /app/auth-service && python manage.py migrate --noinput)
 (cd /app/restaurant-service && python manage.py migrate --noinput)
