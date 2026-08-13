@@ -4,14 +4,20 @@ Owns: CustomUser, Address, BlacklistedToken
 Port: 8001
 """
 import sys
-import os
 from pathlib import Path
 
-# Add shared utilities to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
-from base_settings import *
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Add shared utilities to the path. Railway's combined image uses
+# /app/{auth-service,shared}, while per-service Docker images use /app/shared.
+for candidate in (BASE_DIR.parent, BASE_DIR):
+    shared_dir = candidate / 'shared'
+    if shared_dir.is_dir():
+        sys.path.insert(0, str(candidate))
+        sys.path.insert(0, str(shared_dir))
+        break
+
+from shared.base_settings import *
 
 INSTALLED_APPS = [
     'django.contrib.admin',
