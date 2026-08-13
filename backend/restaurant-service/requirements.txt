@@ -12,5 +12,7 @@ requests==2.32.5
 pillow==12.0.0
 django-storages==1.14.4
 boto3==1.35.0
-cryptography==44.0.0
+# Kept compatible with sendgrid==6.12.5, installed for the auth service in the
+# single Railway image (it requires cryptography >=45.0.6).
+cryptography==45.0.6
 pytz==2024.1
